@@ -1,0 +1,9 @@
+*.o
+*.exe
+tund
+*.dll
+dist/
+dist.zip
+*.log
+.DS_Store
+__MACOSX/

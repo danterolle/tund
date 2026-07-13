@@ -1,0 +1,185 @@
+# Tund
+
+**A lightweight, self-hosted virtual IPv4 LAN.**
+
+Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge Simulator) LAN parties and direct-IP multiplayer with friends.
+
+Built iteratively with DeepSeek V4 Flash: observing the generated code, refactoring and modularising as it grew. A "one-shot" tool made for fun, for a specific purpose and perhaps to learn something along the way.
+
+It behaves like Radmin VPN, but open source and cross-platform. Written in C with no external libraries.
+
+## How it works
+
+```
+┌──────────┐         ┌─────────────┐         ┌──────────┐
+│ Client A │ ──UDP──▶│  Tund Hub   │◀──UDP── │ Client B │
+│ 10.9.0.2 │         │  10.9.0.1   │         │ 10.9.0.3 │
+└──────────┘         └─────────────┘         └──────────┘
+     ▲                                              ▲
+     └──────────── Virtual LAN: 10.9.0.0/24 ────────┘
+```
+
+1. One machine runs Tund in **server** mode. On the same physical LAN it only needs to be reachable by the other PCs; over the Internet it needs a reachable UDP port.
+2. Other machines connect as **clients**
+3. All clients automatically discover each other
+4. Traffic is tunneled over UDP through the server
+5. Each client gets a virtual IP in the `10.9.0.0/24` range
+
+## Build
+
+```bash
+make
+```
+
+Supported platforms:
+
+- **Windows 10/11** (Wintun)
+- **macOS** (via utun kernel interface)
+- **Linux** (via /dev/net/tun)
+
+### Windows build
+
+```bash
+make windows
+```
+
+Run `tund.exe` from the generated `dist` directory **as Administrator**. Keep `wintun.dll` next to the executable.
+
+## Usage
+
+### Start the server
+
+On a machine with a public IP:
+
+```bash
+sudo ./tund server -k "a-long-random-party-key"
+```
+
+Options:
+```
+-k, --key <key>      Shared network key (same on all computers, 12+ characters)
+-p, --port <port>    UDP port (default: 9909)
+-v, --verbose        Debug logging
+```
+
+### Connect as a client
+
+```bash
+sudo ./tund client -s <server_ip> -k "a-long-random-party-key"
+```
+
+Options:
+```
+-s, --server <ip>    Server IP/hostname (required)
+-p, --port <port>    Server port (default: 9909)
+-n, --name <name>    Display name (default: hostname)
+-k, --key <key>      Shared network key (same on all computers, 12+ characters)
+-v, --verbose        Debug logging
+```
+
+### Example
+
+```bash
+# Machine A (server, e.g. IP 203.0.113.10):
+sudo ./tund server -k "a-long-random-party-key"
+
+# Machine B (client, behind NAT):
+sudo ./tund client -s 203.0.113.10 -n "Gaming-PC" -k "a-long-random-party-key"
+
+# Machine C (client, behind NAT):
+sudo ./tund client -s 203.0.113.10 -n "Work-Laptop" -k "a-long-random-party-key"
+
+# Now Machine B can ping Machine C:
+ping 10.9.0.3
+```
+
+## Features
+
+- **Zero registration** — no accounts or external service
+- **Auto-discovery** — clients are automatically recognized when they connect
+- **NAT traversal** — works behind any type of NAT (relay mode)
+- **Cross-platform** — Windows, macOS, and Linux
+- **Single binary** — one executable, server and client in one
+- **No external dependencies** — pure C, only uses system libraries
+- **Graceful shutdown** — Ctrl+C cleanly disconnects and notifies peers
+- **Keepalive** — automatic peer timeout detection (30s)
+- **Broadcast support** — LAN broadcast packets are forwarded
+- **Authenticated membership** — packets without the shared network key are discarded
+
+## Game compatibility
+
+Tund transports IPv4 traffic (including the IPv4 subnet broadcast address). It is suitable for direct-IP games and games such as Artemis that use ordinary IPv4 networking. It is not an Ethernet bridge: games requiring Layer-2 discovery, IPv6, or multicast discovery may need direct IP entry or may not work.
+
+The shared key authenticates packets but does **not** encrypt traffic. Use it on trusted networks or behind a trusted server; do not treat it as a privacy VPN.
+
+For Artemis, start the server first, connect every station with the same key, then use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
+
+## Network details and troubleshooting
+
+- Tund listens on UDP port `9909` by default. Allow inbound UDP on the server firewall (`netsh advfirewall` on Windows, `ufw`/`firewalld` on Linux); clients normally need only outbound UDP.
+- The tunnel MTU is `1400` bytes, leaving room for UDP encapsulation.
+- Each datagram has a 12-byte Tund header: magic/type/length plus an 8-byte SipHash integrity tag derived from the shared key. A mismatched key appears as a timeout by design.
+- The virtual subnet is fixed at `10.9.0.0/24`. Do not use Tund on a host already routing that subnet through a real LAN or another VPN.
+- All participants must run the same Tund protocol version: authenticated framing is not compatible with older builds.
+- To test connectivity, `ping 10.9.0.1` from each client after connecting. If ping fails despite a successful registration (the client gets a virtual IP), the server firewall is likely blocking ICMP.
+
+### Windows notes
+
+- **Server firewall**: allow inbound UDP on port `9909` or the server will not be reachable. To quickly verify:
+  ```cmd
+  netsh advfirewall set allprofiles state off    :: disable (test only)
+  netsh advfirewall set allprofiles state on     :: re-enable
+  ```
+  For a persistent rule create an inbound UDP rule for port 9909 in Windows Defender Firewall.
+
+- **ICMP (ping)**: Windows Firewall often blocks ICMP echo requests on the virtual adapter. After verifying connectivity by temporarily disabling the firewall (above), re-enable it. Ping is not required for game traffic, only for connectivity checks.
+
+- **Console encoding**: `tund.exe` (the console build) sets UTF-8 automatically. If characters display incorrectly in older terminals, run `chcp 65001` before launching the program.
+
+## Virtual Network
+
+| Address | Role |
+|---------|------|
+| `10.9.0.1` | Server |
+| `10.9.0.2` - `10.9.0.254` | Clients (auto-assigned) |
+| `10.9.0.255` | Broadcast |
+
+Maximum 253 simultaneous clients per network.
+
+## Architecture
+
+```
+tund
+├── src/
+│   ├── main.c          # Entry point, CLI parsing
+│   ├── tund.h        # Common types, logging
+│   ├── protocol.h      # Wire protocol (UDP messages)
+│   ├── tun.h           # TUN interface API
+│   ├── tun_linux.c     # Linux TUN implementation
+│   ├── tun_darwin.c    # macOS utun implementation
+│   ├── tun_windows.c   # Windows TUN implementation (Wintun)
+│   ├── network.h       # UDP socket API
+│   ├── network.c       # Socket operations
+│   ├── server.h        # Server API
+│   ├── server.c        # Hub server (relay + peer mgmt)
+│   ├── client.h        # Client API
+│   ├── client.c        # Client (TUN + tunnel)
+│   ├── tui.h           # Terminal UI header
+│   ├── tui.c           # Terminal UI (live peer dashboard)
+│   └── wintun.h        # Wintun API declarations
+├── Makefile
+└── README.md
+```
+
+For implementation details, protocol framing, security boundaries, and platform lifecycle notes, see [Technical documentation](docs/TECHNICAL.md).
+
+## Requirements
+
+- C11 compiler (gcc, clang)
+- Root/sudo (for TUN interface creation)
+- Windows 10/11 x64, macOS 10.10+, or Linux 2.6+
+- Windows: bundled `wintun.dll` (included in `dist/` or downloadable via `make windows`); macOS/Linux: native TUN support enabled by the OS
+
+## License
+
+MIT

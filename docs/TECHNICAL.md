@@ -1,0 +1,98 @@
+# Tund — Technical documentation
+
+## Purpose and scope
+
+Tund is a self-hosted, hub-and-spoke virtual IPv4 LAN. It creates a local Layer-3 TUN interface on every participant and relays IP packets through one UDP server. It is intended for small, trusted groups and games that work over IPv4, such as Artemis Space Ship Simulator.
+
+It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement for a production VPN. It does not transport Ethernet frames, IPv6, or arbitrary multicast discovery.
+
+## Components
+
+| Component | Responsibility |
+|---|---|
+| `main.c` | Parses configuration, derives the network key, starts server or client mode. |
+| `network.c` | UDP sockets, hostname resolution, packet authentication and source-address comparison. |
+| `protocol.h` | Datagram framing, message serialisation, virtual-network constants and SipHash MAC. |
+| `server.c` | Address assignment, peer table, packet forwarding and timeout handling. |
+| `client.c` | Server registration, keepalive, peer table and local TUN forwarding. |
+| `tun_linux.c` | Linux `/dev/net/tun` implementation. |
+| `tun_darwin.c` | macOS `utun` implementation. |
+| `tun_windows.c` | Windows Wintun implementation, loaded dynamically from `wintun.dll`. |
+| `tui.c` | Optional terminal status views (TUI). |
+
+## Virtual network
+
+The virtual network is fixed to `10.9.0.0/24`.
+
+- `10.9.0.1`: hub server
+- `10.9.0.2`–`10.9.0.254`: clients, assigned sequentially from the first free address
+- `10.9.0.255`: IPv4 broadcast
+
+Each endpoint sets the TUN MTU to 1400 bytes. The lower-than-Ethernet MTU reserves space for UDP encapsulation and limits normal fragmentation.
+
+## Start-up sequence
+
+1. The user selects server/client and supplies the shared network key.
+2. `main.c` rejects keys shorter than 12 characters and derives the two SipHash key words.
+3. A server binds UDP port 9909 by default, opens a TUN device and assigns `10.9.0.1/24`.
+4. A client resolves the server, binds an ephemeral UDP port and sends `MSG_REGISTER`.
+5. The server allocates an unused `10.9.0.x` address and replies with `MSG_ASSIGN`.
+6. The client configures its TUN interface and starts the TUN-reader and keepalive threads.
+
+## Datagram format
+
+Every Tund datagram uses the following 12-byte header followed by a payload:
+
+| Bytes | Field | Description |
+|---:|---|---|
+| 0 | magic | Fixed value `0xA9`. |
+| 1 | type | Message type. |
+| 2–3 | length | Big-endian payload length. |
+| 4–11 | tag | 64-bit SipHash integrity tag. |
+
+The tag covers the stable header fields and payload. `network.c` signs every outgoing packet and drops any incoming packet with an invalid tag before message parsing. All participants must therefore use the same access key and protocol version.
+
+Message types are `REGISTER`, `ASSIGN`, `PEER_LIST`, `DATA`, `KEEPALIVE`, `DISCONNECT`, `PEER_JOIN`, and `PEER_LEAVE`.
+
+## Packet forwarding
+
+### Client → server
+
+The client TUN thread reads an IPv4 packet, wraps it as `MSG_DATA`, signs it and sends it to the configured server. The server accepts data only if the UDP source endpoint belongs to an active peer.
+
+### Server → client
+
+The hub reads the destination IPv4 address at offset 16 of the IP header:
+
+- traffic for `10.9.0.1` is written to the server TUN;
+- traffic for `10.9.0.255` is relayed to every peer except the sender and to the server TUN;
+- traffic for an assigned client address is relayed to that endpoint.
+
+Clients accept traffic only when its UDP source address equals the configured server address. This prevents arbitrary local UDP packets from being injected into the virtual interface.
+
+## Concurrency and shutdown
+
+The server has a timeout thread and a TUN-reader thread. Each client has a keepalive thread and a TUN-reader thread. Peer-table access is protected by a mutex. UI state for the TUI is copied under the same peer lock.
+
+On shutdown, Tund sets the stop flags and closes the TUN before joining its reader thread. Closing the descriptor/session unblocks a pending TUN read on Linux, macOS and Windows.
+
+## Security model
+
+The shared key authenticates datagrams and prevents unauthorised endpoints without the key from registering or injecting packets. It does **not** encrypt packet contents and it does not provide replay protection. Use a long random key and only trusted networks/servers.
+
+Do not describe Tund as a confidential VPN until it uses a reviewed authenticated-encryption transport and replay protection.
+
+## Platform notes
+
+- **Linux:** requires `/dev/net/tun` and root/CAP_NET_ADMIN.
+- **macOS:** uses an OS-managed `utun` interface and `ifconfig`/`route` for address setup; run with administrator rights.
+- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable.
+
+## Operational checklist
+
+1. Choose a host where UDP 9909 is reachable by all participants.
+2. Ensure no participant already routes `10.9.0.0/24` through another LAN or VPN.
+3. Use the same long random key on every endpoint.
+4. Permit UDP 9909 in the server firewall.
+5. Confirm `ping 10.9.0.1` from each client, then ping another assigned client address.
+6. For games whose discovery does not cross the tunnel, enter the virtual host address manually.
