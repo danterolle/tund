@@ -89,9 +89,9 @@ static void tui_render_logo(const char *version, const char *mode)
 
 static void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int npeers)
 {
-    tui_printf("  %s────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
-    tui_printf("  %sPeers: %s%d%s\n", TUI_GRAY, TUI_YELLOW, peer_count, TUI_RESET);
-    tui_printf("  %s%-5s %-15s %-22s %s%s\n", TUI_GRAY, " ", "Virtual IP", "Name", "Last Seen", TUI_RESET);
+    tui_printf(" %s─────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
+    tui_printf(" %sPeers: %s%d%s\n", TUI_GRAY, TUI_YELLOW, peer_count, TUI_RESET);
+    tui_printf(" %s%-2s %-15s %-22s %s%s\n", TUI_GRAY, " ", "Virtual IP", "Name", "Last Seen", TUI_RESET);
 
     bool any = false;
     for (int i = 0; i < npeers; i++) {
@@ -104,23 +104,23 @@ static void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int n
         int ago = (int)(time(NULL) - peers[i].last_seen);
         const char *dot;
         if (ago < 10) {
-            dot = TUI_GREEN "\xe2\x97\x8f" TUI_RESET;    /* green circle */
+            dot = TUI_GREEN "\xe2\x97\x8f" TUI_RESET;
         } else if (ago < 30) {
-            dot = TUI_YELLOW "\xe2\x97\x8f" TUI_RESET;   /* yellow circle */
+            dot = TUI_YELLOW "\xe2\x97\x8f" TUI_RESET;
         } else {
-            dot = TUI_RED "\xe2\x97\x8f" TUI_RESET;       /* red circle */
+            dot = TUI_RED "\xe2\x97\x8f" TUI_RESET;
         }
 
-        tui_printf("  %s  %-15s %-22s %s\n", dot, ip_str, peers[i].name, ago_str);
+        tui_printf(" %s  %-15s %-22s %s\n", dot, ip_str, peers[i].name, ago_str);
     }
     if (!any)
-        tui_printf("  %s(no peers yet)%s\n", TUI_GRAY, TUI_RESET);
+        tui_printf(" %s(no peers yet)%s\n", TUI_GRAY, TUI_RESET);
 }
 
 static void tui_render_footer(const char *hint)
 {
-    tui_printf("  %s────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
-    tui_printf("  [%s%s%s]\n", TUI_YELLOW, hint, TUI_RESET);
+    tui_printf(" %s─────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
+    tui_printf(" [%s%s%s]\n", TUI_YELLOW, hint, TUI_RESET);
 }
 
 void tui_render_server(uint16_t port, const char *tun_name,
