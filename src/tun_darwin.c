@@ -6,6 +6,8 @@
 #include <sys/kern_control.h>
 #include <sys/sys_domain.h>
 #include <sys/ioctl.h>
+#include <sys/sockio.h>
+#include <sys/wait.h>
 #include <net/if_utun.h>
 #include <net/if.h>
 
@@ -68,38 +70,63 @@ void tun_close(tun_device_t *dev)
 
 int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 {
-    char cmd[256];
     struct in_addr ip_addr, mask_addr, dst_addr;
     ip_addr.s_addr = ip;
     mask_addr.s_addr = netmask;
 
     uint32_t net = ntohl(ip) & ntohl(netmask);
     dst_addr.s_addr = htonl(net | 1);
-    if (ip == dst_addr.s_addr) {
+    if (ip == dst_addr.s_addr)
         dst_addr.s_addr = htonl(net | 2);
-    }
 
     char ip_str[INET_ADDRSTRLEN], dst_str[INET_ADDRSTRLEN], mask_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &ip_addr, ip_str, sizeof(ip_str));
     inet_ntop(AF_INET, &dst_addr, dst_str, sizeof(dst_str));
     inet_ntop(AF_INET, &mask_addr, mask_str, sizeof(mask_str));
 
-    snprintf(cmd, sizeof(cmd),
-             "ifconfig %s inet %s %s netmask %s up",
-             dev->ifname, ip_str, dst_str, mask_str);
-
-    LOG_DEBUG("Running: %s", cmd);
-    int ret = system(cmd);
-    if (ret != 0) {
-        LOG_ERROR("ifconfig failed (exit %d)", ret);
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        LOG_ERROR("socket() for IP config failed: %s", strerror(errno));
         return -1;
     }
 
-    snprintf(cmd, sizeof(cmd),
-             "route add -net %s -netmask %s -interface %s 2>/dev/null",
-             "10.9.0.0", mask_str, dev->ifname);
-    LOG_DEBUG("Running: %s", cmd);
-    system(cmd);
+    struct ifaliasreq ifra;
+    struct sockaddr_in *sin;
+
+    memset(&ifra, 0, sizeof(ifra));
+    strlcpy(ifra.ifra_name, dev->ifname, sizeof(ifra.ifra_name));
+
+    sin = (struct sockaddr_in *)&ifra.ifra_addr;
+    sin->sin_family = AF_INET;
+    sin->sin_len = sizeof(*sin);
+    sin->sin_addr.s_addr = ip;
+
+    sin = (struct sockaddr_in *)&ifra.ifra_broadaddr;
+    sin->sin_family = AF_INET;
+    sin->sin_len = sizeof(*sin);
+    sin->sin_addr.s_addr = dst_addr.s_addr;
+
+    sin = (struct sockaddr_in *)&ifra.ifra_mask;
+    sin->sin_family = AF_INET;
+    sin->sin_len = sizeof(*sin);
+    sin->sin_addr.s_addr = netmask;
+
+    if (ioctl(sock, SIOCAIFADDR, &ifra) < 0) {
+        LOG_ERROR("ioctl(SIOCAIFADDR) on %s failed: %s", dev->ifname, strerror(errno));
+        close(sock);
+        return -1;
+    }
+
+    close(sock);
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        execl("/sbin/route", "route", "add", "-net", "10.9.0.0",
+              "-netmask", mask_str, "-interface", dev->ifname, (char *)NULL);
+        _exit(127);
+    }
+    if (pid > 0)
+        waitpid(pid, NULL, 0);
 
     LOG_INFO("Configured %s: %s (peer %s) netmask %s",
              dev->ifname, ip_str, dst_str, mask_str);
@@ -108,14 +135,24 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 
 int tun_set_mtu(tun_device_t *dev, int mtu)
 {
-    char cmd[128];
-    snprintf(cmd, sizeof(cmd), "ifconfig %s mtu %d", dev->ifname, mtu);
-    LOG_DEBUG("Running: %s", cmd);
-    int ret = system(cmd);
-    if (ret != 0) {
-        LOG_ERROR("ifconfig mtu failed (exit %d)", ret);
+    struct ifreq ifr;
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        LOG_ERROR("socket() for MTU failed: %s", strerror(errno));
         return -1;
     }
+
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, dev->ifname, IFNAMSIZ);
+    ifr.ifr_mtu = mtu;
+
+    if (ioctl(sock, SIOCSIFMTU, &ifr) < 0) {
+        LOG_ERROR("ioctl(SIOCSIFMTU) on %s failed: %s", dev->ifname, strerror(errno));
+        close(sock);
+        return -1;
+    }
+
+    close(sock);
     dev->mtu = mtu;
     LOG_INFO("MTU set to %d on %s", mtu, dev->ifname);
     return 0;

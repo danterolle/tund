@@ -6,6 +6,31 @@
 
 static HMODULE g_wintun_dll = NULL;
 
+static int run_cmd(const char *exe, const char *args)
+{
+    char full[4096];
+    snprintf(full, sizeof(full), "%s %s", exe, args);
+
+    LOG_DEBUG("Running: %s", full);
+
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+    memset(&si, 0, sizeof(si));
+    memset(&pi, 0, sizeof(pi));
+    si.cb = sizeof(si);
+
+    if (!CreateProcessA(NULL, full, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        LOG_ERROR("CreateProcess(%s) failed: %lu", exe, GetLastError());
+        return -1;
+    }
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD code;
+    GetExitCodeProcess(pi.hProcess, &code);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    return code == 0 ? 0 : -1;
+}
+
 static WINTUN_ADAPTER_HANDLE (*pWintunCreateAdapter)(LPCWSTR, LPCWSTR, const GUID *);
 static void (*pWintunCloseAdapter)(WINTUN_ADAPTER_HANDLE);
 static WINTUN_ADAPTER_HANDLE (*pWintunOpenAdapter)(LPCWSTR);
@@ -114,7 +139,7 @@ void tun_close(tun_device_t *dev)
 
 int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 {
-    char cmd[2048];
+    char buf[2048];
     char ip_s[32], mask_s[32], net_s[32];
     struct in_addr ip_a, mask_a, net_a;
 
@@ -123,26 +148,21 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
     inet_ntop(AF_INET, &ip_a, ip_s, sizeof(ip_s));
     inet_ntop(AF_INET, &mask_a, mask_s, sizeof(mask_s));
 
-    snprintf(cmd, sizeof(cmd),
-             "netsh interface ip set address name=\"%s\" static %s %s 2>nul",
+    snprintf(buf, sizeof(buf),
+             "interface ip set address name=\"%s\" static %s %s",
              dev->ifname, ip_s, mask_s);
-
-    LOG_DEBUG("Running: %s", cmd);
-    int ret = system(cmd);
-    if (ret != 0) {
-        LOG_ERROR("netsh failed (exit %d)", ret);
+    if (run_cmd("netsh", buf) < 0) {
+        LOG_ERROR("netsh ip set address failed");
         return -1;
     }
 
-    /* Add route for virtual subnet */
     uint32_t net = ntohl(ip) & ntohl(netmask);
     net_a.s_addr = htonl(net);
     inet_ntop(AF_INET, &net_a, net_s, sizeof(net_s));
-    snprintf(cmd, sizeof(cmd),
-             "route add %s mask %s %s metric 2 >nul 2>&1",
+    snprintf(buf, sizeof(buf),
+             "add %s mask %s %s metric 2",
              net_s, mask_s, ip_s);
-    LOG_DEBUG("Running: %s", cmd);
-    system(cmd);
+    run_cmd("route", buf);
 
     LOG_INFO("Configured %s: %s/%s", dev->ifname, ip_s, mask_s);
     return 0;
@@ -150,12 +170,11 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 
 int tun_set_mtu(tun_device_t *dev, int mtu)
 {
-    char cmd[512];
-    snprintf(cmd, sizeof(cmd),
-             "netsh interface ipv4 set subinterface \"%s\" mtu=%d store=active 2>nul",
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+             "interface ipv4 set subinterface \"%s\" mtu=%d store=active",
              dev->ifname, mtu);
-    LOG_DEBUG("Running: %s", cmd);
-    system(cmd);
+    run_cmd("netsh", buf);
     dev->mtu = mtu;
     LOG_INFO("MTU set to %d on %s", mtu, dev->ifname);
     return 0;
