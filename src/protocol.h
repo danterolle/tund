@@ -74,7 +74,8 @@ static inline int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_l
     return TUND_HDR_SIZE;
 }
 
-/* SipHash-2-4: keyed MAC for authenticated LAN membership. */
+/* SipHash-2-4: keyed MAC for authenticated LAN membership.
+ * Reference: https://ia.cr/2012/351 — Aumasson & Bernstein. */
 static inline uint64_t proto_rotl64(uint64_t x, int b)
 {
     return (x << b) | (x >> (64 - b));
