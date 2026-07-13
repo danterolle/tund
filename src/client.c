@@ -248,15 +248,37 @@ int client_init(client_t *cli, const config_t *cfg)
 
 void client_run(client_t *cli)
 {
-    LOG_INFO("╔══════════════════════════════════════════════════╗");
-    LOG_INFO("║          Tund Client v%s                  ║", TUND_VERSION);
-    LOG_INFO("║  Virtual IP: %-15s                    ║", ip_to_str(cli->virt_ip));
-    LOG_INFO("║  Server: %s:%-5u                        ║",
+    char version_str[64];
+    snprintf(version_str, sizeof(version_str), "Tund Client v%s", TUND_VERSION);
+    char ip_str[64];
+    snprintf(ip_str, sizeof(ip_str), "Virtual IP: %s", ip_to_str(cli->virt_ip));
+    char server_str[64];
+    snprintf(server_str, sizeof(server_str), "Server: %s:%u",
              inet_ntoa(cli->server_addr.sin_addr),
              ntohs(cli->server_addr.sin_port));
-    LOG_INFO("║  TUN: %-8s                                ║", cli->tun.ifname);
-    LOG_INFO("║  Name: %-16s                         ║", cli->name);
-    LOG_INFO("╚══════════════════════════════════════════════════╝");
+    char tun_str[64];
+    snprintf(tun_str, sizeof(tun_str), "TUN: %s", cli->tun.ifname);
+    char name_str[64];
+    snprintf(name_str, sizeof(name_str), "Name: %s", cli->name);
+
+    int max_len = (int)strlen(version_str);
+    if ((int)strlen(ip_str) > max_len) max_len = (int)strlen(ip_str);
+    if ((int)strlen(server_str) > max_len) max_len = (int)strlen(server_str);
+    if ((int)strlen(tun_str) > max_len) max_len = (int)strlen(tun_str);
+    if ((int)strlen(name_str) > max_len) max_len = (int)strlen(name_str);
+
+    int inner = max_len + 4;
+    char line[128];
+    memset(line, '=', (size_t)inner);
+    line[inner] = '\0';
+
+    LOG_INFO("╔%s╗", line);
+    LOG_INFO("║  %-*s║", inner - 2, version_str);
+    LOG_INFO("║  %-*s║", inner - 2, ip_str);
+    LOG_INFO("║  %-*s║", inner - 2, server_str);
+    LOG_INFO("║  %-*s║", inner - 2, tun_str);
+    LOG_INFO("║  %-*s║", inner - 2, name_str);
+    LOG_INFO("╚%s╝", line);
     LOG_INFO("Press Ctrl+C to disconnect.");
 
     cli->ka_quit = false;

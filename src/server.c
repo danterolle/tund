@@ -337,13 +337,34 @@ int server_init(server_t *srv, const config_t *cfg)
 
 void server_run(server_t *srv)
 {
-    LOG_INFO("╔══════════════════════════════════════════════════╗");
-    LOG_INFO("║          Tund Server v%s                  ║", TUND_VERSION);
-    LOG_INFO("║  Listening on UDP port %u                     ║", srv->port);
-    LOG_INFO("║  Virtual IP: %s                       ║", ip_to_str(htonl(TUND_SERVER_IP)));
-    LOG_INFO("║  Subnet: 10.9.0.0/24                            ║");
-    LOG_INFO("║  TUN: %s                                  ║", srv->tun.ifname);
-    LOG_INFO("╚══════════════════════════════════════════════════╝");
+    char version_str[64];
+    snprintf(version_str, sizeof(version_str), "Tund Server v%s", TUND_VERSION);
+    char port_str[64];
+    snprintf(port_str, sizeof(port_str), "Listening on UDP port %u", srv->port);
+    char ip_str_full[64];
+    snprintf(ip_str_full, sizeof(ip_str_full), "Virtual IP: %s", ip_to_str(htonl(TUND_SERVER_IP)));
+    char subnet_str[] = "Subnet: 10.9.0.0/24";
+    char tun_str[64];
+    snprintf(tun_str, sizeof(tun_str), "TUN: %s", srv->tun.ifname);
+
+    int max_len = (int)strlen(version_str);
+    if ((int)strlen(port_str) > max_len) max_len = (int)strlen(port_str);
+    if ((int)strlen(ip_str_full) > max_len) max_len = (int)strlen(ip_str_full);
+    if ((int)strlen(subnet_str) > max_len) max_len = (int)strlen(subnet_str);
+    if ((int)strlen(tun_str) > max_len) max_len = (int)strlen(tun_str);
+
+    int inner = max_len + 4;
+    char line[128];
+    memset(line, '=', (size_t)inner);
+    line[inner] = '\0';
+
+    LOG_INFO("╔%s╗", line);
+    LOG_INFO("║  %-*s║", inner - 2, version_str);
+    LOG_INFO("║  %-*s║", inner - 2, port_str);
+    LOG_INFO("║  %-*s║", inner - 2, ip_str_full);
+    LOG_INFO("║  %-*s║", inner - 2, subnet_str);
+    LOG_INFO("║  %-*s║", inner - 2, tun_str);
+    LOG_INFO("╚%s╝", line);
 
     srv->timeout_quit = false;
     srv->tun_quit = false;
