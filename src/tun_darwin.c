@@ -119,14 +119,21 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 
     close(sock);
 
+    struct in_addr net_addr;
+    net_addr.s_addr = htonl(net);
+    char net_str[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &net_addr, net_str, sizeof(net_str));
+
     pid_t pid = fork();
     if (pid == 0) {
-        execl("/sbin/route", "route", "add", "-net", "10.9.0.0",
+        execl("/sbin/route", "route", "add", "-net", net_str,
               "-netmask", mask_str, "-interface", dev->ifname, (char *)NULL);
         _exit(127);
-    }
-    if (pid > 0)
+    } else if (pid > 0) {
         waitpid(pid, NULL, 0);
+    } else {
+        LOG_WARN("fork() for route add failed: %s", strerror(errno));
+    }
 
     LOG_INFO("Configured %s: %s (peer %s) netmask %s",
              dev->ifname, ip_str, dst_str, mask_str);
