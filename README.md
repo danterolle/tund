@@ -141,7 +141,7 @@ Maximum 253 simultaneous clients per network.
 
 Tund transports IPv4 traffic (including the IPv4 subnet broadcast address). It is suitable for direct-IP games and games such as Artemis that use ordinary IPv4 networking. It is not an Ethernet bridge: games requiring Layer-2 discovery, IPv6, or multicast discovery may need direct IP entry or may not work.
 
-The shared key authenticates packets but does **not** encrypt traffic. Use it on trusted networks or behind a trusted server; do not treat it as a privacy VPN.
+The shared key authenticates packets but does **not** encrypt traffic. Tund is not a production VPN — it is a weekend project for trusted networks, not a privacy tool. Do not use on untrusted networks or untrusted servers.
 
 For Artemis, start the server first, connect every station with the same key, then use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
 

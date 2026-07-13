@@ -33,9 +33,9 @@
   }
 
   .wrap {
-    max-width: 640px;
+    max-width: 720px;
     margin: 0 auto;
-    padding: 3rem 1.25rem 2.5rem;
+    padding: 4rem 1.5rem 3rem;
   }
 
   .hero {
@@ -52,13 +52,13 @@
   }
 
   .brand svg {
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     flex-shrink: 0;
   }
 
   .brand h1 {
-    font-size: 34px;
+    font-size: 38px;
     font-weight: 600;
     margin: 0;
     letter-spacing: 1px;
@@ -67,10 +67,10 @@
   }
 
   .tagline {
-    font-size: 16px;
+    font-size: 17px;
     color: var(--text-secondary);
-    max-width: 440px;
-    margin: 0 auto 1.75rem;
+    max-width: 480px;
+    margin: 0 auto 2rem;
   }
 
   .buttons {
@@ -84,14 +84,14 @@
   .btn {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 0 28px;
-    height: 54px;
-    border-radius: 10px;
+    gap: 12px;
+    padding: 0 40px;
+    height: 64px;
+    border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text-primary);
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 500;
     text-decoration: none;
     transition: background .15s ease, border-color .15s ease, transform .1s ease;
@@ -107,12 +107,12 @@
   }
 
   .btn i {
-    font-size: 24px;
+    font-size: 26px;
     color: var(--accent-light);
   }
 
   .license {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-muted);
     margin: 0;
   }
@@ -133,23 +133,23 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 1rem;
+    padding: 1.15rem;
   }
 
   .card i {
-    font-size: 20px;
+    font-size: 22px;
     color: var(--accent-light);
   }
 
   .card p.title {
     font-weight: 500;
-    font-size: 14px;
+    font-size: 15px;
     margin: .6rem 0 4px;
     color: var(--text-primary);
   }
 
   .card p.desc {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary);
     margin: 0;
   }
@@ -218,7 +218,7 @@
 
   .quickstart-body pre {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    font-size: 13px;
+    font-size: 14px;
     margin: 0;
     white-space: pre-wrap;
     line-height: 1.9;
@@ -233,14 +233,14 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
     margin: 0 0 1rem;
     color: var(--text-primary);
   }
 
   .section-title i {
-    font-size: 18px;
+    font-size: 20px;
     color: var(--accent-light);
   }
 
@@ -291,7 +291,7 @@
   }
 
   .win-steps .step-text {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary);
     padding-top: 2px;
   }
@@ -310,14 +310,14 @@
     background: var(--surface-2);
     padding: 1px 6px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--accent-light);
   }
 
   .win-note {
     display: flex;
     gap: 8px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-muted);
     margin-top: 1rem;
     padding-top: 1rem;
@@ -326,7 +326,7 @@
 
   .win-note i {
     flex-shrink: 0;
-    font-size: 15px;
+    font-size: 16px;
     margin-top: 1px;
   }
 
@@ -339,7 +339,7 @@
   }
 
   footer a {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary);
     text-decoration: none;
     display: flex;
@@ -352,7 +352,7 @@
   }
 
   footer a i {
-    font-size: 16px;
+    font-size: 18px;
   }
 </style>
 </head>
@@ -394,6 +394,7 @@
       </div>
 
       <p class="license">MIT license · <a href="https://github.com/danterolle/tund">source code on GitHub</a></p>
+      <p style="color:var(--text-muted);font-size:13px;margin-top:.75rem">⚠️ Packet contents are <strong>authenticated but not encrypted</strong> — use only on trusted networks.</p>
     </div>
 
     <div class="features">
@@ -441,8 +442,16 @@
         </li>
         <li>
           <span class="num"></span>
-          <span class="step-text">If this machine is the server, allow inbound UDP on port <code>9909</code> in <strong>Windows Defender Firewall</strong> so clients can reach it:
-          <br><code>netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909</code></span>
+          <span class="step-text">If this machine is the server, allow inbound UDP on port <code>9909</code> in <strong>Windows Defender Firewall</strong> so clients can reach it:</span>
+          <div style="margin-top:.4rem;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <div class="quickstart-header" style="padding:.3rem 1rem">
+              <span class="label" style="font-size:12px">netsh</span>
+              <button class="copy-btn" id="copyNetshBtn"><i class="ti ti-copy"></i>Copy</button>
+            </div>
+            <div class="quickstart-body" style="padding:.4rem 1rem">
+              <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;margin:0;white-space:pre-wrap;line-height:1.7"><span class="cmd">netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909</span></pre>
+            </div>
+          </div>
         </li>
         <li>
           <span class="num"></span>
@@ -454,24 +463,29 @@
 
     <div class="win-guide">
       <p class="section-title"><i class="ti ti-brand-apple"></i>macOS — first run</p>
-      <p class="win-note" style="margin-top:0;border-top:none;padding-top:0;margin-bottom:0">
-        <i class="ti ti-info-circle"></i>
-        macOS may show <em>"apple cannot verify the identity of the developer"</em>
-        because the binary is not signed with an Apple certificate. Run this once to clear the quarantine flag:
-      </p>
-      <div class="quickstart-body" style="padding:.5rem 1.25rem .75rem">
-        <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;margin:0;white-space:pre-wrap;line-height:1.9"><span class="cmd">xattr -d com.apple.quarantine ./tund</span></pre>
+      <ol class="win-steps">
+        <li>
+          <span class="num"></span>
+          <span class="step-text">macOS may show <em>"apple cannot verify the identity of the developer"</em> because the binary is not signed with an Apple certificate. Run this once to clear the quarantine flag:</span>
+        </li>
+      </ol>
+      <div class="quickstart-header" style="padding:.4rem 1rem">
+        <span class="label" style="font-size:12px">clear quarantine flag</span>
+        <button class="copy-btn" id="copyXattrBtn"><i class="ti ti-copy"></i>Copy</button>
       </div>
-      <p class="win-note" style="border-top:none;padding-top:0">
+      <div class="quickstart-body" style="padding:.5rem 1.25rem .75rem">
+        <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:14px;margin:0;white-space:pre-wrap;line-height:1.9"><span class="cmd">xattr -d com.apple.quarantine ./tund</span></pre>
+      </div>
+      <p class="win-note" style="border-top:none;padding-top:.5rem">
         <i class="ti ti-info-circle"></i>
-        If the warning persists, go to <strong>System Settings → Privacy & Security</strong> and click <em>Open Anyway</em>.
+        If the warning persists, go to System Settings → Privacy &amp; Security and click <em>Open Anyway</em>.
       </p>
     </div>
 
     <div class="win-guide">
       <p class="section-title"><i class="ti ti-shield-lock"></i>Firewall — allow port 9909 on Linux / macOS</p>
       <div class="quickstart-body" style="padding:.75rem 1.25rem">
-        <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;margin:0;white-space:pre-wrap;line-height:1.9">
+        <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:14px;margin:0;white-space:pre-wrap;line-height:1.9">
 <span class="comment"># ufw (Ubuntu/Debian)</span>
 <span class="cmd">sudo ufw allow 9909/udp</span>
 <span class="gap"></span><span class="comment"># firewalld (Fedora/RHEL)</span>
@@ -480,7 +494,7 @@
 <span class="gap"></span><span class="comment"># iptables</span>
 <span class="cmd">sudo iptables -A INPUT -p udp --dport 9909 -j ACCEPT</span>
 <span class="gap"></span><span class="comment"># macOS — usually no firewall blocks inbound,</span>
-<span class="comment"># but check System Settings > Network > Firewall</span></pre>
+<span class="comment"># but check System Settings &gt; Network &gt; Firewall</span></pre>
       </div>
     </div>
 
@@ -492,15 +506,19 @@
   </div>
 
   <script>
-    document.getElementById('copyBtn').addEventListener('click', function() {
-      var text = 'sudo ./tund server -k "a-long-random-key"\nsudo ./tund client -s <server_ip> -k "a-long-random-key"';
-      navigator.clipboard.writeText(text).then(function() {
-        var btn = document.getElementById('copyBtn');
-        var original = btn.innerHTML;
-        btn.innerHTML = '<i class="ti ti-check"></i>Copied';
-        setTimeout(function() { btn.innerHTML = original; }, 1500);
+    function setupCopy(id, text) {
+      document.getElementById(id).addEventListener('click', function() {
+        navigator.clipboard.writeText(text).then(function() {
+          var btn = document.getElementById(id);
+          var original = btn.innerHTML;
+          btn.innerHTML = '<i class="ti ti-check"></i>Copied';
+          setTimeout(function() { btn.innerHTML = original; }, 1500);
+        });
       });
-    });
+    }
+    setupCopy('copyBtn', 'sudo ./tund server -k "a-long-random-key"\nsudo ./tund client -s <server_ip> -k "a-long-random-key"');
+    setupCopy('copyXattrBtn', 'xattr -d com.apple.quarantine ./tund');
+    setupCopy('copyNetshBtn', 'netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909');
   </script>
 </body>
 </html>
