@@ -453,6 +453,22 @@
     </div>
 
     <div class="win-guide">
+      <p class="section-title"><i class="ti ti-brand-apple"></i>macOS — first run</p>
+      <p class="win-note" style="margin-top:0;border-top:none;padding-top:0;margin-bottom:0">
+        <i class="ti ti-info-circle"></i>
+        macOS may show <em>"apple cannot verify the identity of the developer"</em>
+        because the binary is not signed with an Apple certificate. Run this once to clear the quarantine flag:
+      </p>
+      <div class="quickstart-body" style="padding:.5rem 1.25rem .75rem">
+        <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;margin:0;white-space:pre-wrap;line-height:1.9"><span class="cmd">xattr -d com.apple.quarantine ./tund</span></pre>
+      </div>
+      <p class="win-note" style="border-top:none;padding-top:0">
+        <i class="ti ti-info-circle"></i>
+        If the warning persists, go to <strong>System Settings → Privacy & Security</strong> and click <em>Open Anyway</em>.
+      </p>
+    </div>
+
+    <div class="win-guide">
       <p class="section-title"><i class="ti ti-shield-lock"></i>Firewall — allow port 9909 on Linux / macOS</p>
       <div class="quickstart-body" style="padding:.75rem 1.25rem">
         <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;margin:0;white-space:pre-wrap;line-height:1.9">

@@ -173,6 +173,18 @@ For Artemis, start the server first, connect every station with the same key, th
 
 - **Console encoding**: `tund.exe` (the console build) sets UTF-8 automatically. If characters display incorrectly in older terminals, run `chcp 65001` before launching the program.
 
+### macOS notes
+
+- **Unverified developer warning**: the first time you run Tund, macOS may show *"apple cannot verify the identity of the developer"*. This happens because the binary is not signed with an Apple Developer certificate. To bypass:
+  ```bash
+  xattr -d com.apple.quarantine ./tund
+  ```
+  Run this once before launching. If the warning persists, open **System Settings → Privacy & Security** and click *Open Anyway* next to the blocked Tund entry.
+
+- **TUN interface**: macOS creates a `utun` device automatically when Tund starts. You may see a prompt asking for network configuration permission — enter your password to allow it.
+
+- **ICMP (ping)**: like Windows, macOS may block ICMP on the virtual interface. Ping is not required for game traffic.
+
 ## Architecture
 
 ```
