@@ -308,32 +308,18 @@ void client_run(client_t *cli)
     uint8_t buf[TUND_MAX_PKT];
     char server_ip_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &cli->server_addr.sin_addr, server_ip_str, sizeof(server_ip_str));
+    int npeers;
 
     while (g_running) {
-        int ret = platform_poll_one(cli->sockfd, 1000);
-        if (ret < 0) {
-            int err = SOCK_Error();
-            if (err == SOCK_EINTR) continue;
-            LOG_ERROR("poll() failed: %s", strerror(err));
+        int ret = net_poll_peers(cli->sockfd, cli->peers, TUND_MAX_PEERS,
+                                 &cli->peers_lock, tui_peers, &npeers);
+        if (ret < 0)
             break;
-        }
         if (ret == 0) {
-            pthread_mutex_lock(&cli->peers_lock);
-            int npeers = 0;
-            int pc = cli->peer_count;
-            for (int i = 0; i < TUND_MAX_PEERS; i++) {
-                tui_peers[npeers].virt_ip = cli->peers[i].virt_ip;
-                tui_peers[npeers].last_seen = cli->peers[i].last_seen;
-                tui_peers[npeers].active = cli->peers[i].active;
-                memcpy(tui_peers[npeers].name, cli->peers[i].name, TUND_NAME_LEN);
-                if (cli->peers[i].active) npeers++;
-            }
-            pthread_mutex_unlock(&cli->peers_lock);
-
             if (g_tui_active)
                 tui_render_client(server_ip_str, ntohs(cli->server_addr.sin_port),
                                   cli->tun.ifname, cli->virt_ip, cli->netmask,
-                                  g_start_time, pc, tui_peers, npeers);
+                                  g_start_time, npeers, tui_peers, npeers);
             continue;
         }
 

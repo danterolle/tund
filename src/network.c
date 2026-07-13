@@ -1,4 +1,5 @@
 #include "network.h"
+#include "tui.h"
 
 #ifdef _WIN32
 static int ensure_winsock(void)
@@ -132,4 +133,30 @@ int net_resolve(const char *host, uint16_t port, struct sockaddr_in *out)
     LOG_DEBUG("Resolved %s -> %s:%u",
               host, inet_ntoa(out->sin_addr), port);
     return 0;
+}
+
+int net_poll_peers(socket_t sockfd, peer_t *peers, int max_peers,
+                   pthread_mutex_t *lock, tui_peer_t *tui_peers, int *npeers)
+{
+    int ret = platform_poll_one(sockfd, 1000);
+    if (ret < 0) {
+        int err = SOCK_Error();
+        if (err == SOCK_EINTR) return 0;
+        LOG_ERROR("poll() failed: %s", strerror(err));
+        return -1;
+    }
+    if (ret == 0) {
+        pthread_mutex_lock(lock);
+        *npeers = 0;
+        for (int i = 0; i < max_peers; i++) {
+            tui_peers[*npeers].virt_ip = peers[i].virt_ip;
+            tui_peers[*npeers].last_seen = peers[i].last_seen;
+            tui_peers[*npeers].active = peers[i].active;
+            memcpy(tui_peers[*npeers].name, peers[i].name, TUND_NAME_LEN);
+            if (peers[i].active) (*npeers)++;
+        }
+        pthread_mutex_unlock(lock);
+        return 0;
+    }
+    return 1;
 }

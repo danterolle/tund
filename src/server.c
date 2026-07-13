@@ -392,32 +392,18 @@ void server_run(server_t *srv)
     uint8_t buf[TUND_MAX_PKT];
     struct sockaddr_in from;
     tui_peer_t tui_peers[TUND_MAX_PEERS];
+    int npeers;
 
     while (g_running) {
-        int ret = platform_poll_one(srv->sockfd, 1000);
-        if (ret < 0) {
-            int err = SOCK_Error();
-            if (err == SOCK_EINTR) continue;
-            LOG_ERROR("poll() failed: %s", strerror(err));
+        int ret = net_poll_peers(srv->sockfd, srv->peers, TUND_MAX_PEERS,
+                                 &srv->peers_lock, tui_peers, &npeers);
+        if (ret < 0)
             break;
-        }
         if (ret == 0) {
-            pthread_mutex_lock(&srv->peers_lock);
-            int npeers = 0;
-            int pc = srv->peer_count;
-            for (int i = 0; i < TUND_MAX_PEERS; i++) {
-                tui_peers[npeers].virt_ip = srv->peers[i].virt_ip;
-                tui_peers[npeers].last_seen = srv->peers[i].last_seen;
-                tui_peers[npeers].active = srv->peers[i].active;
-                memcpy(tui_peers[npeers].name, srv->peers[i].name, TUND_NAME_LEN);
-                if (srv->peers[i].active) npeers++;
-            }
-            pthread_mutex_unlock(&srv->peers_lock);
-
             if (g_tui_active)
                 tui_render_server(srv->port, srv->tun.ifname,
                                   htonl(TUND_SERVER_IP), htonl(TUND_NETMASK),
-                                  g_start_time, pc, tui_peers, npeers);
+                                  g_start_time, npeers, tui_peers, npeers);
             continue;
         }
 
