@@ -1,3 +1,14 @@
+<p align="center">
+  <img src="logo.svg" width="120" alt="Tund logo">
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
+  <a href="https://github.com/danterolle/tund/releases"><img src="https://img.shields.io/github/v/release/danterolle/tund" alt="Release"></a>
+  <img src="https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-378ADD" alt="Platform">
+  <img src="https://img.shields.io/badge/language-C-555555.svg" alt="Language">
+</p>
+
 # Tund
 
 **A lightweight, self-hosted virtual IPv4 LAN.**
