@@ -16,7 +16,7 @@ endif
 ifneq ($(filter MINGW%,$(UNAME_S)),)
     TUN_SRC  := src/tun_windows.c
     TARGET   := tund.exe
-    LDFLAGS  := -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32
+    LDFLAGS  := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32
 endif
 
 SRCS     := src/main.c src/network.c src/server.c src/client.c src/tui.c $(TUN_SRC)
