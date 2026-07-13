@@ -113,7 +113,7 @@ static inline uint64_t now_ms(void)
 #include "protocol.h"
 
 #define TUND_MAX_PEERS    253     /* 10.9.0.2 .. 10.9.0.254 */
-#define TUND_VERSION      "1"
+#define TUND_VERSION      "1.1"
 
 enum log_level {
     LOG_DEBUG = 0,
