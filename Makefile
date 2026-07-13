@@ -44,7 +44,7 @@ DIST        := dist
 TARGET_WCON := $(DIST)/tund.exe
 WIN_SRCS    := src/main.c src/network.c src/server.c src/client.c src/tui.c src/tun_windows.c
 WIN_CFLAGS  := -Wall -Wextra -O2 -std=c11 -D_WIN32_WINNT=0x0601
-WIN_LIBS    := -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32
+WIN_LIBS    := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32
 
 $(DIST):
 	mkdir -p $(DIST)
