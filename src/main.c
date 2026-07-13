@@ -4,7 +4,7 @@
 #include <getopt.h>
 
 int g_log_level = LOG_INFO;
-volatile bool g_tui_active = false;
+volatile bool g_tui_active = true;
 time_t g_start_time = 0;
 volatile int g_running = 1;
 uint64_t g_auth_key0 = 0;
@@ -97,25 +97,8 @@ static void setup_signals(void)
 }
 #endif
 
-static void print_banner(void)
-{
-    fprintf(stderr,
-        "\n"
-        "\033[36m"
-        "####### #     # #     # ######  \n"
-        "   #    #     # ##    # #     # \n"
-        "   #    #     # # #   # #     # \n"
-        "   #    #     # #  #  # #     # \n"
-        "   #    #     # #   # # #     # \n"
-        "   #    #     # #    ## #     # \n"
-        "   #     #####  #     # ######  \n"
-        "\033[0m"
-        );
-}
-
 static void print_usage(const char *prog, bool show_desc)
 {
-    print_banner();
     if (show_desc) fprintf(stderr,
         "Tund — Virtual LAN over UDP. Creates a secure\n"
         "layer-2 tunnel for LAN gaming with friends.\n"
@@ -134,7 +117,7 @@ static void print_usage(const char *prog, bool show_desc)
         "  -p, --port <port>    UDP port (default: %u)\n"
         "  -n, --name <name>    Client display name (default: hostname)\n"
         "  -k, --key <key>      Shared network passphrase (required)\n"
-        "  -t, --tui            Terminal UI (live peer dashboard)\n"
+         "  -t, --no-tui        Disable terminal UI (live peer dashboard)\n"
         "  -v, --verbose        Enable debug logging\n"
         "  -h, --help           Show this help\n"
         "\n"
@@ -163,6 +146,7 @@ int main(int argc, char *argv[])
     memset(&cfg, 0, sizeof(cfg));
     cfg.port = TUND_PORT;
     cfg.log_level = LOG_INFO;
+    cfg.tui_mode = true;
 
     if (argc < 2) {
         print_usage(argv[0], false);
@@ -188,7 +172,7 @@ int main(int argc, char *argv[])
         {"port",    required_argument, 0, 'p'},
         {"name",    required_argument, 0, 'n'},
         {"key",     required_argument, 0, 'k'},
-        {"tui",     no_argument,       0, 't'},
+        {"no-tui",  no_argument,       0, 't'},
         {"verbose", no_argument,       0, 'v'},
         {"help",    no_argument,       0, 'h'},
         {0, 0, 0, 0}
@@ -219,7 +203,7 @@ int main(int argc, char *argv[])
             snprintf(cfg.access_key, sizeof(cfg.access_key), "%s", optarg);
             break;
         case 't':
-            cfg.tui_mode = true;
+            cfg.tui_mode = false;
             break;
         case 'v':
             cfg.log_level = LOG_DEBUG;
@@ -287,7 +271,6 @@ int main(int argc, char *argv[])
 #endif
 
     setup_signals();
-    print_banner();
 
     if (cfg.mode == MODE_SERVER) {
         if (server_init(&g_server, &cfg) < 0) {
