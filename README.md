@@ -8,6 +8,25 @@ Built iteratively with DeepSeek V4 Flash: observing the generated code, refactor
 
 It behaves like Radmin VPN, but open source and cross-platform. Written in C with no external libraries.
 
+## Table of Contents
+
+- [How it works](#how-it-works)
+- [Usage](#usage)
+  - [Start the server](#start-the-server)
+  - [Connect as a client](#connect-as-a-client)
+  - [Example](#example)
+- [Build](#build)
+  - [Linux / macOS](#linux--macos)
+  - [Windows](#windows)
+- [Features](#features)
+- [Virtual Network](#virtual-network)
+- [Game compatibility](#game-compatibility)
+- [Network details and troubleshooting](#network-details-and-troubleshooting)
+  - [Windows notes](#windows-notes)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [License](#license)
+
 ## How it works
 
 ```
@@ -25,26 +44,6 @@ It behaves like Radmin VPN, but open source and cross-platform. Written in C wit
 4. Traffic is tunneled over UDP through the server
 5. Each client gets a virtual IP in the `10.9.0.0/24` range
 
-## Build
-
-```bash
-make
-```
-
-Supported platforms:
-
-- **Windows 10/11** (Wintun)
-- **macOS** (via utun kernel interface)
-- **Linux** (via /dev/net/tun)
-
-### Windows build
-
-```bash
-make windows
-```
-
-Run `tund.exe` from the generated `dist` directory **as Administrator**. Keep `wintun.dll` next to the executable.
-
 ## Usage
 
 ### Start the server
@@ -52,7 +51,7 @@ Run `tund.exe` from the generated `dist` directory **as Administrator**. Keep `w
 On a machine with a public IP:
 
 ```bash
-sudo ./tund server -k "a-long-random-party-key"
+sudo ./tund server -k "a-long-random-key"
 ```
 
 Options:
@@ -65,7 +64,7 @@ Options:
 ### Connect as a client
 
 ```bash
-sudo ./tund client -s <server_ip> -k "a-long-random-party-key"
+sudo ./tund client -s <server_ip> -k "a-long-random-key"
 ```
 
 Options:
@@ -81,17 +80,37 @@ Options:
 
 ```bash
 # Machine A (server, e.g. IP 203.0.113.10):
-sudo ./tund server -k "a-long-random-party-key"
+sudo ./tund server -k "a-long-random-key"
 
 # Machine B (client, behind NAT):
-sudo ./tund client -s 203.0.113.10 -n "Gaming-PC" -k "a-long-random-party-key"
+sudo ./tund client -s 203.0.113.10 -n "Gaming-PC" -k "a-long-random-key"
 
 # Machine C (client, behind NAT):
-sudo ./tund client -s 203.0.113.10 -n "Work-Laptop" -k "a-long-random-party-key"
+sudo ./tund client -s 203.0.113.10 -n "Work-Laptop" -k "a-long-random-key"
 
 # Now Machine B can ping Machine C:
 ping 10.9.0.3
 ```
+
+## Build
+
+Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases).
+
+### Linux / macOS
+
+```bash
+make
+```
+
+### Windows
+
+```bash
+make windows
+```
+
+Run `tund.exe` from the generated `dist` directory **as Administrator**. Keep `wintun.dll` next to the executable.
+
+Or download the latest release — `tund.exe` and `wintun.dll` are already bundled together.
 
 ## Features
 
@@ -106,36 +125,6 @@ ping 10.9.0.3
 - **Broadcast support** — LAN broadcast packets are forwarded
 - **Authenticated membership** — packets without the shared network key are discarded
 
-## Game compatibility
-
-Tund transports IPv4 traffic (including the IPv4 subnet broadcast address). It is suitable for direct-IP games and games such as Artemis that use ordinary IPv4 networking. It is not an Ethernet bridge: games requiring Layer-2 discovery, IPv6, or multicast discovery may need direct IP entry or may not work.
-
-The shared key authenticates packets but does **not** encrypt traffic. Use it on trusted networks or behind a trusted server; do not treat it as a privacy VPN.
-
-For Artemis, start the server first, connect every station with the same key, then use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
-
-## Network details and troubleshooting
-
-- Tund listens on UDP port `9909` by default. Allow inbound UDP on the server firewall (`netsh advfirewall` on Windows, `ufw`/`firewalld` on Linux); clients normally need only outbound UDP.
-- The tunnel MTU is `1400` bytes, leaving room for UDP encapsulation.
-- Each datagram has a 12-byte Tund header: magic/type/length plus an 8-byte SipHash integrity tag derived from the shared key. A mismatched key appears as a timeout by design.
-- The virtual subnet is fixed at `10.9.0.0/24`. Do not use Tund on a host already routing that subnet through a real LAN or another VPN.
-- All participants must run the same Tund protocol version: authenticated framing is not compatible with older builds.
-- To test connectivity, `ping 10.9.0.1` from each client after connecting. If ping fails despite a successful registration (the client gets a virtual IP), the server firewall is likely blocking ICMP.
-
-### Windows notes
-
-- **Server firewall**: allow inbound UDP on port `9909` or the server will not be reachable. To quickly verify:
-  ```cmd
-  netsh advfirewall set allprofiles state off    :: disable (test only)
-  netsh advfirewall set allprofiles state on     :: re-enable
-  ```
-  For a persistent rule create an inbound UDP rule for port 9909 in Windows Defender Firewall.
-
-- **ICMP (ping)**: Windows Firewall often blocks ICMP echo requests on the virtual adapter. After verifying connectivity by temporarily disabling the firewall (above), re-enable it. Ping is not required for game traffic, only for connectivity checks.
-
-- **Console encoding**: `tund.exe` (the console build) sets UTF-8 automatically. If characters display incorrectly in older terminals, run `chcp 65001` before launching the program.
-
 ## Virtual Network
 
 | Address | Role |
@@ -146,13 +135,51 @@ For Artemis, start the server first, connect every station with the same key, th
 
 Maximum 253 simultaneous clients per network.
 
+## Game compatibility
+
+Tund transports IPv4 traffic (including the IPv4 subnet broadcast address). It is suitable for direct-IP games and games such as Artemis that use ordinary IPv4 networking. It is not an Ethernet bridge: games requiring Layer-2 discovery, IPv6, or multicast discovery may need direct IP entry or may not work.
+
+The shared key authenticates packets but does **not** encrypt traffic. Use it on trusted networks or behind a trusted server; do not treat it as a privacy VPN.
+
+For Artemis, start the server first, connect every station with the same key, then use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
+
+## Network details and troubleshooting
+
+- Tund listens on UDP port `9909` by default. Allow inbound UDP on the server firewall; clients normally need only outbound UDP.
+  - **Linux (ufw):** `sudo ufw allow 9909/udp`
+  - **Linux (firewalld):** `sudo firewall-cmd --add-port=9909/udp --permanent && sudo firewall-cmd --reload`
+  - **Linux (iptables):** `sudo iptables -A INPUT -p udp --dport 9909 -j ACCEPT`
+  - **Windows:** `netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909`
+  - **macOS:** usually no firewall blocks inbound by default; check System Settings → Network → Firewall
+- The tunnel MTU is `1400` bytes, leaving room for UDP encapsulation.
+- Each datagram has a 12-byte Tund header: magic/type/length plus an 8-byte SipHash integrity tag derived from the shared key. A mismatched key appears as a timeout by design.
+- The virtual subnet is fixed at `10.9.0.0/24`. Do not use Tund on a host already routing that subnet through a real LAN or another VPN.
+- All participants must run the same Tund protocol version: authenticated framing is not compatible with older builds.
+- To test connectivity, `ping 10.9.0.1` from each client after connecting. If ping fails despite a successful registration (the client gets a virtual IP), the server firewall is likely blocking ICMP.
+
+### Windows notes
+
+- **Server firewall**: allow inbound UDP on port `9909` or the server will not be reachable.
+  ```cmd
+  :: Persistent rule (recommended)
+  netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909
+
+  :: Temporarily disable (test only)
+  netsh advfirewall set allprofiles state off
+  netsh advfirewall set allprofiles state on
+  ```
+
+- **ICMP (ping)**: Windows Firewall often blocks ICMP echo requests on the virtual adapter. After verifying connectivity by temporarily disabling the firewall (above), re-enable it. Ping is not required for game traffic, only for connectivity checks.
+
+- **Console encoding**: `tund.exe` (the console build) sets UTF-8 automatically. If characters display incorrectly in older terminals, run `chcp 65001` before launching the program.
+
 ## Architecture
 
 ```
 tund
 ├── src/
 │   ├── main.c          # Entry point, CLI parsing
-│   ├── tund.h        # Common types, logging
+│   ├── tund.h         # Common types, logging
 │   ├── protocol.h      # Wire protocol (UDP messages)
 │   ├── tun.h           # TUN interface API
 │   ├── tun_linux.c     # Linux TUN implementation
@@ -182,4 +209,4 @@ For implementation details, protocol framing, security boundaries, and platform 
 
 ## License
 
-MIT
+[MIT](LICENSE)
