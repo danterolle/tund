@@ -74,38 +74,76 @@ static inline int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_l
     return TUND_HDR_SIZE;
 }
 
-/* SipHash-2-4: a compact MAC for authenticated LAN membership. */
-static inline uint64_t proto_rotl64(uint64_t x, int b) { return (x << b) | (x >> (64 - b)); }
-static inline uint64_t proto_load64_le(const uint8_t *p) {
-    uint64_t v = 0; for (int i = 0; i < 8; ++i) v |= (uint64_t)p[i] << (8 * i); return v;
+/* SipHash-2-4: keyed MAC for authenticated LAN membership. */
+static inline uint64_t proto_rotl64(uint64_t x, int b)
+{
+    return (x << b) | (x >> (64 - b));
 }
-static inline uint64_t proto_siphash24(const uint8_t *in, size_t len, uint64_t k0, uint64_t k1) {
-    uint64_t v0 = 0x736f6d6570736575ULL ^ k0, v1 = 0x646f72616e646f6dULL ^ k1;
-    uint64_t v2 = 0x6c7967656e657261ULL ^ k0, v3 = 0x7465646279746573ULL ^ k1;
-#define SIPROUND do { v0 += v1; v1 = proto_rotl64(v1,13); v1 ^= v0; v0 = proto_rotl64(v0,32); v2 += v3; v3 = proto_rotl64(v3,16); v3 ^= v2; v0 += v3; v3 = proto_rotl64(v3,21); v3 ^= v0; v2 += v1; v1 = proto_rotl64(v1,17); v1 ^= v2; v2 = proto_rotl64(v2,32); } while (0)
-    const uint8_t *end = in + (len & ~(size_t)7); uint64_t b = (uint64_t)len << 56;
-    for (; in != end; in += 8) { uint64_t m = proto_load64_le(in); v3 ^= m; SIPROUND; SIPROUND; v0 ^= m; }
-    for (size_t i = 0; i < (len & 7); ++i) b |= (uint64_t)in[i] << (8 * i);
-    v3 ^= b; SIPROUND; SIPROUND; v0 ^= b; v2 ^= 0xff; SIPROUND; SIPROUND; SIPROUND; SIPROUND;
-#undef SIPROUND
+
+static inline uint64_t proto_load64_le(const uint8_t *p)
+{
+    uint64_t v = 0;
+    for (int i = 0; i < 8; i++)
+        v |= (uint64_t)p[i] << (8 * i);
+    return v;
+}
+
+#define SIPROUND \
+    do { \
+        v0 += v1; v1 = proto_rotl64(v1, 13); v1 ^= v0; v0 = proto_rotl64(v0, 32); \
+        v2 += v3; v3 = proto_rotl64(v3, 16); v3 ^= v2; \
+        v0 += v3; v3 = proto_rotl64(v3, 21); v3 ^= v0; \
+        v2 += v1; v1 = proto_rotl64(v1, 17); v1 ^= v2; v2 = proto_rotl64(v2, 32); \
+    } while (0)
+
+static inline uint64_t proto_siphash24(const uint8_t *in, size_t len,
+                                       uint64_t k0, uint64_t k1)
+{
+    uint64_t v0 = 0x736f6d6570736575ULL ^ k0;
+    uint64_t v1 = 0x646f72616e646f6dULL ^ k1;
+    uint64_t v2 = 0x6c7967656e657261ULL ^ k0;
+    uint64_t v3 = 0x7465646279746573ULL ^ k1;
+    const uint8_t *end = in + (len & ~(size_t)7);
+    uint64_t b = (uint64_t)len << 56;
+
+    for (; in != end; in += 8) {
+        uint64_t m = proto_load64_le(in);
+        v3 ^= m; SIPROUND; SIPROUND; v0 ^= m;
+    }
+    for (size_t i = 0; i < (len & 7); i++)
+        b |= (uint64_t)in[i] << (8 * i);
+
+    v3 ^= b; SIPROUND; SIPROUND; v0 ^= b;
+    v2 ^= 0xff; SIPROUND; SIPROUND; SIPROUND; SIPROUND;
     return v0 ^ v1 ^ v2 ^ v3;
 }
 
-static inline void proto_key_from_passphrase(const char *passphrase, uint64_t *k0, uint64_t *k1) {
-    /* SipHash keys must be unpredictable: use a long random passphrase, not a word. */
-    *k0 = proto_siphash24((const uint8_t *)passphrase, strlen(passphrase), 0x0706050403020100ULL, 0x0f0e0d0c0b0a0908ULL);
-    *k1 = proto_siphash24((const uint8_t *)passphrase, strlen(passphrase), 0xfedcba9876543210ULL, 0x0123456789abcdefULL);
+static inline void proto_key_from_passphrase(const char *passphrase,
+                                             uint64_t *k0, uint64_t *k1)
+{
+    *k0 = proto_siphash24((const uint8_t *)passphrase, strlen(passphrase),
+                          0x0706050403020100ULL, 0x0f0e0d0c0b0a0908ULL);
+    *k1 = proto_siphash24((const uint8_t *)passphrase, strlen(passphrase),
+                          0xfedcba9876543210ULL, 0x0123456789abcdefULL);
 }
 
-static inline void proto_sign(uint8_t *buf, int len, uint64_t k0, uint64_t k1) {
-    uint64_t tag = proto_siphash24(buf, 4, k0, k1) ^ proto_siphash24(buf + TUND_HDR_SIZE, (size_t)len - TUND_HDR_SIZE, k0, k1);
-    for (int i = 0; i < 8; ++i) buf[4 + i] = (uint8_t)(tag >> (8 * i));
+static inline void proto_sign(uint8_t *buf, int len, uint64_t k0, uint64_t k1)
+{
+    uint64_t tag = proto_siphash24(buf, 4, k0, k1)
+                 ^ proto_siphash24(buf + TUND_HDR_SIZE,
+                                   (size_t)len - TUND_HDR_SIZE, k0, k1);
+    for (int i = 0; i < 8; i++)
+        buf[4 + i] = (uint8_t)(tag >> (8 * i));
 }
 
-static inline bool proto_verify(const uint8_t *buf, int len, uint64_t k0, uint64_t k1) {
-    if (len < TUND_HDR_SIZE) return false;
+static inline bool proto_verify(const uint8_t *buf, int len, uint64_t k0, uint64_t k1)
+{
+    if (len < TUND_HDR_SIZE)
+        return false;
     uint64_t got = proto_load64_le(buf + 4);
-    uint64_t tag = proto_siphash24(buf, 4, k0, k1) ^ proto_siphash24(buf + TUND_HDR_SIZE, (size_t)len - TUND_HDR_SIZE, k0, k1);
+    uint64_t tag = proto_siphash24(buf, 4, k0, k1)
+                 ^ proto_siphash24(buf + TUND_HDR_SIZE,
+                                   (size_t)len - TUND_HDR_SIZE, k0, k1);
     return got == tag;
 }
 
