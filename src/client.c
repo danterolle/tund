@@ -129,7 +129,8 @@ static void *client_keepalive_thread(void *arg)
         if (!g_running || cli->ka_quit) break;
 
         int len = proto_build_keepalive(buf, now_ms());
-        net_send(cli->sockfd, buf, len, &cli->server_addr);
+        if (net_send(cli->sockfd, buf, len, &cli->server_addr) < 0)
+            LOG_WARN("Keepalive send failed");
     }
     return NULL;
 }
@@ -147,7 +148,8 @@ static void *client_tun_thread(void *arg)
             continue;
         }
         int msg_len = proto_build_data(msg_buf, pkt_buf, (uint16_t)n);
-        net_send(cli->sockfd, msg_buf, msg_len, &cli->server_addr);
+        if (net_send(cli->sockfd, msg_buf, msg_len, &cli->server_addr) < 0)
+            LOG_WARN("Failed to send TUN data to server");
     }
     return NULL;
 }

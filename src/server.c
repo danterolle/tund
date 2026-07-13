@@ -53,7 +53,9 @@ static void server_broadcast(server_t *srv, uint8_t *buf, int len, int exclude_i
 {
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (srv->peers[i].active && i != exclude_idx) {
-            net_send(srv->sockfd, buf, len, &srv->peers[i].real_addr);
+            if (net_send(srv->sockfd, buf, len, &srv->peers[i].real_addr) < 0)
+                LOG_WARN("Broadcast to %s (%s) failed",
+                         srv->peers[i].name, ip_to_str(srv->peers[i].virt_ip));
         }
     }
 }
@@ -80,11 +82,12 @@ static void server_send_peer_list(server_t *srv, int peer_idx)
     }
 
     proto_write_hdr(buf, MSG_PEER_LIST, (uint16_t)offset);
-    net_send(srv->sockfd, buf, TUND_HDR_SIZE + offset,
-             &srv->peers[peer_idx].real_addr);
-
-    LOG_DEBUG("Sent peer list (%d peers) to %s",
-              count, srv->peers[peer_idx].name);
+    if (net_send(srv->sockfd, buf, TUND_HDR_SIZE + offset,
+                 &srv->peers[peer_idx].real_addr) < 0)
+        LOG_WARN("Failed to send peer list to %s", srv->peers[peer_idx].name);
+    else
+        LOG_DEBUG("Sent peer list (%d peers) to %s",
+                  count, srv->peers[peer_idx].name);
 }
 
 static void server_handle_register(server_t *srv, const uint8_t *payload,
@@ -103,7 +106,9 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
                                      srv->peers[idx].virt_ip,
                                      htonl(TUND_NETMASK),
                                      TUND_TUN_MTU);
-        net_send(srv->sockfd, buf, len, from);
+        if (net_send(srv->sockfd, buf, len, from) < 0)
+            LOG_WARN("Failed to send ASSIGN to reconnecting peer %s",
+                     srv->peers[idx].name);
         return;
     }
 
@@ -144,7 +149,8 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_assign(buf, vip, htonl(TUND_NETMASK), TUND_TUN_MTU);
-    net_send(srv->sockfd, buf, len, from);
+    if (net_send(srv->sockfd, buf, len, from) < 0)
+        LOG_WARN("Failed to send ASSIGN to new peer %s", p->name);
 
     server_send_peer_list(srv, idx);
 
@@ -198,7 +204,8 @@ static void server_handle_data(server_t *srv, const uint8_t *payload,
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_data(buf, payload, plen);
-    net_send(srv->sockfd, buf, len, &srv->peers[dst_idx].real_addr);
+    if (net_send(srv->sockfd, buf, len, &srv->peers[dst_idx].real_addr) < 0)
+        LOG_WARN("Failed to forward data to %s", srv->peers[dst_idx].name);
     pthread_mutex_unlock(&srv->peers_lock);
 }
 
@@ -214,7 +221,8 @@ static void server_handle_keepalive(server_t *srv, const struct sockaddr_in *fro
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_keepalive(buf, now_ms());
-    net_send(srv->sockfd, buf, len, from);
+    if (net_send(srv->sockfd, buf, len, from) < 0 && idx >= 0)
+        LOG_WARN("Keepalive reply to %s failed", srv->peers[idx].name);
 }
 
 static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *from)
@@ -299,7 +307,9 @@ static void *server_tun_thread(void *arg)
         } else {
             int idx = server_find_peer_by_vip(srv, dst_ip);
             if (idx >= 0) {
-                net_send(srv->sockfd, msg_buf, msg_len, &srv->peers[idx].real_addr);
+                if (net_send(srv->sockfd, msg_buf, msg_len, &srv->peers[idx].real_addr) < 0)
+                    LOG_WARN("Failed to forward TUN packet to %s",
+                             srv->peers[idx].name);
             }
         }
         pthread_mutex_unlock(&srv->peers_lock);
