@@ -58,6 +58,7 @@ Options:
 ```
 -k, --key <key>      Shared network key (same on all computers, 12+ characters)
 -p, --port <port>    UDP port (default: 9909)
+-t, --no-tui         Disable terminal UI (live peer dashboard)
 -v, --verbose        Debug logging
 ```
 
@@ -73,6 +74,7 @@ Options:
 -p, --port <port>    Server port (default: 9909)
 -n, --name <name>    Display name (default: hostname)
 -k, --key <key>      Shared network key (same on all computers, 12+ characters)
+-t, --no-tui         Disable terminal UI (live peer dashboard)
 -v, --verbose        Debug logging
 ```
 

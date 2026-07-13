@@ -9,16 +9,19 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 ## Components
 
 | Component | Responsibility |
-|---|---|
+|---|---|---|
+| `tund.h` | Common types, logging macros, platform abstractions, global state. |
 | `main.c` | Parses configuration, derives the network key, starts server or client mode. |
-| `network.c` | UDP sockets, hostname resolution, packet authentication and source-address comparison. |
 | `protocol.h` | Datagram framing, message serialisation, virtual-network constants and SipHash MAC. |
-| `server.c` | Address assignment, peer table, packet forwarding and timeout handling. |
-| `client.c` | Server registration, keepalive, peer table and local TUN forwarding. |
+| `network.h` / `network.c` | UDP sockets, hostname resolution, packet authentication, source-address comparison. |
+| `server.h` / `server.c` | Address assignment, peer table, packet forwarding and timeout handling. |
+| `client.h` / `client.c` | Server registration, keepalive, peer table and local TUN forwarding. |
+| `tun.h` | TUN device struct and API declarations. |
 | `tun_linux.c` | Linux `/dev/net/tun` implementation. |
 | `tun_darwin.c` | macOS `utun` implementation. |
 | `tun_windows.c` | Windows Wintun implementation, loaded dynamically from `wintun.dll`. |
-| `tui.c` | Optional terminal status views (TUI). |
+| `tui.h` / `tui.c` | Terminal UI (live peer dashboard). |
+| `wintun.h` | Wintun adapter/session handle typedefs. |
 
 ## Virtual network
 
