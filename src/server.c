@@ -3,7 +3,7 @@
 #include "tun.h"
 #include "tui.h"
 
-static uint32_t server_alloc_ip(server_t *srv)
+static uint32_t server_alloc_ip(const server_t *srv)
 {
     for (uint32_t ip_h = TUND_IP_START; ip_h <= TUND_IP_END; ip_h++) {
         uint32_t ip_n = htonl(ip_h);
@@ -20,7 +20,7 @@ static uint32_t server_alloc_ip(server_t *srv)
     return 0;
 }
 
-static int server_find_peer_by_vip(server_t *srv, uint32_t virt_ip)
+static int server_find_peer_by_vip(const server_t *srv, uint32_t virt_ip)
 {
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (srv->peers[i].active && srv->peers[i].virt_ip == virt_ip)
@@ -29,7 +29,7 @@ static int server_find_peer_by_vip(server_t *srv, uint32_t virt_ip)
     return -1;
 }
 
-static int server_find_peer_by_addr(server_t *srv, const struct sockaddr_in *addr)
+static int server_find_peer_by_addr(const server_t *srv, const struct sockaddr_in *addr)
 {
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (srv->peers[i].active &&
@@ -40,7 +40,7 @@ static int server_find_peer_by_addr(server_t *srv, const struct sockaddr_in *add
     return -1;
 }
 
-static int server_find_free_slot(server_t *srv)
+static int server_find_free_slot(const server_t *srv)
 {
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (!srv->peers[i].active)
