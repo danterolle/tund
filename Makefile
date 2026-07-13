@@ -1,8 +1,8 @@
 CC       := cc
 CFLAGS   := -Wall -Wextra -O2 -std=c11
 LDFLAGS  := -pthread
+TARGET   := tund
 
-# Detect OS for platform-specific TUN implementation
 UNAME_S  := $(shell uname -s)
 
 ifeq ($(UNAME_S),Linux)
@@ -13,11 +13,14 @@ ifeq ($(UNAME_S),Darwin)
     TUN_SRC  := src/tun_darwin.c
     CFLAGS   += -D_DARWIN_C_SOURCE
 endif
+ifneq ($(filter MINGW%,$(UNAME_S)),)
+    TUN_SRC  := src/tun_windows.c
+    TARGET   := tund.exe
+    LDFLAGS  := -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32
+endif
 
 SRCS     := src/main.c src/network.c src/server.c src/client.c src/tui.c $(TUN_SRC)
 HDRS     := src/tund.h src/protocol.h src/tun.h src/network.h src/server.h src/client.h src/tui.h
-
-TARGET   := tund
 
 .PHONY: all clean install uninstall windows
 
