@@ -88,7 +88,7 @@ Do not describe Tund as a confidential VPN until it uses a reviewed authenticate
 ## Platform notes
 
 - **Linux:** requires `/dev/net/tun` and root/CAP_NET_ADMIN.
-- **macOS:** uses an OS-managed `utun` interface and `ifconfig`/`route` for address setup; run with administrator rights.
+- **macOS:** uses an OS-managed `utun` interface configured via `ioctl(SIOCAIFADDR)` and `ioctl(SIOCSIFMTU)`; the subnet route is added through `fork`+`exec(/sbin/route)` — no shell processes are spawned. Run with administrator rights.
 - **Windows:** requires Administrator privileges and `wintun.dll` beside the executable.
 
 ## Operational checklist
