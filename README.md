@@ -6,7 +6,7 @@ Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge
 
 Built iteratively with DeepSeek V4 Flash: observing the generated code, refactoring and modularising as it grew. A "one-shot" tool made for fun, for a specific purpose and perhaps to learn something along the way.
 
-It behaves like Radmin VPN, but open source and cross-platform. Written in C with no external libraries.
+It behaves like Radmin VPN, but open source and cross-platform. Written in C — Linux and macOS use only system libraries; Windows bundles Wintun for TUN support.
 
 ## Table of Contents
 
