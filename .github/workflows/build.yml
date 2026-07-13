@@ -43,6 +43,7 @@ jobs:
             mingw-w64-x86_64-gcc
             make
             unzip
+            zip
             curl
       - run: make
       - name: Download wintun.dll
@@ -51,12 +52,11 @@ jobs:
           curl -sL https://www.wintun.net/builds/wintun-0.14.1.zip -o /tmp/wintun.zip
           unzip -o /tmp/wintun.zip wintun/bin/amd64/wintun.dll -d /tmp >/dev/null
           cp /tmp/wintun/bin/amd64/wintun.dll .
+      - run: zip tund-windows-x86_64.zip tund.exe wintun.dll
       - uses: actions/upload-artifact@v4
         with:
           name: tund-windows-x86_64
-          path: |
-            tund.exe
-            wintun.dll
+          path: tund-windows-x86_64.zip
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -68,10 +68,9 @@ jobs:
       - uses: actions/download-artifact@v4
       - run: |
           mkdir release
-          cp tund-linux-x86_64/tund              release/tund-linux-x86_64
-          cp tund-darwin-arm64/tund              release/tund-darwin-arm64
-          cp tund-windows-x86_64/tund.exe   release/tund-windows-x86_64.exe
-          cp tund-windows-x86_64/wintun.dll release/wintun.dll
+          cp tund-linux-x86_64/tund                    release/tund-linux-x86_64
+          cp tund-darwin-arm64/tund                    release/tund-darwin-arm64
+          cp tund-windows-x86_64/tund-windows-x86_64.zip release/
       - uses: softprops/action-gh-release@v2
         with:
           files: release/*
