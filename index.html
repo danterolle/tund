@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tund — lightweight virtual LAN tool</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #14181b;
+    --surface: #1e2327;
+    --surface-2: #262c31;
+    --border: #333a40;
+    --text-primary: #f2f3f4;
+    --text-secondary: #a8b0b6;
+    --text-muted: #6b7379;
+    --accent: #378ADD;
+    --accent-light: #85B7EB;
+    --accent-bg: #185FA5;
+    --code-comment: #6b7379;
+    --code-string: #85B7EB;
+    --code-cmd: #f2f3f4;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 3rem 1.25rem 2.5rem;
+  }
+
+  .hero {
+    text-align: center;
+    padding-bottom: 2.5rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 0 0 .5rem;
+  }
+
+  .brand svg {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+
+  .brand h1 {
+    font-size: 34px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 1px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    color: var(--text-primary);
+  }
+
+  .tagline {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 440px;
+    margin: 0 auto 1.75rem;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 28px;
+    height: 54px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background .15s ease, border-color .15s ease, transform .1s ease;
+  }
+
+  .btn:hover {
+    background: var(--surface-2);
+    border-color: var(--accent-light);
+  }
+
+  .btn:active {
+    transform: scale(0.98);
+  }
+
+  .btn i {
+    font-size: 24px;
+    color: var(--accent-light);
+  }
+
+  .license {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .license a {
+    color: var(--text-muted);
+    text-decoration: underline;
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .card i {
+    font-size: 20px;
+    color: var(--accent-light);
+  }
+
+  .card p.title {
+    font-weight: 500;
+    font-size: 14px;
+    margin: .6rem 0 4px;
+    color: var(--text-primary);
+  }
+
+  .card p.desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .quickstart {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  .quickstart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .quickstart-header .dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .quickstart-header .dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .quickstart-header .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+
+  .copy-btn:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .copy-btn i {
+    font-size: 14px;
+  }
+
+  .quickstart-body {
+    padding: 1.1rem 1.25rem;
+  }
+
+  .quickstart-body pre {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    margin: 0;
+    white-space: pre-wrap;
+    line-height: 1.9;
+  }
+
+  .quickstart-body .comment { color: var(--code-comment); }
+  .quickstart-body .cmd { color: var(--code-cmd); font-weight: 500; }
+  .quickstart-body .str { color: var(--code-string); }
+  .quickstart-body .gap { display: block; height: .5rem; }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0 0 1rem;
+    color: var(--text-primary);
+  }
+
+  .section-title i {
+    font-size: 18px;
+    color: var(--accent-light);
+  }
+
+  .win-guide {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .win-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: step;
+  }
+
+  .win-steps li {
+    display: flex;
+    gap: 12px;
+    padding: .6rem 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .win-steps li:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .win-steps .num {
+    counter-increment: step;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--accent-light);
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .win-steps .num::before {
+    content: counter(step);
+  }
+
+  .win-steps .step-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding-top: 2px;
+  }
+
+  .win-steps .step-text strong {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .win-steps .step-text a {
+    color: var(--accent-light);
+  }
+
+  .win-steps code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--accent-light);
+  }
+
+  .win-note {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .win-note i {
+    flex-shrink: 0;
+    font-size: 15px;
+    margin-top: 1px;
+  }
+
+  footer {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 1.25rem;
+  }
+
+  footer a {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  footer a:hover {
+    color: var(--text-primary);
+  }
+
+  footer a i {
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="hero">
+      <div class="brand">
+        <svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="0" y="0" width="140" height="140" rx="24" fill="#1e2327" stroke="#333a40" stroke-width="1"/>
+          <g transform="translate(70,70)">
+            <line x1="0" y1="0" x2="0" y2="-42" stroke="#85B7EB" stroke-width="4"/>
+            <line x1="0" y1="0" x2="40" y2="-13" stroke="#85B7EB" stroke-width="4"/>
+            <line x1="0" y1="0" x2="25" y2="34" stroke="#85B7EB" stroke-width="4"/>
+            <line x1="0" y1="0" x2="-25" y2="34" stroke="#85B7EB" stroke-width="4"/>
+            <line x1="0" y1="0" x2="-40" y2="-13" stroke="#85B7EB" stroke-width="4"/>
+            <circle cx="0" cy="0" r="14" fill="#378ADD"/>
+            <circle cx="0" cy="-42" r="8" fill="#85B7EB"/>
+            <circle cx="40" cy="-13" r="8" fill="#85B7EB"/>
+            <circle cx="25" cy="34" r="8" fill="#85B7EB"/>
+            <circle cx="-25" cy="34" r="8" fill="#85B7EB"/>
+            <circle cx="-40" cy="-13" r="8" fill="#85B7EB"/>
+          </g>
+        </svg>
+        <h1>Tund</h1>
+      </div>
+      <p class="tagline">A lightweight, self-hosted virtual LAN tool. Single binary, no external dependencies, written in pure C.</p>
+
+      <div class="buttons">
+        <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1/tund-windows-x86_64.zip">
+          <i class="ti ti-brand-windows"></i>Windows 10/11
+        </a>
+        <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1/tund-linux-x86_64">
+          <i class="ti ti-brand-debian"></i>GNU/Linux
+        </a>
+        <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1/tund-darwin-arm64">
+          <i class="ti ti-brand-apple"></i>macOS
+        </a>
+      </div>
+
+      <p class="license">MIT license · <a href="https://github.com/danterolle/tund">source code on GitHub</a></p>
+    </div>
+
+    <div class="features">
+      <div class="card">
+        <i class="ti ti-lock"></i>
+        <p class="title">SipHash authentication</p>
+        <p class="desc">Every packet is verified using the shared network key.</p>
+      </div>
+      <div class="card">
+        <i class="ti ti-hierarchy-3"></i>
+        <p class="title">Hub and spoke</p>
+        <p class="desc">One server node, up to 253 connected client peers.</p>
+      </div>
+      <div class="card">
+        <i class="ti ti-plug-connected"></i>
+        <p class="title">Zero registration</p>
+        <p class="desc">No accounts, no external services. Just an IP and a key.</p>
+      </div>
+    </div>
+
+    <div class="quickstart">
+      <div class="quickstart-header">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="label">quick start</span>
+        <button class="copy-btn" id="copyBtn"><i class="ti ti-copy"></i>Copy</button>
+      </div>
+      <div class="quickstart-body">
+        <pre id="quickstartCode"><span class="comment"># on the machine with a public IP</span>
+<span class="cmd">sudo ./tund server</span> -k <span class="str">"a-long-random-key"</span>
+<span class="gap"></span><span class="comment"># on every machine that should join the LAN</span>
+<span class="cmd">sudo ./tund client</span> -s &lt;server_ip&gt; -k <span class="str">"a-long-random-key"</span></pre>
+      </div>
+    </div>
+
+    <div class="win-guide">
+      <p class="section-title"><i class="ti ti-brand-windows"></i>Getting it running on Windows</p>
+      <ol class="win-steps">
+        <li>
+          <span class="num"></span>
+          <span class="step-text">Download <code>tund-windows-x86_64.zip</code> above and extract both files into the same folder.</span>
+        </li>
+        <li>
+          <span class="num"></span>
+          <span class="step-text">Right-click the executable and choose <strong>Run as administrator</strong>. The TUN interface can't be created otherwise.</span>
+        </li>
+        <li>
+          <span class="num"></span>
+          <span class="step-text">If this machine is the server, allow inbound UDP on port <code>9909</code> in <strong>Windows Defender Firewall</strong> so clients can reach it:
+          <br><code>netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909</code></span>
+        </li>
+        <li>
+          <span class="num"></span>
+          <span class="step-text">Launch with the same commands as Linux/macOS, e.g. <code>tund-windows-x86_64.exe server -k "a-long-random-key"</code>.</span>
+        </li>
+      </ol>
+      <p class="win-note"><i class="ti ti-info-circle"></i>Windows Firewall often blocks ping (ICMP) on the virtual adapter even when the tunnel works fine — this doesn't affect game traffic, only connectivity checks.</p>
+    </div>
+
+    <div class="win-guide">
+      <p class="section-title"><i class="ti ti-shield-lock"></i>Firewall — allow port 9909 on Linux / macOS</p>
+      <div class="quickstart-body" style="padding:.75rem 1.25rem">
+        <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;margin:0;white-space:pre-wrap;line-height:1.9">
+<span class="comment"># ufw (Ubuntu/Debian)</span>
+<span class="cmd">sudo ufw allow 9909/udp</span>
+<span class="gap"></span><span class="comment"># firewalld (Fedora/RHEL)</span>
+<span class="cmd">sudo firewall-cmd --add-port=9909/udp --permanent</span>
+<span class="cmd">sudo firewall-cmd --reload</span>
+<span class="gap"></span><span class="comment"># iptables</span>
+<span class="cmd">sudo iptables -A INPUT -p udp --dport 9909 -j ACCEPT</span>
+<span class="gap"></span><span class="comment"># macOS — usually no firewall blocks inbound,</span>
+<span class="comment"># but check System Settings > Network > Firewall</span></pre>
+      </div>
+    </div>
+
+    <footer>
+      <a href="https://github.com/danterolle/tund"><i class="ti ti-brand-github"></i>Repository</a>
+      <a href="https://github.com/danterolle/tund/blob/main/docs/TECHNICAL.md"><i class="ti ti-file-text"></i>Documentation</a>
+    </footer>
+
+  </div>
+
+  <script>
+    document.getElementById('copyBtn').addEventListener('click', function() {
+      var text = 'sudo ./tund server -k "a-long-random-key"\nsudo ./tund client -s <server_ip> -k "a-long-random-key"';
+      navigator.clipboard.writeText(text).then(function() {
+        var btn = document.getElementById('copyBtn');
+        var original = btn.innerHTML;
+        btn.innerHTML = '<i class="ti ti-check"></i>Copied';
+        setTimeout(function() { btn.innerHTML = original; }, 1500);
+      });
+    });
+  </script>
+</body>
+</html>
