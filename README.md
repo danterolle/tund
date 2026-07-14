@@ -165,7 +165,7 @@ For Artemis, start the server first, connect every station with the same key, th
   - **Windows:** `netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909`
   - **macOS:** usually no firewall blocks inbound by default; check System Settings → Network → Firewall
 - The tunnel MTU is `1400` bytes, leaving room for UDP encapsulation.
-- Each datagram has a 12-byte Tund header: magic/type/length plus an 8-byte SipHash integrity tag derived from the shared key. A mismatched key appears as a timeout by design.
+- Each datagram has a 13-byte Tund header: magic/version/type/length plus an 8-byte SipHash integrity tag derived from the shared key. A mismatched key appears as a timeout by design.
 - The virtual subnet is fixed at `10.9.0.0/24`. Do not use Tund on a host already routing that subnet through a real LAN or another VPN.
 - All participants must run the same Tund protocol version: authenticated framing is not compatible with older builds.
 - To test connectivity, `ping 10.9.0.1` from each client after connecting. If ping fails despite a successful registration (the client gets a virtual IP), the server firewall is likely blocking ICMP.

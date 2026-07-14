@@ -93,8 +93,12 @@ static int client_register(client_t *cli)
 
         uint8_t type;
         uint16_t payload_len;
-        if (proto_read_hdr(buf, &type, &payload_len) < 0)
+        int hdr_status = proto_read_hdr(buf, &type, &payload_len);
+        if (hdr_status < 0) {
+            if (hdr_status == TUND_HDR_BAD_VERSION)
+                LOG_WARN("Server uses unsupported protocol version %u", buf[1]);
             continue;
+        }
 
         if (type == MSG_ASSIGN && payload_len >= 10) {
             uint8_t *p = buf + TUND_HDR_SIZE;
@@ -338,8 +342,12 @@ void client_run(client_t *cli)
 
         uint8_t type;
         uint16_t payload_len;
-        if (proto_read_hdr(buf, &type, &payload_len) < 0)
+        int hdr_status = proto_read_hdr(buf, &type, &payload_len);
+        if (hdr_status < 0) {
+            if (hdr_status == TUND_HDR_BAD_VERSION)
+                LOG_DEBUG("Ignored packet with unsupported protocol version %u", buf[1]);
             continue;
+        }
 
         if (TUND_HDR_SIZE + payload_len > n)
             continue;

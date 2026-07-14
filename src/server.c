@@ -427,9 +427,14 @@ void server_run(server_t *srv)
 
         uint8_t type;
         uint16_t payload_len;
-        if (proto_read_hdr(buf, &type, &payload_len) < 0) {
-            LOG_DEBUG("Invalid magic from %s:%u",
-                      inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+        int hdr_status = proto_read_hdr(buf, &type, &payload_len);
+        if (hdr_status < 0) {
+            if (hdr_status == TUND_HDR_BAD_VERSION)
+                LOG_DEBUG("Unsupported protocol version %u from %s:%u",
+                          buf[1], inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+            else
+                LOG_DEBUG("Invalid magic from %s:%u",
+                          inet_ntoa(from.sin_addr), ntohs(from.sin_port));
             continue;
         }
 

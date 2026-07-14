@@ -3,15 +3,16 @@
  * protocol.h — Wire protocol definitions
  *
  * Every UDP datagram exchanged between server and client starts with
- * a 12-byte header. The final 8 bytes are a keyed integrity tag.
+ * a 13-byte header. The final 8 bytes are a keyed integrity tag.
  *
- *   +-------+------+--------+--------+
- *   | Magic | Type | Length (16-bit) |
- *   +-------+------+--------+--------+
- *   |           Payload ...          |
- *   +--------------------------------+
+ *   +-------+---------+------+-----------------+----------------+
+ *   | Magic | Version | Type | Length (16-bit) | Tag (64-bit)   |
+ *   +-------+---------+------+-----------------+----------------+
+ *   |                         Payload ...                       |
+ *   +-----------------------------------------------------------+
  *
  * Magic  = 0xA9
+ * Version = TUND_PROTOCOL_VERSION
  * Type   = one of MSG_* constants
  * Length = big-endian uint16 payload length (NOT including header)
  */
@@ -31,13 +32,19 @@
 #endif
 
 #define TUND_MAGIC        0xA9
+#define TUND_PROTOCOL_VERSION 2
 #define TUND_PORT         9909
 #define TUND_AUTH_TAG_SIZE 8
-#define TUND_HDR_SIZE     (4 + TUND_AUTH_TAG_SIZE)
+#define TUND_AUTH_TAG_OFFSET 5
+#define TUND_HDR_SIZE     (TUND_AUTH_TAG_OFFSET + TUND_AUTH_TAG_SIZE)
 #define TUND_MAX_PAYLOAD  1600   /* MTU 1500 + some headroom */
 #define TUND_MAX_PKT      (TUND_HDR_SIZE + TUND_MAX_PAYLOAD)
 #define TUND_NAME_LEN     32
 #define TUND_TUN_MTU      1400   /* Leave room for UDP encapsulation */
+
+#define TUND_HDR_OK          0
+#define TUND_HDR_BAD_MAGIC  -1
+#define TUND_HDR_BAD_VERSION -2
 
 /* Virtual subnet: 10.9.0.0/24 */
 #define TUND_SUBNET       0x0A090000  /* 10.9.0.0 in host byte order */
@@ -72,10 +79,11 @@ typedef struct {
 static inline int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_len)
 {
     buf[0] = TUND_MAGIC;
-    buf[1] = type;
-    buf[2] = (uint8_t)(payload_len >> 8);
-    buf[3] = (uint8_t)(payload_len & 0xFF);
-    memset(buf + 4, 0, TUND_AUTH_TAG_SIZE);
+    buf[1] = TUND_PROTOCOL_VERSION;
+    buf[2] = type;
+    buf[3] = (uint8_t)(payload_len >> 8);
+    buf[4] = (uint8_t)(payload_len & 0xFF);
+    memset(buf + TUND_AUTH_TAG_OFFSET, 0, TUND_AUTH_TAG_SIZE);
     return TUND_HDR_SIZE;
 }
 
@@ -135,19 +143,19 @@ static inline void proto_key_from_passphrase(const char *passphrase,
 
 static inline void proto_sign(uint8_t *buf, int len, uint64_t k0, uint64_t k1)
 {
-    uint64_t tag = proto_siphash24(buf, 4, k0, k1)
+    uint64_t tag = proto_siphash24(buf, TUND_AUTH_TAG_OFFSET, k0, k1)
                  ^ proto_siphash24(buf + TUND_HDR_SIZE,
                                    (size_t)len - TUND_HDR_SIZE, k0, k1);
     for (int i = 0; i < 8; i++)
-        buf[4 + i] = (uint8_t)(tag >> (8 * i));
+        buf[TUND_AUTH_TAG_OFFSET + i] = (uint8_t)(tag >> (8 * i));
 }
 
 static inline bool proto_verify(const uint8_t *buf, int len, uint64_t k0, uint64_t k1)
 {
     if (len < TUND_HDR_SIZE)
         return false;
-    uint64_t got = proto_load64_le(buf + 4);
-    uint64_t tag = proto_siphash24(buf, 4, k0, k1)
+    uint64_t got = proto_load64_le(buf + TUND_AUTH_TAG_OFFSET);
+    uint64_t tag = proto_siphash24(buf, TUND_AUTH_TAG_OFFSET, k0, k1)
                  ^ proto_siphash24(buf + TUND_HDR_SIZE,
                                    (size_t)len - TUND_HDR_SIZE, k0, k1);
     return got == tag;
@@ -156,9 +164,11 @@ static inline bool proto_verify(const uint8_t *buf, int len, uint64_t k0, uint64
 static inline int proto_read_hdr(const uint8_t *buf, uint8_t *type, uint16_t *payload_len)
 {
     if (buf[0] != TUND_MAGIC)
-        return -1;
-    *type = buf[1];
-    *payload_len = (uint16_t)((buf[2] << 8) | buf[3]);
+        return TUND_HDR_BAD_MAGIC;
+    if (buf[1] != TUND_PROTOCOL_VERSION)
+        return TUND_HDR_BAD_VERSION;
+    *type = buf[2];
+    *payload_len = (uint16_t)((buf[3] << 8) | buf[4]);
     return 0;
 }
 

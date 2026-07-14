@@ -44,14 +44,15 @@ Each endpoint sets the TUN MTU to 1400 bytes. The lower-than-Ethernet MTU reserv
 
 ## Datagram format
 
-Every Tund datagram uses the following 12-byte header followed by a payload:
+Every Tund datagram uses the following 13-byte header followed by a payload:
 
 | Bytes | Field | Description |
 |---:|---|---|
 | 0 | magic | Fixed value `0xA9`. |
-| 1 | type | Message type. |
-| 2–3 | length | Big-endian payload length. |
-| 4–11 | tag | 64-bit SipHash integrity tag. |
+| 1 | version | Protocol version. |
+| 2 | type | Message type. |
+| 3–4 | length | Big-endian payload length. |
+| 5–12 | tag | 64-bit SipHash integrity tag. |
 
 The tag covers the stable header fields and payload. `network.c` signs every outgoing packet and drops any incoming packet with an invalid tag before message parsing. All participants must therefore use the same access key and protocol version.
 

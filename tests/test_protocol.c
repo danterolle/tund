@@ -30,19 +30,24 @@ static void test_header_roundtrip(void)
     memset(buf, 0xCC, sizeof(buf));
     CHECK(proto_write_hdr(buf, MSG_DATA, 0x1234) == TUND_HDR_SIZE);
     CHECK(buf[0] == TUND_MAGIC);
-    CHECK(buf[1] == MSG_DATA);
-    CHECK(buf[2] == 0x12);
-    CHECK(buf[3] == 0x34);
+    CHECK(buf[1] == TUND_PROTOCOL_VERSION);
+    CHECK(buf[2] == MSG_DATA);
+    CHECK(buf[3] == 0x12);
+    CHECK(buf[4] == 0x34);
 
     for (int i = 0; i < TUND_AUTH_TAG_SIZE; i++)
-        CHECK(buf[4 + i] == 0);
+        CHECK(buf[TUND_AUTH_TAG_OFFSET + i] == 0);
 
     CHECK(proto_read_hdr(buf, &type, &payload_len) == 0);
     CHECK(type == MSG_DATA);
     CHECK(payload_len == 0x1234);
 
     buf[0] = 0;
-    CHECK(proto_read_hdr(buf, &type, &payload_len) == -1);
+    CHECK(proto_read_hdr(buf, &type, &payload_len) == TUND_HDR_BAD_MAGIC);
+
+    proto_write_hdr(buf, MSG_DATA, 0);
+    buf[1] = TUND_PROTOCOL_VERSION + 1;
+    CHECK(proto_read_hdr(buf, &type, &payload_len) == TUND_HDR_BAD_VERSION);
 }
 
 static void test_authentication(void)
