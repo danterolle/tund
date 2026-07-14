@@ -333,6 +333,22 @@ int client_init(client_t *cli, const config_t *cfg)
     return 0;
 }
 
+static void client_log_startup_checklist(const client_t *cli)
+{
+    char virt_ip[TUND_IP_STR_LEN];
+    char server_ip[TUND_IP_STR_LEN];
+
+    LOG_INFO("Startup checklist:");
+    LOG_INFO("Connected to server %s:%u.",
+             ip_to_str_buf(cli->server_addr.sin_addr.s_addr, server_ip, sizeof(server_ip)),
+             ntohs(cli->server_addr.sin_port));
+    LOG_INFO("Virtual IP assigned: %s on %s.",
+             ip_to_str_buf(cli->virt_ip, virt_ip, sizeof(virt_ip)),
+             cli->tun.ifname);
+    LOG_INFO("Shared key accepted by server.");
+    LOG_INFO("Waiting for peer updates and tunnel traffic.");
+}
+
 void client_run(client_t *cli)
 {
     char version_str[64];
@@ -394,6 +410,8 @@ void client_run(client_t *cli)
     tui_peer_t tui_peers[TUND_MAX_PEERS];
     if (g_tui_active)
         tui_init();
+
+    client_log_startup_checklist(cli);
 
     uint8_t buf[TUND_MAX_PKT];
     char server_ip_str[INET_ADDRSTRLEN];

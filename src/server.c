@@ -341,6 +341,20 @@ static void *server_tun_thread(void *arg)
     return NULL;
 }
 
+static void server_log_startup_checklist(const server_t *srv)
+{
+    char server_ip[TUND_IP_STR_LEN];
+
+    LOG_INFO("Startup checklist:");
+    LOG_INFO("Virtual LAN ready: %s/24 on %s.",
+             ip_to_str_buf(htonl(TUND_SERVER_IP), server_ip, sizeof(server_ip)),
+             srv->tun.ifname);
+    LOG_INFO("Listening for clients on UDP %u.", srv->port);
+    LOG_INFO("Use the same shared key on every client.");
+    LOG_INFO("Allow inbound UDP %u on this server if clients cannot connect.", srv->port);
+    LOG_INFO("Waiting for peers...");
+}
+
 int server_init(server_t *srv, const config_t *cfg)
 {
     memset(srv, 0, sizeof(*srv));
@@ -429,10 +443,7 @@ void server_run(server_t *srv)
     if (g_tui_active)
         tui_init();
 
-#ifdef _WIN32
-    LOG_INFO("Windows Firewall is not changed automatically; allow inbound UDP %u if clients cannot connect.",
-             srv->port);
-#endif
+    server_log_startup_checklist(srv);
 
     uint8_t buf[TUND_MAX_PKT];
     struct sockaddr_in from;

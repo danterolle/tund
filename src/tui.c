@@ -23,7 +23,7 @@
 #define TUI_GRAY    "\033[90m"
 #define TUI_RESET   "\033[0m"
 
-#define TUI_MAX_EVENTS 5
+#define TUI_MAX_EVENTS 7
 #define TUI_EVENT_MESSAGE_LEN 128
 
 typedef struct {
