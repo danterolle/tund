@@ -35,6 +35,21 @@ typedef SOCKET socket_t;
 static inline int sock_close(socket_t s) { return closesocket(s); }
 static inline int sock_valid(socket_t s) { return s != INVALID_SOCKET; }
 
+static inline const char *sock_errstr(int err)
+{
+    static char buf[256];
+    buf[0] = '\0';
+    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                   NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                   buf, sizeof(buf), NULL);
+    if (buf[0] == '\0')
+        snprintf(buf, sizeof(buf), "WSA error %d", err);
+    size_t n = strlen(buf);
+    while (n > 0 && (buf[n - 1] == '\n' || buf[n - 1] == '\r' || buf[n - 1] == '.'))
+        buf[--n] = '\0';
+    return buf;
+}
+
 static inline void platform_sleep(unsigned int sec)
 {
     Sleep(sec * 1000);
@@ -90,6 +105,8 @@ typedef int socket_t;
 
 static inline int sock_close(socket_t s) { return close(s); }
 static inline int sock_valid(socket_t s) { return s >= 0; }
+
+static inline const char *sock_errstr(int err) { return strerror(err); }
 
 static inline void platform_sleep(unsigned int sec) { sleep(sec); }
 

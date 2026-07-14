@@ -15,28 +15,8 @@ static int ensure_winsock(void)
     return 0;
 }
 
-static const char* wsa_strerror(int err)
-{
-    static char buf[256];
-    buf[0] = '\0';
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                   NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                   buf, sizeof(buf), NULL);
-    if (buf[0] == '\0')
-        snprintf(buf, sizeof(buf), "WSA error %d", err);
-    size_t n = strlen(buf);
-    while (n > 0 && (buf[n-1] == '\n' || buf[n-1] == '\r' || buf[n-1] == '.'))
-        buf[--n] = '\0';
-    return buf;
-}
 #else
 #define ensure_winsock() 0
-#endif
-
-#ifdef _WIN32
-#define sock_errstr(err) wsa_strerror(err)
-#else
-#define sock_errstr(err) strerror(err)
 #endif
 
 socket_t net_create_socket(uint16_t bind_port)
@@ -145,7 +125,7 @@ int net_poll_peers(socket_t sockfd, peer_t *peers, int max_peers,
     if (ret < 0) {
         int err = SOCK_Error();
         if (err == SOCK_EINTR) return 0;
-        LOG_ERROR("poll() failed: %s", strerror(err));
+        LOG_ERROR("poll() failed: %s", sock_errstr(err));
         return -1;
     }
     if (ret == 0) {

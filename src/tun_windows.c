@@ -174,7 +174,10 @@ int tun_set_mtu(tun_device_t *dev, int mtu)
     snprintf(buf, sizeof(buf),
              "interface ipv4 set subinterface \"%s\" mtu=%d store=active",
              dev->ifname, mtu);
-    run_cmd("netsh", buf);
+    if (run_cmd("netsh", buf) < 0) {
+        LOG_ERROR("netsh MTU update failed");
+        return -1;
+    }
     dev->mtu = mtu;
     LOG_INFO("MTU set to %d on %s", mtu, dev->ifname);
     return 0;

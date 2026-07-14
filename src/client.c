@@ -77,7 +77,7 @@ static int client_register(client_t *cli)
 
         int ret = platform_poll_one(cli->sockfd, TUND_REGISTER_TIMEOUT * 1000);
         if (ret < 0) {
-            LOG_ERROR("poll() failed: %s", strerror(errno));
+            LOG_ERROR("poll() failed: %s", sock_errstr(SOCK_Error()));
             return -1;
         }
         if (ret == 0) {
@@ -243,7 +243,11 @@ int client_init(client_t *cli, const config_t *cfg)
         sock_close(cli->sockfd);
         return -1;
     }
-    tun_set_mtu(&cli->tun, TUND_TUN_MTU);
+    if (tun_set_mtu(&cli->tun, TUND_TUN_MTU) < 0) {
+        tun_close(&cli->tun);
+        sock_close(cli->sockfd);
+        return -1;
+    }
 
     return 0;
 }

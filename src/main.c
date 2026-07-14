@@ -140,7 +140,6 @@ int main(int argc, char *argv[])
     SetUnhandledExceptionFilter(crash_handler);
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
-    log_to_exe_dir("tund_started.log", "main() reached");
 #endif
     config_t cfg;
     memset(&cfg, 0, sizeof(cfg));

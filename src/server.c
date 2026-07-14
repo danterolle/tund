@@ -340,7 +340,11 @@ int server_init(server_t *srv, const config_t *cfg)
         sock_close(srv->sockfd);
         return -1;
     }
-    tun_set_mtu(&srv->tun, TUND_TUN_MTU);
+    if (tun_set_mtu(&srv->tun, TUND_TUN_MTU) < 0) {
+        tun_close(&srv->tun);
+        sock_close(srv->sockfd);
+        return -1;
+    }
 
     return 0;
 }
