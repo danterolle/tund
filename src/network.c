@@ -114,6 +114,9 @@ bool net_addr_equal(const struct sockaddr_in *a, const struct sockaddr_in *b)
 
 int net_resolve(const char *host, uint16_t port, struct sockaddr_in *out)
 {
+    if (ensure_winsock() < 0)
+        return -1;
+
     struct addrinfo hints, *res;
 
     memset(&hints, 0, sizeof(hints));
