@@ -19,14 +19,16 @@ int tun_open(tun_device_t *dev)
 
     fd = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
     if (fd < 0) {
-        LOG_ERROR("socket(PF_SYSTEM) failed: %s", strerror(errno));
+        LOG_ERROR("Cannot open macOS utun control socket: %s. Run with administrator privileges.",
+                  strerror(errno));
         return -1;
     }
 
     memset(&ctlInfo, 0, sizeof(ctlInfo));
     strncpy(ctlInfo.ctl_name, UTUN_CONTROL_NAME, sizeof(ctlInfo.ctl_name));
     if (ioctl(fd, CTLIOCGINFO, &ctlInfo) < 0) {
-        LOG_ERROR("ioctl(CTLIOCGINFO) failed: %s", strerror(errno));
+        LOG_ERROR("Cannot locate macOS utun control: %s. Check that utun support is available.",
+                  strerror(errno));
         close(fd);
         return -1;
     }
@@ -39,7 +41,8 @@ int tun_open(tun_device_t *dev)
     sc.sc_unit = 0;
 
     if (connect(fd, (struct sockaddr *)&sc, sizeof(sc)) < 0) {
-        LOG_ERROR("connect(utun) failed: %s", strerror(errno));
+        LOG_ERROR("Cannot create macOS utun interface: %s. Run with administrator privileges and allow network configuration if prompted.",
+                  strerror(errno));
         close(fd);
         return -1;
     }
@@ -86,7 +89,7 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
-        LOG_ERROR("socket() for IP config failed: %s", strerror(errno));
+        LOG_ERROR("Cannot open socket for macOS interface configuration: %s.", strerror(errno));
         return -1;
     }
 
@@ -112,7 +115,8 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
     sin->sin_addr.s_addr = netmask;
 
     if (ioctl(sock, SIOCAIFADDR, &ifra) < 0) {
-        LOG_ERROR("ioctl(SIOCAIFADDR) on %s failed: %s", dev->ifname, strerror(errno));
+        LOG_ERROR("Cannot assign macOS TUN address on %s: %s. Check privileges and whether 10.9.0.0/24 conflicts with another route.",
+                  dev->ifname, strerror(errno));
         close(sock);
         return -1;
     }
@@ -145,7 +149,7 @@ int tun_set_mtu(tun_device_t *dev, int mtu)
     struct ifreq ifr;
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
-        LOG_ERROR("socket() for MTU failed: %s", strerror(errno));
+        LOG_ERROR("Cannot open socket for macOS MTU configuration: %s.", strerror(errno));
         return -1;
     }
 
@@ -154,7 +158,8 @@ int tun_set_mtu(tun_device_t *dev, int mtu)
     ifr.ifr_mtu = mtu;
 
     if (ioctl(sock, SIOCSIFMTU, &ifr) < 0) {
-        LOG_ERROR("ioctl(SIOCSIFMTU) on %s failed: %s", dev->ifname, strerror(errno));
+        LOG_ERROR("Cannot set macOS TUN MTU to %d on %s: %s.",
+                  mtu, dev->ifname, strerror(errno));
         close(sock);
         return -1;
     }

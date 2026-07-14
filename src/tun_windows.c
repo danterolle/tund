@@ -139,13 +139,15 @@ int tun_open(tun_device_t *dev)
     if (!adapter || !pWintunCloseAdapter || !pWintunStartSession
         || !pWintunGetReadWaitEvent || !pWintunEndSession
         || !pWintunGetAdapterLUID) {
-        LOG_ERROR("Wintun adapter creation failed (error %lu)", GetLastError());
+        LOG_ERROR("Cannot create/open Wintun adapter (error %lu). Accept the UAC prompt, keep wintun.dll next to tund.exe, and try again.",
+                  GetLastError());
         return -1;
     }
 
     WINTUN_SESSION_HANDLE session = pWintunStartSession(adapter, 0x400000);
     if (!session) {
-        LOG_ERROR("WintunStartSession failed (error %lu)", GetLastError());
+        LOG_ERROR("Cannot start Wintun session (error %lu). Close other Tund instances and try again.",
+                  GetLastError());
         pWintunCloseAdapter(adapter);
         return -1;
     }
@@ -202,7 +204,7 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
              "interface ip set address name=\"%s\" static %s %s",
              dev->ifname, ip_s, mask_s);
     if (run_cmd("netsh", buf) < 0) {
-        LOG_ERROR("netsh ip set address failed");
+        LOG_ERROR("Failed to configure the Wintun IP address with netsh. Run from an elevated prompt and check Windows network policy.");
         return -1;
     }
 
@@ -213,7 +215,7 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
              "add %s mask %s %s metric 2",
              net_s, mask_s, ip_s);
     if (run_cmd("route", buf) < 0) {
-        LOG_ERROR("route add failed");
+        LOG_ERROR("Failed to add the Windows route for 10.9.0.0/24. Check for an existing route/VPN conflict and run as Administrator.");
         return -1;
     }
 
@@ -228,7 +230,7 @@ int tun_set_mtu(tun_device_t *dev, int mtu)
              "interface ipv4 set subinterface \"%s\" mtu=%d store=active",
              dev->ifname, mtu);
     if (run_cmd("netsh", buf) < 0) {
-        LOG_ERROR("netsh MTU update failed");
+        LOG_ERROR("Failed to set Wintun MTU with netsh. Run as Administrator and check Windows network policy.");
         return -1;
     }
     dev->mtu = mtu;

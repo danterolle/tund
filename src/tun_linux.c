@@ -15,7 +15,8 @@ int tun_open(tun_device_t *dev)
 
     fd = open("/dev/net/tun", O_RDWR);
     if (fd < 0) {
-        LOG_ERROR("Cannot open /dev/net/tun: %s", strerror(errno));
+        LOG_ERROR("Cannot open /dev/net/tun: %s. Run with sudo/CAP_NET_ADMIN and ensure the tun kernel module is available.",
+                  strerror(errno));
         return -1;
     }
 
@@ -24,7 +25,8 @@ int tun_open(tun_device_t *dev)
     strncpy(ifr.ifr_name, "tund%d", IFNAMSIZ);
 
     if (ioctl(fd, TUNSETIFF, (void *)&ifr) < 0) {
-        LOG_ERROR("ioctl(TUNSETIFF) failed: %s", strerror(errno));
+        LOG_ERROR("Cannot create Linux TUN interface: %s. Run with sudo/CAP_NET_ADMIN and check /dev/net/tun.",
+                  strerror(errno));
         close(fd);
         return -1;
     }
@@ -54,7 +56,7 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
-        LOG_ERROR("socket() for ioctl failed: %s", strerror(errno));
+        LOG_ERROR("Cannot open socket for Linux interface configuration: %s.", strerror(errno));
         return -1;
     }
 
@@ -65,7 +67,8 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
     addr->sin_family = AF_INET;
     addr->sin_addr.s_addr = ip;
     if (ioctl(sock, SIOCSIFADDR, &ifr) < 0) {
-        LOG_ERROR("ioctl(SIOCSIFADDR) failed: %s", strerror(errno));
+        LOG_ERROR("Cannot set Linux TUN IP address: %s. Check privileges and whether 10.9.0.0/24 conflicts with another interface.",
+                  strerror(errno));
         close(sock);
         return -1;
     }
@@ -74,7 +77,7 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
     addr->sin_family = AF_INET;
     addr->sin_addr.s_addr = netmask;
     if (ioctl(sock, SIOCSIFNETMASK, &ifr) < 0) {
-        LOG_ERROR("ioctl(SIOCSIFNETMASK) failed: %s", strerror(errno));
+        LOG_ERROR("Cannot set Linux TUN netmask: %s.", strerror(errno));
         close(sock);
         return -1;
     }
@@ -115,7 +118,7 @@ int tun_set_mtu(tun_device_t *dev, int mtu)
     ifr.ifr_mtu = mtu;
 
     if (ioctl(sock, SIOCSIFMTU, &ifr) < 0) {
-        LOG_ERROR("ioctl(SIOCSIFMTU) failed: %s", strerror(errno));
+        LOG_ERROR("Cannot set Linux TUN MTU to %d: %s.", mtu, strerror(errno));
         close(sock);
         return -1;
     }

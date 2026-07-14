@@ -30,7 +30,8 @@ socket_t net_create_socket(uint16_t bind_port)
 
     sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sockfd == (socket_t)-1) {
-        LOG_ERROR("socket(UDP) failed: %s", sock_errstr(SOCK_Error()));
+        LOG_ERROR("Cannot create UDP socket: %s. Check OS socket permissions and try again.",
+                  sock_errstr(SOCK_Error()));
         return (socket_t)-1;
     }
 
@@ -43,7 +44,8 @@ socket_t net_create_socket(uint16_t bind_port)
     addr.sin_port = htons(bind_port);
 
     if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        LOG_ERROR("bind(port %u) failed: %s", bind_port, sock_errstr(SOCK_Error()));
+        LOG_ERROR("Cannot bind UDP port %u: %s. If another Tund/server is running, stop it or choose a different port with -p.",
+                  bind_port, sock_errstr(SOCK_Error()));
         sock_close(sockfd);
         return (socket_t)-1;
     }
@@ -112,7 +114,8 @@ int net_resolve(const char *host, uint16_t port, struct sockaddr_in *out)
 
     int err = getaddrinfo(host, NULL, &hints, &res);
     if (err != 0) {
-        LOG_ERROR("Cannot resolve '%s': %s", host, gai_strerror(err));
+        LOG_ERROR("Cannot resolve server '%s': %s. Check the hostname/IP and DNS/network connectivity.",
+                  host, gai_strerror(err));
         return -1;
     }
 
