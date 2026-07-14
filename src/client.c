@@ -66,6 +66,10 @@ static int client_register(client_t *cli)
 {
     uint8_t buf[TUND_MAX_PKT];
     struct sockaddr_in from;
+    bool saw_auth_failure = false;
+    bool saw_protocol_mismatch = false;
+    bool saw_bad_reply = false;
+    bool saw_server_reply = false;
 
     for (int attempt = 0; attempt < TUND_REGISTER_RETRIES; attempt++) {
         LOG_INFO("Registering with server (attempt %d/%d)...",
@@ -81,22 +85,43 @@ static int client_register(client_t *cli)
             return -1;
         }
         if (ret == 0) {
-            LOG_WARN("No response from server, retrying...");
+            LOG_WARN("No response from server; check the IP, port, firewall, and that the server is running.");
             continue;
         }
 
         int n = net_recv(cli->sockfd, buf, sizeof(buf), &from);
+        if (n == NET_RECV_AUTH_FAILED) {
+            if (net_addr_equal(&from, &cli->server_addr)) {
+                saw_auth_failure = true;
+                saw_server_reply = true;
+                LOG_WARN("Server replied, but authentication failed; check the shared key and protocol version.");
+            }
+            continue;
+        }
         if (n <= 0)
             continue;
         if (!net_addr_equal(&from, &cli->server_addr))
             continue;
+        saw_server_reply = true;
 
         uint8_t type;
         uint16_t payload_len;
         int hdr_status = proto_read_hdr(buf, &type, &payload_len);
         if (hdr_status < 0) {
-            if (hdr_status == TUND_HDR_BAD_VERSION)
-                LOG_WARN("Server uses unsupported protocol version %u", buf[1]);
+            saw_bad_reply = true;
+            if (hdr_status == TUND_HDR_BAD_VERSION) {
+                saw_protocol_mismatch = true;
+                LOG_WARN("Server uses unsupported protocol version %u (expected %u).",
+                         buf[1], TUND_PROTOCOL_VERSION);
+            } else {
+                LOG_WARN("Server sent an invalid handshake reply.");
+            }
+            continue;
+        }
+
+        if (TUND_HDR_SIZE + payload_len > n) {
+            saw_bad_reply = true;
+            LOG_WARN("Server sent a truncated handshake reply.");
             continue;
         }
 
@@ -112,9 +137,21 @@ static int client_register(client_t *cli)
                      ip_to_str(cli->virt_ip), mtu);
             return 0;
         }
+        saw_bad_reply = true;
+        LOG_WARN("Server sent an unexpected handshake message type 0x%02X.", type);
     }
 
-    LOG_ERROR("Registration failed after %d attempts", TUND_REGISTER_RETRIES);
+    if (saw_protocol_mismatch)
+        LOG_ERROR("Registration failed: server protocol is not compatible with this client.");
+    else if (saw_auth_failure)
+        LOG_ERROR("Registration failed: server replied but authentication failed; check the shared key and protocol compatibility.");
+    else if (saw_bad_reply)
+        LOG_ERROR("Registration failed: server replied with an invalid handshake.");
+    else if (!saw_server_reply)
+        LOG_ERROR("Registration timed out after %d attempts; check server address, UDP port, and firewall.",
+                  TUND_REGISTER_RETRIES);
+    else
+        LOG_ERROR("Registration failed after %d attempts", TUND_REGISTER_RETRIES);
     return -1;
 }
 

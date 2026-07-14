@@ -4,6 +4,10 @@
 #include "tund.h"
 #include "tui.h"
 
+#define NET_RECV_NO_DATA      0
+#define NET_RECV_ERROR       -1
+#define NET_RECV_AUTH_FAILED -2
+
 socket_t net_create_socket(uint16_t bind_port);
 int net_send(socket_t sockfd, uint8_t *buf, int len,
              const struct sockaddr_in *dest);

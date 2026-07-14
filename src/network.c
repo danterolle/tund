@@ -77,12 +77,15 @@ int net_recv(socket_t sockfd, uint8_t *buf, int bufsize,
     if (n < 0) {
         int err = SOCK_Error();
         if (err == SOCK_EAGAIN || err == SOCK_EWOULDBLOCK || err == SOCK_EINTR)
-            return 0;
+            return NET_RECV_NO_DATA;
         LOG_ERROR("recvfrom() failed: %s", sock_errstr(err));
-        return -1;
+        return NET_RECV_ERROR;
     }
-    if (!proto_verify(buf, (int)n, g_auth_key0, g_auth_key1))
-        return 0;
+    if (!proto_verify(buf, (int)n, g_auth_key0, g_auth_key1)) {
+        LOG_DEBUG("Dropped unauthenticated packet from %s:%u",
+                  inet_ntoa(from->sin_addr), ntohs(from->sin_port));
+        return NET_RECV_AUTH_FAILED;
+    }
     return (int)n;
 }
 
