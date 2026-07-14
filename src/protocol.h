@@ -19,8 +19,13 @@
 #ifndef TUND_PROTOCOL_H
 #define TUND_PROTOCOL_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
 #ifndef _WIN32
 #include <arpa/inet.h>
 #endif
