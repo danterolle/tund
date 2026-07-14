@@ -131,6 +131,7 @@ static inline uint64_t now_ms(void)
 
 #define TUND_MAX_PEERS    253     /* 10.9.0.2 .. 10.9.0.254 */
 #define TUND_VERSION      "1.4"
+#define TUND_IP_STR_LEN   INET_ADDRSTRLEN
 
 enum log_level {
     LOG_DEBUG = 0,
@@ -197,11 +198,13 @@ typedef struct {
     bool            tui_mode;
 } config_t;
 
-static inline const char *ip_to_str(uint32_t ip_nbo)
+static inline const char *ip_to_str_buf(uint32_t ip_nbo, char *buf, size_t len)
 {
     struct in_addr a;
     a.s_addr = ip_nbo;
-    return inet_ntoa(a);
+    if (!inet_ntop(AF_INET, &a, buf, (socklen_t)len))
+        snprintf(buf, len, "<invalid>");
+    return buf;
 }
 
 extern volatile int g_running;

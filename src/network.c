@@ -60,8 +60,10 @@ int net_send(socket_t sockfd, uint8_t *buf, int len,
     ssize_t sent = sendto(sockfd, (const char *)buf, (size_t)len, 0,
                           (const struct sockaddr *)dest, sizeof(*dest));
     if (sent < 0) {
+        char dest_ip[TUND_IP_STR_LEN];
         LOG_ERROR("sendto(%s:%u) failed: %s",
-                  inet_ntoa(dest->sin_addr), ntohs(dest->sin_port),
+                  ip_to_str_buf(dest->sin_addr.s_addr, dest_ip, sizeof(dest_ip)),
+                  ntohs(dest->sin_port),
                   sock_errstr(SOCK_Error()));
         return -1;
     }
@@ -82,8 +84,10 @@ int net_recv(socket_t sockfd, uint8_t *buf, int bufsize,
         return NET_RECV_ERROR;
     }
     if (!proto_verify(buf, (int)n, g_auth_key0, g_auth_key1)) {
+        char from_ip[TUND_IP_STR_LEN];
         LOG_DEBUG("Dropped unauthenticated packet from %s:%u",
-                  inet_ntoa(from->sin_addr), ntohs(from->sin_port));
+                  ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)),
+                  ntohs(from->sin_port));
         return NET_RECV_AUTH_FAILED;
     }
     return (int)n;
@@ -116,8 +120,9 @@ int net_resolve(const char *host, uint16_t port, struct sockaddr_in *out)
     out->sin_port = htons(port);
     freeaddrinfo(res);
 
+    char out_ip[TUND_IP_STR_LEN];
     LOG_DEBUG("Resolved %s -> %s:%u",
-              host, inet_ntoa(out->sin_addr), port);
+              host, ip_to_str_buf(out->sin_addr.s_addr, out_ip, sizeof(out_ip)), port);
     return 0;
 }
 

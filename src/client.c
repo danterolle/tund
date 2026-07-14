@@ -52,8 +52,9 @@ static void client_print_peers(client_t *cli)
 
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (cli->peers[i].active) {
+            char peer_ip[TUND_IP_STR_LEN];
             LOG_INFO("│ %-12s │ %-24s │",
-                     ip_to_str(cli->peers[i].virt_ip),
+                     ip_to_str_buf(cli->peers[i].virt_ip, peer_ip, sizeof(peer_ip)),
                      cli->peers[i].name);
         }
     }
@@ -133,8 +134,9 @@ static int client_register(client_t *cli)
             memcpy(&mtu_n, p, 2);
             int mtu = ntohs(mtu_n);
 
+            char virt_ip[TUND_IP_STR_LEN];
             LOG_INFO("★ Registered! Virtual IP: %s (MTU: %d)",
-                     ip_to_str(cli->virt_ip), mtu);
+                     ip_to_str_buf(cli->virt_ip, virt_ip, sizeof(virt_ip)), mtu);
             return 0;
         }
         saw_bad_reply = true;
@@ -222,7 +224,9 @@ static void client_handle_peer_join(client_t *cli, const uint8_t *payload, uint1
     memset(name, 0, sizeof(name));
     memcpy(name, payload + 4, TUND_NAME_LEN);
 
-    LOG_INFO("★ Peer joined: %s (%s)", name, ip_to_str(vip));
+    char vip_str[TUND_IP_STR_LEN];
+    LOG_INFO("★ Peer joined: %s (%s)",
+             name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)));
     client_update_peer(cli, vip, name, true);
     client_print_peers(cli);
 }
@@ -247,7 +251,9 @@ static void client_handle_peer_leave(client_t *cli, const uint8_t *payload, uint
     int remaining = cli->peer_count;
     pthread_mutex_unlock(&cli->peers_lock);
 
-    LOG_INFO("✦ Peer left: %s (%s)", name, ip_to_str(vip));
+    char vip_str[TUND_IP_STR_LEN];
+    LOG_INFO("✦ Peer left: %s (%s)",
+             name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)));
 
     if (remaining > 0)
         client_print_peers(cli);
@@ -298,10 +304,13 @@ void client_run(client_t *cli)
     char version_str[64];
     snprintf(version_str, sizeof(version_str), "Tund Client v%s", TUND_VERSION);
     char ip_str[64];
-    snprintf(ip_str, sizeof(ip_str), "Virtual IP: %s", ip_to_str(cli->virt_ip));
+    char virt_ip[TUND_IP_STR_LEN];
+    snprintf(ip_str, sizeof(ip_str), "Virtual IP: %s",
+             ip_to_str_buf(cli->virt_ip, virt_ip, sizeof(virt_ip)));
     char server_str[64];
+    char server_ip[TUND_IP_STR_LEN];
     snprintf(server_str, sizeof(server_str), "Server: %s:%u",
-             inet_ntoa(cli->server_addr.sin_addr),
+             ip_to_str_buf(cli->server_addr.sin_addr.s_addr, server_ip, sizeof(server_ip)),
              ntohs(cli->server_addr.sin_port));
     char tun_str[64];
     snprintf(tun_str, sizeof(tun_str), "TUN: %s", cli->tun.ifname);

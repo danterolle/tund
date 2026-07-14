@@ -93,8 +93,11 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 
     close(sock);
 
+    char ip_str[TUND_IP_STR_LEN];
+    char mask_str[TUND_IP_STR_LEN];
     LOG_INFO("Configured %s: %s/%s", dev->ifname,
-             ip_to_str(ip), ip_to_str(netmask));
+             ip_to_str_buf(ip, ip_str, sizeof(ip_str)),
+             ip_to_str_buf(netmask, mask_str, sizeof(mask_str)));
     return 0;
 }
 

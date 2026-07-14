@@ -53,9 +53,12 @@ static void server_broadcast(server_t *srv, uint8_t *buf, int len, int exclude_i
 {
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (srv->peers[i].active && i != exclude_idx) {
-            if (net_send(srv->sockfd, buf, len, &srv->peers[i].real_addr) < 0)
+            if (net_send(srv->sockfd, buf, len, &srv->peers[i].real_addr) < 0) {
+                char peer_ip[TUND_IP_STR_LEN];
                 LOG_WARN("Broadcast to %s (%s) failed",
-                         srv->peers[i].name, ip_to_str(srv->peers[i].virt_ip));
+                         srv->peers[i].name,
+                         ip_to_str_buf(srv->peers[i].virt_ip, peer_ip, sizeof(peer_ip)));
+            }
         }
     }
 }
@@ -114,9 +117,11 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
 
     idx = server_find_free_slot(srv);
     if (idx < 0) {
+        char from_ip[TUND_IP_STR_LEN];
         pthread_mutex_unlock(&srv->peers_lock);
         LOG_WARN("Peer table full, rejecting connection from %s:%u",
-                 inet_ntoa(from->sin_addr), ntohs(from->sin_port));
+                 ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)),
+                 ntohs(from->sin_port));
         return;
     }
 
@@ -143,9 +148,12 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
 
     pthread_mutex_unlock(&srv->peers_lock);
 
+    char vip_str[TUND_IP_STR_LEN];
+    char from_ip[TUND_IP_STR_LEN];
     LOG_INFO("★ New peer: %s → %s [%s:%u]",
-             p->name, ip_to_str(vip),
-             inet_ntoa(from->sin_addr), ntohs(from->sin_port));
+             p->name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)),
+             ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)),
+             ntohs(from->sin_port));
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_assign(buf, vip, htonl(TUND_NETMASK), TUND_TUN_MTU);
@@ -197,8 +205,10 @@ static void server_handle_data(server_t *srv, const uint8_t *payload,
 
     int dst_idx = server_find_peer_by_vip(srv, dst_ip);
     if (dst_idx < 0) {
+        char dst_ip_str[TUND_IP_STR_LEN];
         pthread_mutex_unlock(&srv->peers_lock);
-        LOG_DEBUG("No peer for %s, dropping packet", ip_to_str(dst_ip));
+        LOG_DEBUG("No peer for %s, dropping packet",
+                  ip_to_str_buf(dst_ip, dst_ip_str, sizeof(dst_ip_str)));
         return;
     }
 
@@ -235,7 +245,9 @@ static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *fr
     }
 
     peer_t *p = &srv->peers[idx];
-    LOG_INFO("✦ Peer disconnected: %s (%s)", p->name, ip_to_str(p->virt_ip));
+    char peer_ip[TUND_IP_STR_LEN];
+    LOG_INFO("✦ Peer disconnected: %s (%s)",
+             p->name, ip_to_str_buf(p->virt_ip, peer_ip, sizeof(peer_ip)));
 
     uint32_t vip = p->virt_ip;
     p->active = false;
@@ -263,8 +275,10 @@ static void *server_timeout_thread(void *arg)
         for (int i = 0; i < TUND_MAX_PEERS; i++) {
             if (srv->peers[i].active &&
                 (now - srv->peers[i].last_seen) > TUND_PEER_TIMEOUT) {
+                char peer_ip[TUND_IP_STR_LEN];
                 LOG_WARN("✦ Peer timed out: %s (%s)",
-                         srv->peers[i].name, ip_to_str(srv->peers[i].virt_ip));
+                         srv->peers[i].name,
+                         ip_to_str_buf(srv->peers[i].virt_ip, peer_ip, sizeof(peer_ip)));
 
                 uint32_t vip = srv->peers[i].virt_ip;
                 srv->peers[i].active = false;
@@ -356,7 +370,9 @@ void server_run(server_t *srv)
     char port_str[64];
     snprintf(port_str, sizeof(port_str), "Listening on UDP port %u", srv->port);
     char ip_str_full[64];
-    snprintf(ip_str_full, sizeof(ip_str_full), "Virtual IP: %s", ip_to_str(htonl(TUND_SERVER_IP)));
+    char server_ip[TUND_IP_STR_LEN];
+    snprintf(ip_str_full, sizeof(ip_str_full), "Virtual IP: %s",
+             ip_to_str_buf(htonl(TUND_SERVER_IP), server_ip, sizeof(server_ip)));
     char subnet_str[] = "Subnet: 10.9.0.0/24";
     char tun_str[64];
     snprintf(tun_str, sizeof(tun_str), "TUN: %s", srv->tun.ifname);
@@ -429,18 +445,24 @@ void server_run(server_t *srv)
         uint16_t payload_len;
         int hdr_status = proto_read_hdr(buf, &type, &payload_len);
         if (hdr_status < 0) {
+            char from_ip[TUND_IP_STR_LEN];
             if (hdr_status == TUND_HDR_BAD_VERSION)
                 LOG_DEBUG("Unsupported protocol version %u from %s:%u",
-                          buf[1], inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+                          buf[1],
+                          ip_to_str_buf(from.sin_addr.s_addr, from_ip, sizeof(from_ip)),
+                          ntohs(from.sin_port));
             else
                 LOG_DEBUG("Invalid magic from %s:%u",
-                          inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+                          ip_to_str_buf(from.sin_addr.s_addr, from_ip, sizeof(from_ip)),
+                          ntohs(from.sin_port));
             continue;
         }
 
         if (TUND_HDR_SIZE + payload_len > n) {
+            char from_ip[TUND_IP_STR_LEN];
             LOG_DEBUG("Truncated packet from %s:%u",
-                      inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+                      ip_to_str_buf(from.sin_addr.s_addr, from_ip, sizeof(from_ip)),
+                      ntohs(from.sin_port));
             continue;
         }
 
@@ -460,9 +482,14 @@ void server_run(server_t *srv)
             server_handle_disconnect(srv, &from);
             break;
         default:
+        {
+            char from_ip[TUND_IP_STR_LEN];
             LOG_DEBUG("Unknown message type 0x%02X from %s:%u",
-                      type, inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+                      type,
+                      ip_to_str_buf(from.sin_addr.s_addr, from_ip, sizeof(from_ip)),
+                      ntohs(from.sin_port));
             break;
+        }
         }
     }
 }
