@@ -192,6 +192,8 @@ typedef struct {
     time_t              last_seen;
     uint64_t            bytes_in;
     uint64_t            bytes_out;
+    uint64_t            rtt_ms;
+    bool                has_rtt;
 } peer_t;
 
 typedef enum {

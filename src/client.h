@@ -10,6 +10,8 @@ typedef struct {
     struct sockaddr_in  server_addr;                /* Server's real UDP address */
     uint32_t            virt_ip;                    /* Our assigned virtual IP (nbo) */
     uint32_t            netmask;                    /* Subnet mask (nbo) */
+    uint64_t            server_rtt_ms;
+    bool                has_server_rtt;
     char                name[TUND_NAME_LEN];      /* Display name */
     peer_t              peers[TUND_MAX_PEERS];    /* Known peers */
     int                 peer_count;                 /* Active peer count */

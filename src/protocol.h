@@ -68,6 +68,7 @@ enum {
     MSG_DISCONNECT  = 0x06,   /* Client → Server : (empty)               */
     MSG_PEER_JOIN   = 0x07,   /* Server → Client : ip(4) + name(32)      */
     MSG_PEER_LEAVE  = 0x08,   /* Server → Client : ip(4)                 */
+    MSG_KEEPALIVE_ACK = 0x09, /* Bidirectional   : echoed timestamp (8B)  */
 };
 
 typedef struct {
@@ -212,6 +213,31 @@ static inline int proto_build_keepalive(uint8_t *buf, uint64_t timestamp)
         timestamp >>= 8;
     }
     return TUND_HDR_SIZE + 8;
+}
+
+static inline int proto_build_keepalive_ack(uint8_t *buf, uint64_t timestamp)
+{
+    proto_write_hdr(buf, MSG_KEEPALIVE_ACK, 8);
+    uint8_t *p = buf + TUND_HDR_SIZE;
+    for (int i = 7; i >= 0; i--) {
+        p[i] = (uint8_t)(timestamp & 0xFF);
+        timestamp >>= 8;
+    }
+    return TUND_HDR_SIZE + 8;
+}
+
+static inline bool proto_read_keepalive_timestamp(const uint8_t *payload,
+                                                  uint16_t payload_len,
+                                                  uint64_t *timestamp)
+{
+    if (payload_len < 8)
+        return false;
+
+    uint64_t value = 0;
+    for (int i = 0; i < 8; i++)
+        value = (value << 8) | payload[i];
+    *timestamp = value;
+    return true;
 }
 
 static inline int proto_build_disconnect(uint8_t *buf)

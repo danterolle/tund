@@ -134,7 +134,7 @@ Or download the latest release — `tund.exe` and `wintun.dll` are already bundl
 - **Single binary** — one executable, server and client in one
 - **No external dependencies** — pure C, only uses system libraries
 - **Graceful shutdown** — Ctrl+C cleanly disconnects and notifies peers
-- **Keepalive** — automatic peer timeout detection (30s)
+- **Keepalive** — automatic peer timeout detection (30s) and RTT tracking
 - **Broadcast support** — LAN broadcast packets are forwarded
 - **Authenticated membership** — packets without the shared network key are discarded
 

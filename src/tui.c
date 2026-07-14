@@ -96,6 +96,17 @@ static void tui_format_bytes(uint64_t bytes, char *buf, size_t len)
         snprintf(buf, len, "%.1f%s", value, units[unit]);
 }
 
+static void tui_format_rtt(bool has_rtt, uint64_t rtt_ms, char *buf, size_t len)
+{
+    if (!has_rtt) {
+        snprintf(buf, len, "-");
+    } else if (rtt_ms > 9999) {
+        snprintf(buf, len, ">9999ms");
+    } else {
+        snprintf(buf, len, "%llums", (unsigned long long)rtt_ms);
+    }
+}
+
 void tui_init(void)
 {
     pthread_mutex_lock(&tui_events_lock);
@@ -156,16 +167,17 @@ static void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int n
 {
     tui_printf(" %s────────────────────────────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
     tui_printf(" %sPeers: %s%d%s\n", TUI_GRAY, TUI_YELLOW, peer_count, TUI_RESET);
-    tui_printf(" %s%-8s %-15s %-18s %-8s %-8s %s%s\n",
-               TUI_GRAY, "Status", "Virtual IP", "Name", "In", "Out", "Last Seen", TUI_RESET);
+    tui_printf(" %s%-8s %-15s %-18s %-8s %-8s %-8s %s%s\n",
+               TUI_GRAY, "Status", "Virtual IP", "Name", "RTT", "In", "Out", "Last Seen", TUI_RESET);
 
     bool any = false;
     for (int i = 0; i < npeers; i++) {
         if (!peers[i].active) continue;
         any = true;
-        char ip_str[16], ago_str[32], in_str[16], out_str[16];
+        char ip_str[16], ago_str[32], rtt_str[16], in_str[16], out_str[16];
         inet_ntop(AF_INET, &peers[i].virt_ip, ip_str, sizeof(ip_str));
         tui_timeago(peers[i].last_seen, ago_str, sizeof(ago_str));
+        tui_format_rtt(peers[i].has_rtt, peers[i].rtt_ms, rtt_str, sizeof(rtt_str));
         tui_format_bytes(peers[i].bytes_in, in_str, sizeof(in_str));
         tui_format_bytes(peers[i].bytes_out, out_str, sizeof(out_str));
 
@@ -183,8 +195,8 @@ static void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int n
             status = "timeout";
         }
 
-        tui_printf(" %s %-7s %-15s %-18s %-8s %-8s %s\n",
-                   dot, status, ip_str, peers[i].name, in_str, out_str, ago_str);
+        tui_printf(" %s %-7s %-15s %-18s %-8s %-8s %-8s %s\n",
+                   dot, status, ip_str, peers[i].name, rtt_str, in_str, out_str, ago_str);
     }
     if (!any)
         tui_printf(" %s(no peers yet)%s\n", TUI_GRAY, TUI_RESET);
@@ -286,7 +298,7 @@ void tui_render_server(uint16_t port, const char *tun_name,
 
 void tui_render_client(const char *server_addr, uint16_t port,
                        const char *tun_name, uint32_t virt_ip, uint32_t netmask,
-                       time_t start_time,
+                       bool has_server_rtt, uint64_t server_rtt_ms, time_t start_time,
                        int peer_count, const tui_peer_t *peers, int npeers)
 {
     tui_write(TUI_CLEAR);
@@ -300,10 +312,12 @@ void tui_render_client(const char *server_addr, uint16_t port,
     inet_ntop(AF_INET, &virt_ip, ip_str, sizeof(ip_str));
     inet_ntop(AF_INET, &netmask, mask_str, sizeof(mask_str));
 
-    char line[192];
+    char line[192], rtt_str[16];
+    tui_format_rtt(has_server_rtt, server_rtt_ms, rtt_str, sizeof(rtt_str));
     snprintf(line, sizeof(line),
-             "  Server: %s%s:%u%s   TUN: %s%s%s",
+             "  Server: %s%s:%u%s   RTT: %s%s%s   TUN: %s%s%s",
              TUI_YELLOW, server_addr, port, TUI_RESET,
+             TUI_YELLOW, rtt_str, TUI_RESET,
              TUI_YELLOW, tun_name, TUI_RESET);
     tui_write(line);
     tui_printf("\n");

@@ -131,6 +131,19 @@ static void test_builders(void)
     CHECK(payload_len == 8);
     const uint8_t expected_ts[8] = {1, 2, 3, 4, 5, 6, 7, 8};
     CHECK(memcmp(buf + TUND_HDR_SIZE, expected_ts, sizeof(expected_ts)) == 0);
+
+    uint64_t got_ts = 0;
+    CHECK(proto_read_keepalive_timestamp(buf + TUND_HDR_SIZE, payload_len, &got_ts));
+    CHECK(got_ts == 0x0102030405060708ULL);
+    CHECK(!proto_read_keepalive_timestamp(buf + TUND_HDR_SIZE, 7, &got_ts));
+
+    len = proto_build_keepalive_ack(buf, 0x1112131415161718ULL);
+    CHECK(len == TUND_HDR_SIZE + 8);
+    CHECK(proto_read_hdr(buf, &type, &payload_len) == 0);
+    CHECK(type == MSG_KEEPALIVE_ACK);
+    CHECK(payload_len == 8);
+    CHECK(proto_read_keepalive_timestamp(buf + TUND_HDR_SIZE, payload_len, &got_ts));
+    CHECK(got_ts == 0x1112131415161718ULL);
 }
 
 static void test_dst_ip(void)

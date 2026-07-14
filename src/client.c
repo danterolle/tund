@@ -231,6 +231,33 @@ static void *client_tun_thread(void *arg)
     return NULL;
 }
 
+static void client_handle_keepalive(client_t *cli, const uint8_t *payload, uint16_t plen)
+{
+    uint64_t sent_at = 0;
+    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at))
+        return;
+
+    uint8_t buf[TUND_MAX_PKT];
+    int len = proto_build_keepalive_ack(buf, sent_at);
+    if (net_send(cli->sockfd, buf, len, &cli->server_addr) < 0)
+        LOG_WARN("Keepalive reply to server failed");
+}
+
+static void client_handle_keepalive_ack(client_t *cli, const uint8_t *payload, uint16_t plen)
+{
+    uint64_t sent_at = 0;
+    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at))
+        return;
+
+    uint64_t now = now_ms();
+    if (now < sent_at)
+        return;
+
+    cli->server_rtt_ms = now - sent_at;
+    cli->has_server_rtt = true;
+    LOG_DEBUG("Server RTT: %llums", (unsigned long long)cli->server_rtt_ms);
+}
+
 static void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint16_t plen)
 {
     int entry_size = (int)sizeof(msg_peer_entry_t);
@@ -427,6 +454,7 @@ void client_run(client_t *cli)
             if (g_tui_active)
                 tui_render_client(server_ip_str, ntohs(cli->server_addr.sin_port),
                                   cli->tun.ifname, cli->virt_ip, cli->netmask,
+                                  cli->has_server_rtt, cli->server_rtt_ms,
                                   g_start_time, npeers, tui_peers, npeers);
             continue;
         }
@@ -470,6 +498,10 @@ void client_run(client_t *cli)
             client_handle_peer_leave(cli, payload, payload_len);
             break;
         case MSG_KEEPALIVE:
+            client_handle_keepalive(cli, payload, payload_len);
+            break;
+        case MSG_KEEPALIVE_ACK:
+            client_handle_keepalive_ack(cli, payload, payload_len);
             break;
         case MSG_DISCONNECT:
             LOG_WARN("Server disconnected!");

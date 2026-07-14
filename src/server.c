@@ -140,6 +140,8 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
     p->virt_ip = vip;
     p->bytes_in = 0;
     p->bytes_out = 0;
+    p->rtt_ms = 0;
+    p->has_rtt = false;
     memset(p->name, 0, TUND_NAME_LEN);
     if (plen > 0) {
         int namelen = (plen < TUND_NAME_LEN - 1) ? plen : TUND_NAME_LEN - 1;
@@ -227,20 +229,50 @@ static void server_handle_data(server_t *srv, const uint8_t *payload,
     pthread_mutex_unlock(&srv->peers_lock);
 }
 
-static void server_handle_keepalive(server_t *srv, const struct sockaddr_in *from)
+static void server_handle_keepalive(server_t *srv, const uint8_t *payload,
+                                    uint16_t plen, const struct sockaddr_in *from)
 {
+    uint64_t sent_at = 0;
+    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at)) {
+        LOG_DEBUG("Ignoring malformed keepalive");
+        return;
+    }
+
     pthread_mutex_lock(&srv->peers_lock);
     int idx = server_find_peer_by_addr(srv, from);
+    char peer_name[TUND_NAME_LEN] = "";
     if (idx >= 0) {
         srv->peers[idx].last_seen = time(NULL);
+        snprintf(peer_name, sizeof(peer_name), "%s", srv->peers[idx].name);
     }
     pthread_mutex_unlock(&srv->peers_lock);
     if (idx < 0) return;
 
     uint8_t buf[TUND_MAX_PKT];
-    int len = proto_build_keepalive(buf, now_ms());
-    if (net_send(srv->sockfd, buf, len, from) < 0 && idx >= 0)
-        LOG_WARN("Keepalive reply to %s failed", srv->peers[idx].name);
+    int len = proto_build_keepalive_ack(buf, sent_at);
+    if (net_send(srv->sockfd, buf, len, from) < 0)
+        LOG_WARN("Keepalive reply to %s failed", peer_name);
+}
+
+static void server_handle_keepalive_ack(server_t *srv, const uint8_t *payload,
+                                        uint16_t plen, const struct sockaddr_in *from)
+{
+    uint64_t sent_at = 0;
+    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at))
+        return;
+
+    uint64_t now = now_ms();
+    if (now < sent_at)
+        return;
+
+    pthread_mutex_lock(&srv->peers_lock);
+    int idx = server_find_peer_by_addr(srv, from);
+    if (idx >= 0) {
+        srv->peers[idx].last_seen = time(NULL);
+        srv->peers[idx].rtt_ms = now - sent_at;
+        srv->peers[idx].has_rtt = true;
+    }
+    pthread_mutex_unlock(&srv->peers_lock);
 }
 
 static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *from)
@@ -278,6 +310,10 @@ static void *server_timeout_thread(void *arg)
             break;
 
         time_t now = time(NULL);
+        uint64_t keepalive_ts = now_ms();
+        uint8_t keepalive_buf[TUND_MAX_PKT];
+        int keepalive_len = proto_build_keepalive(keepalive_buf, keepalive_ts);
+
         pthread_mutex_lock(&srv->peers_lock);
 
         for (int i = 0; i < TUND_MAX_PEERS; i++) {
@@ -295,6 +331,11 @@ static void *server_timeout_thread(void *arg)
                 uint8_t buf[TUND_MAX_PKT];
                 int len = proto_build_peer_leave(buf, vip);
                 server_broadcast(srv, buf, len, -1, 0);
+            } else if (srv->peers[i].active) {
+                if (net_send(srv->sockfd, keepalive_buf, keepalive_len,
+                             &srv->peers[i].real_addr) < 0) {
+                    LOG_WARN("Keepalive probe to %s failed", srv->peers[i].name);
+                }
             }
         }
 
@@ -502,7 +543,10 @@ void server_run(server_t *srv)
             server_handle_data(srv, payload, payload_len, &from);
             break;
         case MSG_KEEPALIVE:
-            server_handle_keepalive(srv, &from);
+            server_handle_keepalive(srv, payload, payload_len, &from);
+            break;
+        case MSG_KEEPALIVE_ACK:
+            server_handle_keepalive_ack(srv, payload, payload_len, &from);
             break;
         case MSG_DISCONNECT:
             server_handle_disconnect(srv, &from);

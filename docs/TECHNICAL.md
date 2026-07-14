@@ -56,7 +56,7 @@ Every Tund datagram uses the following 13-byte header followed by a payload:
 
 The tag covers the stable header fields and payload. `network.c` signs every outgoing packet and drops any incoming packet with an invalid tag before message parsing. All participants must therefore use the same access key and protocol version.
 
-Message types are `REGISTER`, `ASSIGN`, `PEER_LIST`, `DATA`, `KEEPALIVE`, `DISCONNECT`, `PEER_JOIN`, and `PEER_LEAVE`.
+Message types are `REGISTER`, `ASSIGN`, `PEER_LIST`, `DATA`, `KEEPALIVE`, `KEEPALIVE_ACK`, `DISCONNECT`, `PEER_JOIN`, and `PEER_LEAVE`.
 
 ## Packet forwarding
 
