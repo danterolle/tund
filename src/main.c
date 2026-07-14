@@ -42,6 +42,13 @@ static bool check_admin(void)
     return is_admin != FALSE;
 }
 
+static bool stderr_is_tty(void)
+{
+    DWORD mode = 0;
+    HANDLE herr = GetStdHandle(STD_ERROR_HANDLE);
+    return herr != INVALID_HANDLE_VALUE && GetConsoleMode(herr, &mode);
+}
+
 static bool append_text(char *buf, size_t bufsize, size_t *pos, const char *text)
 {
     size_t len = strlen(text);
@@ -175,6 +182,11 @@ static LONG WINAPI crash_handler(EXCEPTION_POINTERS *ep)
     return EXCEPTION_EXECUTE_HANDLER;
 }
 #else
+static bool stderr_is_tty(void)
+{
+    return isatty(STDERR_FILENO);
+}
+
 static void signal_handler(int sig)
 {
     (void)sig;
@@ -339,6 +351,12 @@ int main(int argc, char *argv[])
     }
     proto_key_from_passphrase(cfg.access_key, &g_auth_key0, &g_auth_key1);
 
+    if (cfg.tui_mode && !stderr_is_tty()) {
+        cfg.tui_mode = false;
+        g_tui_active = false;
+        LOG_INFO("Terminal UI disabled because stderr is not interactive.");
+    }
+
 #ifdef _WIN32
     if (!check_admin()) {
         fprintf(stderr, "Tund requires Administrator privileges for the TUN interface.\n");
@@ -348,7 +366,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     if (cfg.tui_mode) {
-        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        HANDLE hOut = GetStdHandle(STD_ERROR_HANDLE);
         DWORD mode = 0;
         if (GetConsoleMode(hOut, &mode)) {
             mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
