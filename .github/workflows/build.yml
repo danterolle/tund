@@ -46,10 +46,15 @@ jobs:
             zip
             curl
       - run: make
+      - run: ./tund.exe --help
       - name: Download wintun.dll
         shell: msys2 {0}
+        env:
+          WINTUN_URL: https://www.wintun.net/builds/wintun-0.14.1.zip
+          WINTUN_SHA256: 07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51
         run: |
-          curl -sL https://www.wintun.net/builds/wintun-0.14.1.zip -o /tmp/wintun.zip
+          curl -fsSL "$WINTUN_URL" -o /tmp/wintun.zip
+          echo "$WINTUN_SHA256  /tmp/wintun.zip" | sha256sum -c -
           unzip -o /tmp/wintun.zip wintun/bin/amd64/wintun.dll -d /tmp >/dev/null
           cp /tmp/wintun/bin/amd64/wintun.dll .
       - run: zip tund-windows-x86_64.zip tund.exe wintun.dll

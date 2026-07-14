@@ -53,11 +53,13 @@ $(TARGET_WCON): $(WIN_SRCS) | $(DIST)
 	$(CROSS_W64)-gcc $(WIN_CFLAGS) -o $@ $(WIN_SRCS) $(WIN_LIBS)
 	@echo "  ✓ Built $(TARGET_WCON)"
 
-WINTUN_URL := https://www.wintun.net/builds/wintun-0.14.1.zip
+WINTUN_URL    := https://www.wintun.net/builds/wintun-0.14.1.zip
+WINTUN_SHA256 := 07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51
 
 $(DIST)/wintun.dll: | $(DIST)
 	@echo "  ↓ Downloading wintun.dll from wintun.net..."
-	curl -sL $(WINTUN_URL) -o /tmp/wintun.zip
+	curl -fsSL $(WINTUN_URL) -o /tmp/wintun.zip
+	printf '%s  %s\n' "$(WINTUN_SHA256)" "/tmp/wintun.zip" | shasum -a 256 -c -
 	unzip -o /tmp/wintun.zip wintun/bin/amd64/wintun.dll -d /tmp >/dev/null
 	cp /tmp/wintun/bin/amd64/wintun.dll $(DIST)/wintun.dll
 	@echo "  ✓ wintun.dll downloaded"
