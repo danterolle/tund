@@ -121,7 +121,7 @@ make
 make windows
 ```
 
-Run `tund.exe` from the generated `dist` directory **as Administrator**. Keep `wintun.dll` next to the executable.
+Run `tund.exe` from the generated `dist` directory. If needed, Tund asks Windows for Administrator privileges through UAC. Keep `wintun.dll` next to the executable.
 
 Or download the latest release — `tund.exe` and `wintun.dll` are already bundled together.
 
@@ -172,7 +172,9 @@ For Artemis, start the server first, connect every station with the same key, th
 
 ### Windows notes
 
-- **Server firewall**: allow inbound UDP on port `9909` or the server will not be reachable.
+- **Administrator privileges**: Tund creates a TUN interface, so Windows may show a UAC prompt on startup. Accept it to continue.
+
+- **Server firewall**: Tund does not change Windows Firewall automatically. If this machine is the server, allow inbound UDP on port `9909` or clients will not be able to reach it.
   ```cmd
   :: Persistent rule (recommended)
   netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909

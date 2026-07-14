@@ -429,6 +429,11 @@ void server_run(server_t *srv)
     if (g_tui_active)
         tui_init();
 
+#ifdef _WIN32
+    LOG_INFO("Windows Firewall is not changed automatically; allow inbound UDP %u if clients cannot connect.",
+             srv->port);
+#endif
+
     uint8_t buf[TUND_MAX_PKT];
     struct sockaddr_in from;
     tui_peer_t tui_peers[TUND_MAX_PEERS];

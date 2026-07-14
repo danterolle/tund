@@ -14,6 +14,8 @@ static server_t g_server;
 static client_t g_client;
 
 #ifdef _WIN32
+#include <shellapi.h>
+
 static BOOL WINAPI console_handler(DWORD dwCtrlType)
 {
     (void)dwCtrlType;
@@ -38,6 +40,101 @@ static bool check_admin(void)
         FreeSid(admin_group);
     }
     return is_admin != FALSE;
+}
+
+static bool append_text(char *buf, size_t bufsize, size_t *pos, const char *text)
+{
+    size_t len = strlen(text);
+    if (*pos + len >= bufsize)
+        return false;
+    memcpy(buf + *pos, text, len);
+    *pos += len;
+    buf[*pos] = '\0';
+    return true;
+}
+
+static bool append_quoted_arg(char *buf, size_t bufsize, size_t *pos, const char *arg)
+{
+    if (!append_text(buf, bufsize, pos, "\""))
+        return false;
+
+    size_t slashes = 0;
+    for (const char *p = arg; ; p++) {
+        if (*p == '\\') {
+            slashes++;
+            continue;
+        }
+
+        if (*p == '"' || *p == '\0') {
+            for (size_t i = 0; i < slashes * 2; i++) {
+                if (!append_text(buf, bufsize, pos, "\\"))
+                    return false;
+            }
+            slashes = 0;
+            if (*p == '"') {
+                if (!append_text(buf, bufsize, pos, "\\\""))
+                    return false;
+                continue;
+            }
+            break;
+        }
+
+        for (size_t i = 0; i < slashes; i++) {
+            if (!append_text(buf, bufsize, pos, "\\"))
+                return false;
+        }
+        slashes = 0;
+
+        char ch[2] = {*p, '\0'};
+        if (!append_text(buf, bufsize, pos, ch))
+            return false;
+    }
+
+    return append_text(buf, bufsize, pos, "\"");
+}
+
+static bool build_relaunch_params(int argc, char *argv[], char *buf, size_t bufsize)
+{
+    size_t pos = 0;
+    buf[0] = '\0';
+
+    for (int i = 1; i < argc; i++) {
+        if (i > 1 && !append_text(buf, bufsize, &pos, " "))
+            return false;
+        if (!append_quoted_arg(buf, bufsize, &pos, argv[i]))
+            return false;
+    }
+
+    return true;
+}
+
+static bool relaunch_as_admin(int argc, char *argv[])
+{
+    char exe_path[MAX_PATH];
+    char params[8192];
+
+    DWORD len = GetModuleFileNameA(NULL, exe_path, sizeof(exe_path));
+    if (len == 0 || len >= sizeof(exe_path)) {
+        fprintf(stderr, "Error: cannot determine executable path for UAC relaunch.\n");
+        return false;
+    }
+
+    if (!build_relaunch_params(argc, argv, params, sizeof(params))) {
+        fprintf(stderr, "Error: command line is too long for UAC relaunch.\n");
+        return false;
+    }
+
+    HINSTANCE result = ShellExecuteA(NULL, "runas", exe_path,
+                                    params[0] ? params : NULL,
+                                    NULL, SW_SHOWNORMAL);
+    if ((INT_PTR)result <= 32) {
+        fprintf(stderr, "Error: UAC relaunch failed or was cancelled (code %ld).\n",
+                (long)(INT_PTR)result);
+        return false;
+    }
+
+    fprintf(stderr, "Tund is relaunching with Administrator privileges...\n");
+    return true;
 }
 
 static void log_to_exe_dir(const char *filename, const char *msg)
@@ -244,10 +341,10 @@ int main(int argc, char *argv[])
 
 #ifdef _WIN32
     if (!check_admin()) {
-        fprintf(stderr,
-            "\033[33mWarning: Tund requires Administrator privileges"
-            " for TUN interface.\n"
-            "Run as Administrator.\033[0m\n\n");
+        fprintf(stderr, "Tund requires Administrator privileges for the TUN interface.\n");
+        if (relaunch_as_admin(argc, argv))
+            return 0;
+        fprintf(stderr, "Run the same command from an Administrator terminal.\n\n");
         return 1;
     }
     if (cfg.tui_mode) {

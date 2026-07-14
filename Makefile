@@ -4,6 +4,7 @@ LDFLAGS  := -pthread
 TARGET   := tund
 EXEEXT   :=
 SAN_FLAGS := -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer
+RUN_PREFIX := sudo ./
 
 UNAME_S  := $(shell uname -s)
 
@@ -19,7 +20,8 @@ ifneq ($(filter MINGW%,$(UNAME_S)),)
     TUN_SRC  := src/tun_windows.c
     TARGET   := tund.exe
     EXEEXT   := .exe
-    LDFLAGS  := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32
+    RUN_PREFIX :=
+    LDFLAGS  := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
 endif
 
 SRCS     := src/main.c src/network.c src/server.c src/client.c src/tui.c $(TUN_SRC)
@@ -34,8 +36,8 @@ $(TARGET): $(SRCS) $(HDRS)
 	$(CC) $(CFLAGS) -o $@ $(SRCS) $(LDFLAGS)
 	@echo ""
 	@echo "  ✓ Built $(TARGET) for $(UNAME_S)"
-	@echo "  Run with: sudo ./$(TARGET) server"
-	@echo "         or: sudo ./$(TARGET) client -s <server_ip>"
+	@echo "  Run with: $(RUN_PREFIX)$(TARGET) server"
+	@echo "         or: $(RUN_PREFIX)$(TARGET) client -s <server_ip>"
 	@echo ""
 
 # Windows cross-compilation via mingw-w64
@@ -48,7 +50,7 @@ DIST        := dist
 TARGET_WCON := $(DIST)/tund.exe
 WIN_SRCS    := src/main.c src/network.c src/server.c src/client.c src/tui.c src/tun_windows.c
 WIN_CFLAGS  := -Wall -Wextra -O2 -std=c11 -D_WIN32_WINNT=0x0601
-WIN_LIBS    := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32
+WIN_LIBS    := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
 
 $(DIST):
 	mkdir -p $(DIST)
@@ -86,7 +88,7 @@ $(DIST)/wintun.dll: | $(DIST)
 windows: $(TARGET_WCON) $(DIST)/wintun.dll
 	@echo ""
 	@echo "  ✓ Deployed to dist/"
-	@echo "  Run as Administrator on Windows:"
+	@echo "  Run on Windows (UAC prompt if needed):"
 	@echo "    dist/tund.exe server -k <key>"
 	@echo "    dist/tund.exe client -s <ip> -k <key>"
 
