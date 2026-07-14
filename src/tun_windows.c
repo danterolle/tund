@@ -6,12 +6,35 @@
 
 static HMODULE g_wintun_dll = NULL;
 
+static const char *win32_errstr(DWORD err)
+{
+    static char buf[256];
+    buf[0] = '\0';
+    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                   NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                   buf, sizeof(buf), NULL);
+    if (buf[0] == '\0')
+        snprintf(buf, sizeof(buf), "Windows error %lu", err);
+    size_t n = strlen(buf);
+    while (n > 0 && (buf[n - 1] == '\n' || buf[n - 1] == '\r' || buf[n - 1] == '.'))
+        buf[--n] = '\0';
+    return buf;
+}
+
 static int run_cmd(const char *exe, const char *args)
 {
     char full[4096];
-    snprintf(full, sizeof(full), "%s %s", exe, args);
+    int written;
+    if (strchr(exe, ' ') || strchr(exe, '\t'))
+        written = snprintf(full, sizeof(full), "\"%s\" %s", exe, args);
+    else
+        written = snprintf(full, sizeof(full), "%s %s", exe, args);
+    if (written < 0 || written >= (int)sizeof(full)) {
+        LOG_ERROR("Command line too long for %s", exe);
+        return -1;
+    }
 
-    LOG_DEBUG("Running: %s", full);
+    LOG_DEBUG("Running command: %s", full);
 
     STARTUPINFOA si;
     PROCESS_INFORMATION pi;
@@ -20,15 +43,41 @@ static int run_cmd(const char *exe, const char *args)
     si.cb = sizeof(si);
 
     if (!CreateProcessA(NULL, full, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-        LOG_ERROR("CreateProcess(%s) failed: %lu", exe, GetLastError());
+        DWORD err = GetLastError();
+        LOG_ERROR("Failed to start command '%s': %s (error %lu)",
+                  full, win32_errstr(err), err);
         return -1;
     }
-    WaitForSingleObject(pi.hProcess, INFINITE);
-    DWORD code;
-    GetExitCodeProcess(pi.hProcess, &code);
+
+    DWORD wait = WaitForSingleObject(pi.hProcess, INFINITE);
+    if (wait == WAIT_FAILED) {
+        DWORD err = GetLastError();
+        LOG_ERROR("Failed while waiting for command '%s': %s (error %lu)",
+                  full, win32_errstr(err), err);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        return -1;
+    }
+
+    DWORD code = 0;
+    if (!GetExitCodeProcess(pi.hProcess, &code)) {
+        DWORD err = GetLastError();
+        LOG_ERROR("Could not read exit code for command '%s': %s (error %lu)",
+                  full, win32_errstr(err), err);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        return -1;
+    }
+
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
-    return code == 0 ? 0 : -1;
+    if (code != 0) {
+        LOG_ERROR("Command failed with exit code %lu: %s", code, full);
+        return -1;
+    }
+
+    LOG_DEBUG("Command completed successfully: %s", full);
+    return 0;
 }
 
 static WINTUN_ADAPTER_HANDLE (*pWintunCreateAdapter)(LPCWSTR, LPCWSTR, const GUID *);
