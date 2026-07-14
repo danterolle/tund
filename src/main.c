@@ -100,8 +100,8 @@ static void setup_signals(void)
 static void print_usage(const char *prog, bool show_desc)
 {
     if (show_desc) fprintf(stderr,
-        "Tund — Virtual LAN over UDP. Creates a secure\n"
-        "layer-2 tunnel for LAN gaming with friends.\n"
+        "Tund - Virtual LAN over UDP. Creates an authenticated\n"
+        "IPv4 tunnel for LAN gaming with friends.\n"
         "\n");
     fprintf(stderr,
         "Usage:\n"
