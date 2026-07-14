@@ -3,6 +3,7 @@ CFLAGS   := -Wall -Wextra -O2 -std=c11
 LDFLAGS  := -pthread
 TARGET   := tund
 EXEEXT   :=
+SAN_FLAGS := -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer
 
 UNAME_S  := $(shell uname -s)
 
@@ -25,7 +26,7 @@ SRCS     := src/main.c src/network.c src/server.c src/client.c src/tui.c $(TUN_S
 HDRS     := src/tund.h src/protocol.h src/tun.h src/network.h src/server.h src/client.h src/tui.h
 TEST_SRCS := tests/test_protocol.c
 
-.PHONY: all clean install uninstall windows test
+.PHONY: all clean install uninstall windows test sanitize
 
 all: $(TARGET)
 
@@ -57,12 +58,19 @@ $(TARGET_WCON): $(WIN_SRCS) | $(DIST)
 	@echo "  ✓ Built $(TARGET_WCON)"
 
 TEST_TARGET := $(DIST)/test_protocol$(EXEEXT)
+SAN_TEST_TARGET := $(DIST)/test_protocol_sanitize$(EXEEXT)
 
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
 $(TEST_TARGET): $(TEST_SRCS) src/protocol.h | $(DIST)
 	$(CC) $(CFLAGS) -I. -o $@ $(TEST_SRCS) $(LDFLAGS)
+
+sanitize: $(SAN_TEST_TARGET)
+	./$(SAN_TEST_TARGET)
+
+$(SAN_TEST_TARGET): $(TEST_SRCS) src/protocol.h | $(DIST)
+	$(CC) $(CFLAGS) $(SAN_FLAGS) -I. -o $@ $(TEST_SRCS) $(LDFLAGS) $(SAN_FLAGS)
 
 WINTUN_URL    := https://www.wintun.net/builds/wintun-0.14.1.zip
 WINTUN_SHA256 := 07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51

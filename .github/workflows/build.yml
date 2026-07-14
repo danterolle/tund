@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: make
+      - run: make test
+      - run: make sanitize
       - uses: actions/upload-artifact@v4
         with:
           name: tund-linux-x86_64
@@ -23,6 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: make
+      - run: make test
+      - run: make sanitize
       - uses: actions/upload-artifact@v4
         with:
           name: tund-darwin-arm64
