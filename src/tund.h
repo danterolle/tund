@@ -157,16 +157,25 @@ extern int g_log_level;
 extern volatile bool g_tui_active;
 extern time_t g_start_time;
 
+bool tui_events_active(void);
+void tui_add_event(int level, const char *message);
+
 #define LOG(level, fmt, ...) do {                                           \
     if ((level) >= g_log_level) {                                           \
-        time_t _t = time(NULL);                                             \
-        struct tm _tm;                                                      \
-        localtime_r(&_t, &_tm);                                             \
-        fprintf(stderr, "%s[%02d:%02d:%02d] [%s] " fmt LOG_RESET "\n",     \
-                log_level_color[(level)],                                    \
-                _tm.tm_hour, _tm.tm_min, _tm.tm_sec,                        \
-                log_level_str[(level)],                                      \
-                ##__VA_ARGS__);                                              \
+        char _log_msg[8192];                                                \
+        snprintf(_log_msg, sizeof(_log_msg), fmt, ##__VA_ARGS__);           \
+        if (g_tui_active && tui_events_active()) {                          \
+            tui_add_event((level), _log_msg);                               \
+        } else {                                                            \
+            time_t _t = time(NULL);                                         \
+            struct tm _tm;                                                  \
+            localtime_r(&_t, &_tm);                                         \
+            fprintf(stderr, "%s[%02d:%02d:%02d] [%s] %s" LOG_RESET "\n",   \
+                    log_level_color[(level)],                                \
+                    _tm.tm_hour, _tm.tm_min, _tm.tm_sec,                    \
+                    log_level_str[(level)],                                  \
+                    _log_msg);                                               \
+        }                                                                   \
     }                                                                       \
 } while (0)
 

@@ -23,6 +23,15 @@
 #define TUI_GRAY    "\033[90m"
 #define TUI_RESET   "\033[0m"
 
+#define TUI_MAX_EVENTS 5
+#define TUI_EVENT_MESSAGE_LEN 128
+
+typedef struct {
+    time_t ts;
+    int level;
+    char message[TUI_EVENT_MESSAGE_LEN];
+} tui_event_t;
+
 static const char *tui_logo[] = {
     "  o",
     " /|\\",
@@ -32,6 +41,11 @@ static const char *tui_logo[] = {
 };
 
 static const int tui_logo_n = 5;
+static pthread_mutex_t tui_events_lock = PTHREAD_MUTEX_INITIALIZER;
+static tui_event_t tui_events[TUI_MAX_EVENTS];
+static int tui_event_start = 0;
+static int tui_event_count = 0;
+static volatile bool tui_active = false;
 
 static void tui_write(const char *s) { fputs(s, stderr); }
 static void tui_printf(const char *fmt, ...)
@@ -67,14 +81,48 @@ static void tui_timeago(time_t ts, char *buf, size_t len)
 
 void tui_init(void)
 {
+    pthread_mutex_lock(&tui_events_lock);
+    tui_event_start = 0;
+    tui_event_count = 0;
+    tui_active = true;
+    pthread_mutex_unlock(&tui_events_lock);
+
     tui_write(TUI_ALT_BUF);
     tui_write(TUI_HIDE_CURSOR);
 }
 
 void tui_shutdown(void)
 {
+    pthread_mutex_lock(&tui_events_lock);
+    tui_active = false;
+    pthread_mutex_unlock(&tui_events_lock);
+
     tui_write(TUI_SHOW_CURSOR);
     tui_write(TUI_MAIN_BUF);
+}
+
+bool tui_events_active(void)
+{
+    return tui_active;
+}
+
+void tui_add_event(int level, const char *message)
+{
+    pthread_mutex_lock(&tui_events_lock);
+
+    int idx = (tui_event_start + tui_event_count) % TUI_MAX_EVENTS;
+    if (tui_event_count == TUI_MAX_EVENTS) {
+        idx = tui_event_start;
+        tui_event_start = (tui_event_start + 1) % TUI_MAX_EVENTS;
+    } else {
+        tui_event_count++;
+    }
+
+    tui_events[idx].ts = time(NULL);
+    tui_events[idx].level = level;
+    snprintf(tui_events[idx].message, sizeof(tui_events[idx].message), "%s", message);
+
+    pthread_mutex_unlock(&tui_events_lock);
 }
 
 static void tui_render_logo(const char *version, const char *mode)
@@ -117,6 +165,62 @@ static void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int n
         tui_printf(" %s(no peers yet)%s\n", TUI_GRAY, TUI_RESET);
 }
 
+static const char *tui_event_level_color(int level)
+{
+    switch (level) {
+    case LOG_DEBUG: return TUI_CYAN;
+    case LOG_INFO:  return TUI_GREEN;
+    case LOG_WARN:  return TUI_YELLOW;
+    case LOG_ERROR: return TUI_RED;
+    default:        return TUI_GRAY;
+    }
+}
+
+static const char *tui_event_level_label(int level)
+{
+    switch (level) {
+    case LOG_DEBUG: return "DEBUG";
+    case LOG_INFO:  return "INFO ";
+    case LOG_WARN:  return "WARN ";
+    case LOG_ERROR: return "ERROR";
+    default:        return "LOG  ";
+    }
+}
+
+static void tui_render_events(void)
+{
+    tui_event_t events[TUI_MAX_EVENTS];
+    int count;
+
+    pthread_mutex_lock(&tui_events_lock);
+    count = tui_event_count;
+    for (int i = 0; i < count; i++) {
+        int idx = (tui_event_start + i) % TUI_MAX_EVENTS;
+        events[i] = tui_events[idx];
+    }
+    pthread_mutex_unlock(&tui_events_lock);
+
+    tui_printf(" %s─────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
+    tui_printf(" %sEvents%s\n", TUI_GRAY, TUI_RESET);
+
+    if (count == 0) {
+        tui_printf(" %s(no recent events)%s\n", TUI_GRAY, TUI_RESET);
+        return;
+    }
+
+    for (int i = 0; i < count; i++) {
+        struct tm tm;
+        char ts[9];
+        localtime_r(&events[i].ts, &tm);
+        snprintf(ts, sizeof(ts), "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+        const char *color = tui_event_level_color(events[i].level);
+        tui_printf(" %s %s%s%s %s\n",
+                   ts, color, tui_event_level_label(events[i].level), TUI_RESET,
+                   events[i].message);
+    }
+}
+
 static void tui_render_footer(const char *hint)
 {
     tui_printf(" %s─────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
@@ -151,6 +255,7 @@ void tui_render_server(uint16_t port, const char *tun_name,
     tui_printf("  Uptime: %s%s%s\n", TUI_YELLOW, uptime, TUI_RESET);
 
     tui_render_peer_table(peer_count, peers, npeers);
+    tui_render_events();
     tui_render_footer("Ctrl+C to stop");
 }
 
@@ -186,5 +291,6 @@ void tui_render_client(const char *server_addr, uint16_t port,
     tui_printf("\n");
 
     tui_render_peer_table(peer_count, peers, npeers);
+    tui_render_events();
     tui_render_footer("Ctrl+C to disconnect");
 }

@@ -14,6 +14,8 @@ typedef struct {
 
 void tui_init(void);
 void tui_shutdown(void);
+bool tui_events_active(void);
+void tui_add_event(int level, const char *message);
 void tui_render_server(uint16_t port, const char *tun_name,
                        uint32_t virt_ip, uint32_t netmask,
                        time_t start_time,
