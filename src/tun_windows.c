@@ -211,7 +211,10 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
     snprintf(buf, sizeof(buf),
              "add %s mask %s %s metric 2",
              net_s, mask_s, ip_s);
-    run_cmd("route", buf);
+    if (run_cmd("route", buf) < 0) {
+        LOG_ERROR("route add failed");
+        return -1;
+    }
 
     LOG_INFO("Configured %s: %s/%s", dev->ifname, ip_s, mask_s);
     return 0;
