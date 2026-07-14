@@ -190,6 +190,8 @@ typedef struct {
     char                name[TUND_NAME_LEN];
     struct sockaddr_in  real_addr;                  /* actual UDP endpoint */
     time_t              last_seen;
+    uint64_t            bytes_in;
+    uint64_t            bytes_out;
 } peer_t;
 
 typedef enum {

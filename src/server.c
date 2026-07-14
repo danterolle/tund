@@ -49,7 +49,8 @@ static int server_find_free_slot(const server_t *srv)
     return -1;
 }
 
-static void server_broadcast(server_t *srv, uint8_t *buf, int len, int exclude_idx)
+static void server_broadcast(server_t *srv, uint8_t *buf, int len,
+                             int exclude_idx, uint64_t bytes_out)
 {
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (srv->peers[i].active && i != exclude_idx) {
@@ -58,6 +59,8 @@ static void server_broadcast(server_t *srv, uint8_t *buf, int len, int exclude_i
                 LOG_WARN("Broadcast to %s (%s) failed",
                          srv->peers[i].name,
                          ip_to_str_buf(srv->peers[i].virt_ip, peer_ip, sizeof(peer_ip)));
+            } else {
+                srv->peers[i].bytes_out += bytes_out;
             }
         }
     }
@@ -135,6 +138,8 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
     peer_t *p = &srv->peers[idx];
     p->active = true;
     p->virt_ip = vip;
+    p->bytes_in = 0;
+    p->bytes_out = 0;
     memset(p->name, 0, TUND_NAME_LEN);
     if (plen > 0) {
         int namelen = (plen < TUND_NAME_LEN - 1) ? plen : TUND_NAME_LEN - 1;
@@ -163,7 +168,7 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
     server_send_peer_list(srv, idx);
 
     len = proto_build_peer_join(buf, vip, p->name);
-    server_broadcast(srv, buf, len, idx);
+    server_broadcast(srv, buf, len, idx, 0);
 }
 
 static void server_handle_data(server_t *srv, const uint8_t *payload,
@@ -185,6 +190,7 @@ static void server_handle_data(server_t *srv, const uint8_t *payload,
         LOG_WARN("Dropped DATA from an unregistered endpoint");
         return;
     }
+    srv->peers[sender_idx].bytes_in += plen;
 
     uint32_t server_vip = htonl(TUND_SERVER_IP);
     if (dst_ip == server_vip) {
@@ -197,7 +203,7 @@ static void server_handle_data(server_t *srv, const uint8_t *payload,
     if (dst_ip == broadcast_ip) {
         uint8_t buf[TUND_MAX_PKT];
         int len = proto_build_data(buf, payload, plen);
-        server_broadcast(srv, buf, len, sender_idx);
+        server_broadcast(srv, buf, len, sender_idx, plen);
         pthread_mutex_unlock(&srv->peers_lock);
         tun_write(&srv->tun, payload, plen);
         return;
@@ -216,6 +222,8 @@ static void server_handle_data(server_t *srv, const uint8_t *payload,
     int len = proto_build_data(buf, payload, plen);
     if (net_send(srv->sockfd, buf, len, &srv->peers[dst_idx].real_addr) < 0)
         LOG_WARN("Failed to forward data to %s", srv->peers[dst_idx].name);
+    else
+        srv->peers[dst_idx].bytes_out += plen;
     pthread_mutex_unlock(&srv->peers_lock);
 }
 
@@ -255,7 +263,7 @@ static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *fr
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_peer_leave(buf, vip);
-    server_broadcast(srv, buf, len, -1);
+    server_broadcast(srv, buf, len, -1, 0);
 
     pthread_mutex_unlock(&srv->peers_lock);
 }
@@ -286,7 +294,7 @@ static void *server_timeout_thread(void *arg)
 
                 uint8_t buf[TUND_MAX_PKT];
                 int len = proto_build_peer_leave(buf, vip);
-                server_broadcast(srv, buf, len, -1);
+                server_broadcast(srv, buf, len, -1, 0);
             }
         }
 
@@ -317,13 +325,15 @@ static void *server_tun_thread(void *arg)
 
         pthread_mutex_lock(&srv->peers_lock);
         if (dst_ip == broadcast_ip) {
-            server_broadcast(srv, msg_buf, msg_len, -1);
+            server_broadcast(srv, msg_buf, msg_len, -1, (uint64_t)n);
         } else {
             int idx = server_find_peer_by_vip(srv, dst_ip);
             if (idx >= 0) {
                 if (net_send(srv->sockfd, msg_buf, msg_len, &srv->peers[idx].real_addr) < 0)
                     LOG_WARN("Failed to forward TUN packet to %s",
                              srv->peers[idx].name);
+                else
+                    srv->peers[idx].bytes_out += (uint64_t)n;
             }
         }
         pthread_mutex_unlock(&srv->peers_lock);

@@ -25,6 +25,8 @@ static void client_update_peer(client_t *cli, uint32_t vip, const char *name, bo
                 return;
             }
             idx = free_idx;
+            cli->peers[idx].bytes_in = 0;
+            cli->peers[idx].bytes_out = 0;
             cli->peer_count++;
         }
         cli->peers[idx].active = true;
@@ -39,6 +41,30 @@ static void client_update_peer(client_t *cli, uint32_t vip, const char *name, bo
         }
     }
 
+    pthread_mutex_unlock(&cli->peers_lock);
+}
+
+static void client_add_peer_traffic(client_t *cli, uint32_t vip,
+                                    uint64_t bytes_in, uint64_t bytes_out)
+{
+    pthread_mutex_lock(&cli->peers_lock);
+    for (int i = 0; i < TUND_MAX_PEERS; i++) {
+        if (cli->peers[i].active && cli->peers[i].virt_ip == vip) {
+            cli->peers[i].bytes_in += bytes_in;
+            cli->peers[i].bytes_out += bytes_out;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&cli->peers_lock);
+}
+
+static void client_add_broadcast_traffic(client_t *cli, uint64_t bytes_out)
+{
+    pthread_mutex_lock(&cli->peers_lock);
+    for (int i = 0; i < TUND_MAX_PEERS; i++) {
+        if (cli->peers[i].active)
+            cli->peers[i].bytes_out += bytes_out;
+    }
     pthread_mutex_unlock(&cli->peers_lock);
 }
 
@@ -191,8 +217,16 @@ static void *client_tun_thread(void *arg)
             continue;
         }
         int msg_len = proto_build_data(msg_buf, pkt_buf, (uint16_t)n);
-        if (net_send(cli->sockfd, msg_buf, msg_len, &cli->server_addr) < 0)
+        if (net_send(cli->sockfd, msg_buf, msg_len, &cli->server_addr) < 0) {
             LOG_WARN("Failed to send TUN data to server");
+        } else {
+            uint32_t dst_ip = proto_get_dst_ip(pkt_buf, (uint16_t)n);
+            uint32_t broadcast_ip = htonl(TUND_SUBNET | ~TUND_NETMASK);
+            if (dst_ip == broadcast_ip)
+                client_add_broadcast_traffic(cli, (uint64_t)n);
+            else
+                client_add_peer_traffic(cli, dst_ip, 0, (uint64_t)n);
+        }
     }
     return NULL;
 }
@@ -402,8 +436,12 @@ void client_run(client_t *cli)
 
         switch (type) {
         case MSG_DATA:
+        {
+            uint32_t src_ip = proto_get_src_ip(payload, payload_len);
+            client_add_peer_traffic(cli, src_ip, payload_len, 0);
             tun_write(&cli->tun, payload, payload_len);
             break;
+        }
         case MSG_PEER_LIST:
             client_handle_peer_list(cli, payload, payload_len);
             break;

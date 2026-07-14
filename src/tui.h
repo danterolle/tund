@@ -9,6 +9,8 @@ typedef struct {
     uint32_t virt_ip;
     char     name[32];
     time_t   last_seen;
+    uint64_t bytes_in;
+    uint64_t bytes_out;
     bool     active;
 } tui_peer_t;
 

@@ -249,4 +249,13 @@ static inline uint32_t proto_get_dst_ip(const uint8_t *ip_pkt, uint16_t len)
     return dst;
 }
 
+static inline uint32_t proto_get_src_ip(const uint8_t *ip_pkt, uint16_t len)
+{
+    if (len < 20)
+        return 0;
+    uint32_t src;
+    memcpy(&src, ip_pkt + 12, 4);
+    return src;
+}
+
 #endif /* TUND_PROTOCOL_H */

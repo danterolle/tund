@@ -79,6 +79,23 @@ static void tui_timeago(time_t ts, char *buf, size_t len)
         snprintf(buf, len, "%dh %dm ago", ago / 3600, (ago % 3600) / 60);
 }
 
+static void tui_format_bytes(uint64_t bytes, char *buf, size_t len)
+{
+    const char *units[] = {"B", "KB", "MB", "GB"};
+    double value = (double)bytes;
+    int unit = 0;
+
+    while (value >= 1024.0 && unit < 3) {
+        value /= 1024.0;
+        unit++;
+    }
+
+    if (unit == 0)
+        snprintf(buf, len, "%lluB", (unsigned long long)bytes);
+    else
+        snprintf(buf, len, "%.1f%s", value, units[unit]);
+}
+
 void tui_init(void)
 {
     pthread_mutex_lock(&tui_events_lock);
@@ -137,29 +154,37 @@ static void tui_render_logo(const char *version, const char *mode)
 
 static void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int npeers)
 {
-    tui_printf(" %s─────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
+    tui_printf(" %s────────────────────────────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
     tui_printf(" %sPeers: %s%d%s\n", TUI_GRAY, TUI_YELLOW, peer_count, TUI_RESET);
-    tui_printf(" %s%-2s %-15s %-22s %s%s\n", TUI_GRAY, " ", "Virtual IP", "Name", "Last Seen", TUI_RESET);
+    tui_printf(" %s%-8s %-15s %-18s %-8s %-8s %s%s\n",
+               TUI_GRAY, "Status", "Virtual IP", "Name", "In", "Out", "Last Seen", TUI_RESET);
 
     bool any = false;
     for (int i = 0; i < npeers; i++) {
         if (!peers[i].active) continue;
         any = true;
-        char ip_str[16], ago_str[32];
+        char ip_str[16], ago_str[32], in_str[16], out_str[16];
         inet_ntop(AF_INET, &peers[i].virt_ip, ip_str, sizeof(ip_str));
         tui_timeago(peers[i].last_seen, ago_str, sizeof(ago_str));
+        tui_format_bytes(peers[i].bytes_in, in_str, sizeof(in_str));
+        tui_format_bytes(peers[i].bytes_out, out_str, sizeof(out_str));
 
         int ago = (int)(time(NULL) - peers[i].last_seen);
         const char *dot;
+        const char *status;
         if (ago < 10) {
             dot = TUI_GREEN "\xe2\x97\x8f" TUI_RESET;
+            status = "online";
         } else if (ago < 30) {
             dot = TUI_YELLOW "\xe2\x97\x8f" TUI_RESET;
+            status = "stale";
         } else {
             dot = TUI_RED "\xe2\x97\x8f" TUI_RESET;
+            status = "timeout";
         }
 
-        tui_printf(" %s  %-15s %-22s %s\n", dot, ip_str, peers[i].name, ago_str);
+        tui_printf(" %s %-7s %-15s %-18s %-8s %-8s %s\n",
+                   dot, status, ip_str, peers[i].name, in_str, out_str, ago_str);
     }
     if (!any)
         tui_printf(" %s(no peers yet)%s\n", TUI_GRAY, TUI_RESET);

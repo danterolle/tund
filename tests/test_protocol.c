@@ -136,11 +136,15 @@ static void test_builders(void)
 static void test_dst_ip(void)
 {
     uint8_t ip_pkt[20];
+    uint32_t src = htonl(0x0A090002);
     uint32_t dst = htonl(0x0A090003);
 
     memset(ip_pkt, 0, sizeof(ip_pkt));
+    memcpy(ip_pkt + 12, &src, sizeof(src));
     memcpy(ip_pkt + 16, &dst, sizeof(dst));
 
+    CHECK(proto_get_src_ip(ip_pkt, sizeof(ip_pkt)) == src);
+    CHECK(proto_get_src_ip(ip_pkt, 19) == 0);
     CHECK(proto_get_dst_ip(ip_pkt, sizeof(ip_pkt)) == dst);
     CHECK(proto_get_dst_ip(ip_pkt, 19) == 0);
 }

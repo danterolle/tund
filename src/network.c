@@ -142,6 +142,8 @@ int net_poll_peers(socket_t sockfd, peer_t *peers, int max_peers,
         for (int i = 0; i < max_peers; i++) {
             tui_peers[*npeers].virt_ip = peers[i].virt_ip;
             tui_peers[*npeers].last_seen = peers[i].last_seen;
+            tui_peers[*npeers].bytes_in = peers[i].bytes_in;
+            tui_peers[*npeers].bytes_out = peers[i].bytes_out;
             tui_peers[*npeers].active = peers[i].active;
             memcpy(tui_peers[*npeers].name, peers[i].name, TUND_NAME_LEN);
             if (peers[i].active) (*npeers)++;
