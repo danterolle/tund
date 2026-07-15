@@ -1,6 +1,6 @@
 #ifdef _WIN32
 
-#include "windows_internal.h"
+#include "internal.h"
 
 int tun_open(tun_device_t *dev)
 {

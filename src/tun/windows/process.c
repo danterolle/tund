@@ -1,6 +1,6 @@
 #ifdef _WIN32
 
-#include "windows_internal.h"
+#include "internal.h"
 
 const char *win32_errstr(DWORD err)
 {

@@ -14,7 +14,8 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 | `src/protocol/` | Datagram framing, message serialisation, virtual-network constants and SipHash MAC. |
 | `src/net/` | UDP sockets, hostname resolution, packet authentication, source-address comparison. |
 | `src/core/` | Server/client state machines, peer management, packet forwarding, keepalive and RTT. |
-| `src/tun/` | Cross-platform TUN API plus Linux, macOS, Windows and Wintun implementations. |
+| `src/tun/` | Cross-platform TUN API plus Linux, macOS, and Windows platform implementations. |
+| `src/tun/windows/` | Windows Wintun loading, process helpers, and IP/route/MTU configuration. |
 | `src/ui/` | Terminal UI and recent event log. |
 
 ## Repository layout
@@ -27,6 +28,7 @@ tund
 │   ├── net/             # UDP socket helpers
 │   ├── protocol/        # wire protocol helpers
 │   ├── tun/             # platform TUN implementations
+│   │   └── windows/     # Windows-specific Wintun/config helpers
 │   └── ui/              # terminal UI
 ├── docs/                # Usage, troubleshooting, and technical docs
 ├── tests/               # Protocol unit tests

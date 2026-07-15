@@ -1,6 +1,6 @@
 #ifdef _WIN32
 
-#include "windows_internal.h"
+#include "internal.h"
 
 static HMODULE g_wintun_dll = NULL;
 
