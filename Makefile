@@ -26,10 +26,14 @@ ifneq ($(filter MINGW%,$(UNAME_S)),)
 endif
 
 PROTO_SRC := src/protocol/protocol.c
-APP_SRC  := src/app/main.c src/app/log.c
+APP_SRC  := src/app/main.c src/app/cli.c src/app/log.c src/app/platform.c
+WIN_RUNTIME_SRC := src/app/win_runtime.c
 UI_SRC   := src/ui/tui.c src/ui/render.c src/ui/events.c
+ifneq ($(filter MINGW%,$(UNAME_S)),)
+    APP_SRC += $(WIN_RUNTIME_SRC)
+endif
 SRCS     := $(APP_SRC) src/net/network.c src/core/server.c src/core/client.c $(UI_SRC) $(PROTO_SRC) $(TUN_SRC)
-HDRS     := src/app/tund.h src/app/log.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server.h src/core/client.h src/ui/tui.h src/ui/tui_internal.h
+HDRS     := src/app/tund.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server.h src/core/client.h src/ui/tui.h src/ui/tui_internal.h
 TEST_SRCS := tests/test_protocol.c
 
 .PHONY: all clean install uninstall windows test sanitize verify
@@ -53,7 +57,8 @@ CROSS_W64   := x86_64-w64-mingw32
 DIST        := dist
 TARGET_WCON := $(DIST)/tund.exe
 WIN_TUN_SRCS := src/tun/windows/tun.c src/tun/windows/config.c src/tun/windows/process.c src/tun/windows/wintun_loader.c
-WIN_SRCS    := $(APP_SRC) src/net/network.c src/core/server.c src/core/client.c $(UI_SRC) $(PROTO_SRC) $(WIN_TUN_SRCS)
+WIN_APP_SRC := src/app/main.c src/app/cli.c src/app/log.c src/app/platform.c $(WIN_RUNTIME_SRC)
+WIN_SRCS    := $(WIN_APP_SRC) src/net/network.c src/core/server.c src/core/client.c $(UI_SRC) $(PROTO_SRC) $(WIN_TUN_SRCS)
 WIN_CFLAGS  := -Wall -Wextra -O2 -std=c11 -D_WIN32_WINNT=0x0601 $(INCLUDES)
 WIN_LIBS    := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
 
