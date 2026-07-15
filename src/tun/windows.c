@@ -1,281 +1,6 @@
 #ifdef _WIN32
 
-#include "tun.h"
-#include "tund.h"
-#include "wintun.h"
-
-static HMODULE g_wintun_dll = NULL;
-
-static const char *win32_errstr(DWORD err)
-{
-    static char buf[256];
-    buf[0] = '\0';
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                   NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                   buf, sizeof(buf), NULL);
-    if (buf[0] == '\0')
-        snprintf(buf, sizeof(buf), "Windows error %lu", err);
-    size_t n = strlen(buf);
-    while (n > 0 && (buf[n - 1] == '\n' || buf[n - 1] == '\r' || buf[n - 1] == '.'))
-        buf[--n] = '\0';
-    return buf;
-}
-
-static int run_cmd(const char *exe, const char *args)
-{
-    char full[4096];
-    int written;
-    if (strchr(exe, ' ') || strchr(exe, '\t'))
-        written = snprintf(full, sizeof(full), "\"%s\" %s", exe, args);
-    else
-        written = snprintf(full, sizeof(full), "%s %s", exe, args);
-    if (written < 0 || written >= (int)sizeof(full)) {
-        LOG_ERROR("Command line too long for %s", exe);
-        return -1;
-    }
-
-    LOG_DEBUG("Running command: %s", full);
-
-    STARTUPINFOA si;
-    PROCESS_INFORMATION pi;
-    memset(&si, 0, sizeof(si));
-    memset(&pi, 0, sizeof(pi));
-    si.cb = sizeof(si);
-
-    if (!CreateProcessA(NULL, full, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-        DWORD err = GetLastError();
-        LOG_ERROR("Failed to start command '%s': %s (error %lu)",
-                  full, win32_errstr(err), err);
-        return -1;
-    }
-
-    DWORD wait = WaitForSingleObject(pi.hProcess, INFINITE);
-    if (wait == WAIT_FAILED) {
-        DWORD err = GetLastError();
-        LOG_ERROR("Failed while waiting for command '%s': %s (error %lu)",
-                  full, win32_errstr(err), err);
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        return -1;
-    }
-
-    DWORD code = 0;
-    if (!GetExitCodeProcess(pi.hProcess, &code)) {
-        DWORD err = GetLastError();
-        LOG_ERROR("Could not read exit code for command '%s': %s (error %lu)",
-                  full, win32_errstr(err), err);
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        return -1;
-    }
-
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-    if (code != 0) {
-        LOG_ERROR("Command failed with exit code %lu: %s", code, full);
-        return -1;
-    }
-
-    LOG_DEBUG("Command completed successfully: %s", full);
-    return 0;
-}
-
-static uint8_t prefix_len_from_netmask(uint32_t netmask_nbo)
-{
-    uint32_t mask = ntohl(netmask_nbo);
-    uint8_t prefix = 0;
-
-    while (mask & 0x80000000U) {
-        prefix++;
-        mask <<= 1;
-    }
-    return prefix;
-}
-
-static bool same_luid(const NET_LUID *a, const NET_LUID *b)
-{
-    return a->Value == b->Value;
-}
-
-static bool windows_ip_config_applied(const tun_device_t *dev,
-                                      uint32_t ip, uint32_t netmask)
-{
-    if (!dev->has_luid)
-        return false;
-
-    PMIB_UNICASTIPADDRESS_TABLE table = NULL;
-    NETIO_STATUS status = GetUnicastIpAddressTable(AF_INET, &table);
-    if (status != NO_ERROR) {
-        LOG_DEBUG("GetUnicastIpAddressTable failed: %lu", status);
-        return false;
-    }
-
-    uint8_t prefix = prefix_len_from_netmask(netmask);
-    bool found = false;
-    for (ULONG i = 0; i < table->NumEntries; i++) {
-        MIB_UNICASTIPADDRESS_ROW *row = &table->Table[i];
-        if (same_luid(&row->InterfaceLuid, &dev->luid) &&
-            row->Address.si_family == AF_INET &&
-            row->Address.Ipv4.sin_addr.s_addr == ip &&
-            row->OnLinkPrefixLength == prefix) {
-            found = true;
-            break;
-        }
-    }
-
-    FreeMibTable(table);
-    return found;
-}
-
-static bool windows_route_applied(const tun_device_t *dev,
-                                  uint32_t network, uint32_t netmask)
-{
-    if (!dev->has_luid)
-        return false;
-
-    PMIB_IPFORWARD_TABLE2 table = NULL;
-    NETIO_STATUS status = GetIpForwardTable2(AF_INET, &table);
-    if (status != NO_ERROR) {
-        LOG_DEBUG("GetIpForwardTable2 failed: %lu", status);
-        return false;
-    }
-
-    uint8_t prefix = prefix_len_from_netmask(netmask);
-    bool found = false;
-    for (ULONG i = 0; i < table->NumEntries; i++) {
-        MIB_IPFORWARD_ROW2 *row = &table->Table[i];
-        if (same_luid(&row->InterfaceLuid, &dev->luid) &&
-            row->DestinationPrefix.Prefix.si_family == AF_INET &&
-            row->DestinationPrefix.Prefix.Ipv4.sin_addr.s_addr == network &&
-            row->DestinationPrefix.PrefixLength == prefix) {
-            found = true;
-            break;
-        }
-    }
-
-    FreeMibTable(table);
-    return found;
-}
-
-static bool windows_add_onlink_route(const tun_device_t *dev,
-                                     uint32_t network, uint32_t netmask)
-{
-    if (!dev->has_luid)
-        return false;
-
-    MIB_IPFORWARD_ROW2 row;
-    InitializeIpForwardEntry(&row);
-    row.InterfaceLuid = dev->luid;
-    ConvertInterfaceLuidToIndex(&dev->luid, &row.InterfaceIndex);
-    row.DestinationPrefix.Prefix.si_family = AF_INET;
-    row.DestinationPrefix.Prefix.Ipv4.sin_addr.s_addr = network;
-    row.DestinationPrefix.PrefixLength = prefix_len_from_netmask(netmask);
-    row.NextHop.si_family = AF_INET;
-    row.NextHop.Ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
-    row.Metric = 2;
-
-    NETIO_STATUS status = CreateIpForwardEntry2(&row);
-    if (status == NO_ERROR || status == ERROR_OBJECT_ALREADY_EXISTS)
-        return true;
-
-    LOG_DEBUG("CreateIpForwardEntry2 failed: %lu", status);
-    return false;
-}
-
-static bool windows_mtu_applied(const tun_device_t *dev, int mtu)
-{
-    if (!dev->has_luid)
-        return false;
-
-    MIB_IPINTERFACE_ROW row;
-    InitializeIpInterfaceEntry(&row);
-    row.Family = AF_INET;
-    row.InterfaceLuid = dev->luid;
-
-    NETIO_STATUS status = GetIpInterfaceEntry(&row);
-    if (status != NO_ERROR) {
-        LOG_DEBUG("GetIpInterfaceEntry failed: %lu", status);
-        return false;
-    }
-
-    return row.NlMtu == (ULONG)mtu;
-}
-
-static bool wait_for_windows_ip_config(const tun_device_t *dev,
-                                       uint32_t ip, uint32_t netmask)
-{
-    for (int i = 0; i < 20; i++) {
-        if (windows_ip_config_applied(dev, ip, netmask))
-            return true;
-        Sleep(100);
-    }
-    return false;
-}
-
-static bool wait_for_windows_route(const tun_device_t *dev,
-                                   uint32_t network, uint32_t netmask)
-{
-    for (int i = 0; i < 20; i++) {
-        if (windows_route_applied(dev, network, netmask))
-            return true;
-        Sleep(100);
-    }
-    return false;
-}
-
-static bool wait_for_windows_mtu(const tun_device_t *dev, int mtu)
-{
-    for (int i = 0; i < 20; i++) {
-        if (windows_mtu_applied(dev, mtu))
-            return true;
-        Sleep(100);
-    }
-    return false;
-}
-
-static WINTUN_ADAPTER_HANDLE (*pWintunCreateAdapter)(LPCWSTR, LPCWSTR, const GUID *);
-static void (*pWintunCloseAdapter)(WINTUN_ADAPTER_HANDLE);
-static WINTUN_ADAPTER_HANDLE (*pWintunOpenAdapter)(LPCWSTR);
-static void (*pWintunGetAdapterLUID)(WINTUN_ADAPTER_HANDLE, NET_LUID *);
-static WINTUN_SESSION_HANDLE (*pWintunStartSession)(WINTUN_ADAPTER_HANDLE, DWORD);
-static void (*pWintunEndSession)(WINTUN_SESSION_HANDLE);
-static HANDLE (*pWintunGetReadWaitEvent)(WINTUN_SESSION_HANDLE);
-static BYTE *(*pWintunReceivePacket)(WINTUN_SESSION_HANDLE, DWORD *);
-static void (*pWintunReleaseReceivePacket)(WINTUN_SESSION_HANDLE, const BYTE *);
-static BYTE *(*pWintunAllocateSendPacket)(WINTUN_SESSION_HANDLE, DWORD);
-static void (*pWintunSendPacket)(WINTUN_SESSION_HANDLE, const BYTE *);
-
-#define WINTUN_LOAD(name) do { \
-    *(void **)(&p##name) = (void *)GetProcAddress(g_wintun_dll, #name); \
-    if (!p##name) { LOG_ERROR("Missing symbol: %s", #name); return -1; } \
-} while (0)
-
-static int wintun_load(void)
-{
-    if (g_wintun_dll) return 0;
-
-    g_wintun_dll = LoadLibraryW(L"wintun.dll");
-    if (!g_wintun_dll) {
-        LOG_ERROR("Failed to load wintun.dll (error %lu); keep wintun.dll next to tund.exe or use the bundled Windows release.",
-                  GetLastError());
-        return -1;
-    }
-
-    WINTUN_LOAD(WintunCreateAdapter);
-    WINTUN_LOAD(WintunCloseAdapter);
-    WINTUN_LOAD(WintunOpenAdapter);
-    WINTUN_LOAD(WintunGetAdapterLUID);
-    WINTUN_LOAD(WintunStartSession);
-    WINTUN_LOAD(WintunEndSession);
-    WINTUN_LOAD(WintunGetReadWaitEvent);
-    WINTUN_LOAD(WintunReceivePacket);
-    WINTUN_LOAD(WintunReleaseReceivePacket);
-    WINTUN_LOAD(WintunAllocateSendPacket);
-    WINTUN_LOAD(WintunSendPacket);
-
-    LOG_INFO("Wintun loaded successfully");
-    return 0;
-}
+#include "windows_internal.h"
 
 int tun_open(tun_device_t *dev)
 {
@@ -287,38 +12,35 @@ int tun_open(tun_device_t *dev)
     if (wintun_load() < 0)
         return -1;
 
-    WINTUN_ADAPTER_HANDLE adapter = pWintunOpenAdapter(L"Tund");
+    WINTUN_ADAPTER_HANDLE adapter = wintun_open_adapter(L"Tund");
     if (!adapter)
-        adapter = pWintunCreateAdapter(L"Tund", L"Tund VPN", NULL);
-    if (!adapter || !pWintunCloseAdapter || !pWintunStartSession
-        || !pWintunGetReadWaitEvent || !pWintunEndSession
-        || !pWintunGetAdapterLUID) {
-        LOG_ERROR("Cannot create/open Wintun adapter (error %lu). Accept the UAC prompt, keep wintun.dll next to tund.exe, and try again.",
+        adapter = wintun_create_adapter(L"Tund", L"Tund VPN");
+    if (!adapter) {
+        LOG_ERROR("Cannot create/open Wintun adapter (error %lu). Accept the UAC prompt and try again.",
                   GetLastError());
         return -1;
     }
 
-    WINTUN_SESSION_HANDLE session = pWintunStartSession(adapter, 0x400000);
+    WINTUN_SESSION_HANDLE session = wintun_start_session(adapter, 0x400000);
     if (!session) {
         LOG_ERROR("Cannot start Wintun session (error %lu). Close other Tund instances and try again.",
                   GetLastError());
-        pWintunCloseAdapter(adapter);
+        wintun_close_adapter(adapter);
         return -1;
     }
 
-    HANDLE read_event = pWintunGetReadWaitEvent(session);
+    HANDLE read_event = wintun_get_read_wait_event(session);
     if (!read_event) {
         LOG_ERROR("WintunGetReadWaitEvent failed (error %lu)", GetLastError());
-        pWintunEndSession(session);
-        pWintunCloseAdapter(adapter);
+        wintun_end_session(session);
+        wintun_close_adapter(adapter);
         return -1;
     }
 
     NET_LUID luid;
     WCHAR ifname_w[256] = {0};
     char ifname_a[256] = {0};
-    if (pWintunGetAdapterLUID) {
-        pWintunGetAdapterLUID(adapter, &luid);
+    if (wintun_get_adapter_luid(adapter, &luid)) {
         dev->luid = luid;
         dev->has_luid = true;
         if (ConvertInterfaceLuidToNameW(&luid, ifname_w, 256)) {
@@ -333,96 +55,30 @@ int tun_open(tun_device_t *dev)
     dev->read_event = read_event;
     snprintf(dev->ifname, TUN_IFNAME_MAX, "%s", ifname_a);
     dev->mtu = TUND_TUN_MTU;
-
     LOG_INFO("TUN interface created: %s", dev->ifname);
     return 0;
 }
 
 void tun_close(tun_device_t *dev)
 {
-    if (dev->session) pWintunEndSession((WINTUN_SESSION_HANDLE)dev->session);
-    if (dev->adapter) pWintunCloseAdapter((WINTUN_ADAPTER_HANDLE)dev->adapter);
+    if (dev->session) wintun_end_session((WINTUN_SESSION_HANDLE)dev->session);
+    if (dev->adapter) wintun_close_adapter((WINTUN_ADAPTER_HANDLE)dev->adapter);
     LOG_INFO("TUN interface closed: %s", dev->ifname);
-}
-
-int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
-{
-    char buf[2048];
-    char ip_s[32], mask_s[32], net_s[32];
-    struct in_addr ip_a, mask_a, net_a;
-
-    ip_a.s_addr = ip;
-    mask_a.s_addr = netmask;
-    inet_ntop(AF_INET, &ip_a, ip_s, sizeof(ip_s));
-    inet_ntop(AF_INET, &mask_a, mask_s, sizeof(mask_s));
-
-    snprintf(buf, sizeof(buf),
-             "interface ip set address name=\"%s\" static %s %s",
-             dev->ifname, ip_s, mask_s);
-    if (run_cmd("netsh", buf) < 0) {
-        LOG_ERROR("Failed to configure the Wintun IP address with netsh. Run from an elevated prompt and check Windows network policy.");
-        return -1;
-    }
-    if (!wait_for_windows_ip_config(dev, ip, netmask)) {
-        LOG_ERROR("Windows did not report the expected Wintun IP configuration on %s. Check network policy and existing routes.",
-                  dev->ifname);
-        return -1;
-    }
-
-    uint32_t net = ntohl(ip) & ntohl(netmask);
-    net_a.s_addr = htonl(net);
-    inet_ntop(AF_INET, &net_a, net_s, sizeof(net_s));
-    if (!windows_route_applied(dev, net_a.s_addr, netmask) &&
-        !windows_add_onlink_route(dev, net_a.s_addr, netmask)) {
-        LOG_ERROR("Failed to add the Windows route for %s/%u. Check for an existing route/VPN conflict and run as Administrator.",
-                  net_s, prefix_len_from_netmask(netmask));
-        return -1;
-    }
-    if (!wait_for_windows_route(dev, net_a.s_addr, netmask)) {
-        LOG_ERROR("Windows did not report the expected route for %s/%u on %s. Check for an existing route/VPN conflict.",
-                  net_s, prefix_len_from_netmask(netmask), dev->ifname);
-        return -1;
-    }
-
-    LOG_INFO("Configured %s: %s/%s", dev->ifname, ip_s, mask_s);
-    return 0;
-}
-
-int tun_set_mtu(tun_device_t *dev, int mtu)
-{
-    char buf[512];
-    snprintf(buf, sizeof(buf),
-             "interface ipv4 set subinterface \"%s\" mtu=%d store=active",
-             dev->ifname, mtu);
-    if (run_cmd("netsh", buf) < 0) {
-        LOG_ERROR("Failed to set Wintun MTU with netsh. Run as Administrator and check Windows network policy.");
-        return -1;
-    }
-    if (!wait_for_windows_mtu(dev, mtu)) {
-        LOG_ERROR("Windows did not report MTU %d on %s after configuration.", mtu, dev->ifname);
-        return -1;
-    }
-    dev->mtu = mtu;
-    LOG_INFO("MTU set to %d on %s", mtu, dev->ifname);
-    return 0;
 }
 
 int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize)
 {
     DWORD size;
     WINTUN_SESSION_HANDLE session = (WINTUN_SESSION_HANDLE)dev->session;
-
-    if (!session || !pWintunReceivePacket || !pWintunReleaseReceivePacket)
-        return -1;
+    if (!session) return -1;
 
     HANDLE re = (HANDLE)dev->read_event;
-
     for (;;) {
-        BYTE *packet = pWintunReceivePacket(session, &size);
+        BYTE *packet = wintun_receive_packet(session, &size);
         if (packet) {
             int n = (size <= (DWORD)bufsize) ? (int)size : bufsize;
             memcpy(buf, packet, (size_t)n);
-            pWintunReleaseReceivePacket(session, packet);
+            wintun_release_receive_packet(session, packet);
             return n;
         }
         DWORD err = GetLastError();
@@ -431,23 +87,20 @@ int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize)
             return -1;
         }
         WaitForSingleObject(re, 500);
-        if (!g_running)
-            return -1;
+        if (!g_running) return -1;
     }
 }
 
 int tun_write(tun_device_t *dev, const uint8_t *buf, int len)
 {
     WINTUN_SESSION_HANDLE session = (WINTUN_SESSION_HANDLE)dev->session;
-
     if (!session) return -1;
 
-    BYTE *packet = pWintunAllocateSendPacket(session, (DWORD)len);
-    if (!packet)
-        return -1;
+    BYTE *packet = wintun_allocate_send_packet(session, (DWORD)len);
+    if (!packet) return -1;
 
     memcpy(packet, buf, (size_t)len);
-    pWintunSendPacket(session, packet);
+    wintun_send_packet(session, packet);
     return len;
 }
 
