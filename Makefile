@@ -27,11 +27,12 @@ endif
 
 PROTO_SRC := src/protocol/protocol.c
 APP_SRC  := src/app/main.c src/app/log.c
-SRCS     := $(APP_SRC) src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(PROTO_SRC) $(TUN_SRC)
-HDRS     := src/app/tund.h src/app/log.h src/protocol/protocol.h src/tun/tun.h src/net/network.h src/core/server.h src/core/client.h src/ui/tui.h
+UI_SRC   := src/ui/tui.c src/ui/render.c src/ui/events.c
+SRCS     := $(APP_SRC) src/net/network.c src/core/server.c src/core/client.c $(UI_SRC) $(PROTO_SRC) $(TUN_SRC)
+HDRS     := src/app/tund.h src/app/log.h src/protocol/protocol.h src/tun/tun.h src/net/network.h src/core/server.h src/core/client.h src/ui/tui.h src/ui/tui_internal.h
 TEST_SRCS := tests/test_protocol.c
 
-.PHONY: all clean install uninstall windows test sanitize
+.PHONY: all clean install uninstall windows test sanitize verify
 
 all: $(TARGET)
 
@@ -51,7 +52,7 @@ $(TARGET): $(SRCS) $(HDRS)
 CROSS_W64   := x86_64-w64-mingw32
 DIST        := dist
 TARGET_WCON := $(DIST)/tund.exe
-WIN_SRCS    := $(APP_SRC) src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(PROTO_SRC) src/tun/windows.c
+WIN_SRCS    := $(APP_SRC) src/net/network.c src/core/server.c src/core/client.c $(UI_SRC) $(PROTO_SRC) src/tun/windows.c
 WIN_CFLAGS  := -Wall -Wextra -O2 -std=c11 -D_WIN32_WINNT=0x0601 $(INCLUDES)
 WIN_LIBS    := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
 
@@ -76,6 +77,12 @@ sanitize: $(SAN_TEST_TARGET)
 
 $(SAN_TEST_TARGET): $(TEST_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SRCS) $(PROTO_SRC) $(LDFLAGS) $(SAN_FLAGS)
+
+verify:
+	$(MAKE) test
+	$(MAKE) sanitize
+	$(MAKE) all
+	$(MAKE) windows
 
 WINTUN_URL    := https://www.wintun.net/builds/wintun-0.14.1.zip
 WINTUN_SHA256 := 07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51
