@@ -23,6 +23,17 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 | `tui.h` / `tui.c` | Terminal UI (live peer dashboard). |
 | `wintun.h` | Wintun adapter/session handle typedefs. |
 
+## Repository layout
+
+```text
+tund
+├── src/                 # C source and headers
+├── docs/                # Usage, troubleshooting, and technical docs
+├── tests/               # Protocol unit tests
+├── Makefile
+└── README.md
+```
+
 ## Virtual network
 
 The virtual network is fixed to `10.9.0.0/24`.
@@ -98,12 +109,3 @@ Do not describe Tund as a confidential VPN until it uses a reviewed authenticate
 - **Linux:** requires `/dev/net/tun` and root/CAP_NET_ADMIN.
 - **macOS:** uses an OS-managed `utun` interface configured via `ioctl(SIOCAIFADDR)` and `ioctl(SIOCSIFMTU)`; the subnet route is added through `fork`+`exec(/sbin/route)` — no shell processes are spawned. Run with administrator rights.
 - **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. If started without elevation, Tund relaunches itself through UAC with the same arguments. Tund uses `netsh` for adapter IP/MTU configuration, creates the tunnel route with IP Helper APIs, then verifies IP address, route, and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.
-
-## Operational checklist
-
-1. Choose a host where UDP 9909 is reachable by all participants.
-2. Ensure no participant already routes `10.9.0.0/24` through another LAN or VPN.
-3. Use the same long random key on every endpoint.
-4. Permit UDP 9909 in the server firewall.
-5. Confirm `ping 10.9.0.1` from each client, then ping another assigned client address.
-6. For games whose discovery does not cross the tunnel, enter the virtual host address manually.

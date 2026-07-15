@@ -63,3 +63,4 @@ Run this once before launching. If the warning persists, open **System Settings 
 | Route/subnet error | Another VPN or LAN already uses `10.9.0.0/24` |
 | Ping fails but peer is connected | ICMP blocked by host firewall |
 | Windows cannot load Wintun | `wintun.dll` missing or not beside `tund.exe` |
+| TUI flickers in old `cmd.exe` | Use Windows Terminal or run with `--no-tui` |

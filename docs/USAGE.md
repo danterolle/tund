@@ -14,6 +14,12 @@ On the machine that should act as the hub:
 sudo ./tund server -k "a-long-random-key"
 ```
 
+On Windows:
+
+```powershell
+.\tund.exe server -k "a-long-random-key"
+```
+
 Options:
 
 ```text
@@ -27,6 +33,12 @@ Options:
 
 ```bash
 sudo ./tund client -s <server_ip> -k "a-long-random-key"
+```
+
+On Windows:
+
+```powershell
+.\tund.exe client -s <server_ip> -k "a-long-random-key"
 ```
 
 Options:
@@ -93,3 +105,12 @@ nc 10.9.0.1 7777
 ```
 
 Text typed on one side should appear on the other. With two clients connected, repeat the test between their assigned `10.9.0.x` addresses to verify client-to-client relay.
+
+## Operational checklist
+
+1. Choose a host where UDP 9909 is reachable by all participants.
+2. Ensure no participant already routes `10.9.0.0/24` through another LAN or VPN.
+3. Use the same long random key on every endpoint.
+4. Permit UDP 9909 in the server firewall.
+5. Confirm `ping 10.9.0.1` from each client, then ping another assigned client address.
+6. For games whose discovery does not cross the tunnel, enter the virtual host address manually.

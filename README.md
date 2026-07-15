@@ -27,7 +27,7 @@ It behaves like Radmin VPN, but open source and cross-platform. Written in C —
 - [Virtual Network](#virtual-network)
 - [Game compatibility](#game-compatibility)
 - [Documentation](#documentation)
-- [Architecture](#architecture)
+- [Project structure](#project-structure)
 - [Requirements](#requirements)
 - [License](#license)
 
@@ -103,36 +103,9 @@ For Artemis, start the server first, connect every station with the same key, th
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — firewall, Windows/macOS notes, and common connectivity checks.
 - [Technical documentation](docs/TECHNICAL.md) — protocol, architecture, platform internals, and security boundaries.
 
-## Architecture
+## Project structure
 
-```
-tund
-├── src/
-│   ├── main.c          # Entry point, CLI parsing
-│   ├── tund.h         # Common types, logging
-│   ├── protocol.h      # Wire protocol (UDP messages)
-│   ├── tun.h           # TUN interface API
-│   ├── tun_linux.c     # Linux TUN implementation
-│   ├── tun_darwin.c    # macOS utun implementation
-│   ├── tun_windows.c   # Windows TUN implementation (Wintun)
-│   ├── network.h       # UDP socket API
-│   ├── network.c       # Socket operations
-│   ├── server.h        # Server API
-│   ├── server.c        # Hub server (relay + peer mgmt)
-│   ├── client.h        # Client API
-│   ├── client.c        # Client (TUN + tunnel)
-│   ├── tui.h           # Terminal UI header
-│   ├── tui.c           # Terminal UI (live peer dashboard)
-│   └── wintun.h        # Wintun API declarations
-├── docs/
-│   ├── USAGE.md
-│   ├── TROUBLESHOOTING.md
-│   └── TECHNICAL.md
-├── Makefile
-└── README.md
-```
-
-For implementation details, protocol framing, security boundaries, and platform lifecycle notes, see [Technical documentation](docs/TECHNICAL.md).
+Source code lives in `src/`; user-facing guides live in `docs/`. For implementation details, protocol framing, security boundaries, and platform lifecycle notes, see [Technical documentation](docs/TECHNICAL.md).
 
 ## Requirements
 
