@@ -9,6 +9,8 @@
 #endif
 
 #define TUI_CLEAR       "\033[2J\033[H"
+#define TUI_HOME        "\033[H"
+#define TUI_CLEAR_REST  "\033[J"
 #define TUI_HIDE_CURSOR "\033[?25l"
 #define TUI_SHOW_CURSOR "\033[?25h"
 #define TUI_ALT_BUF     "\033[?1049h"
@@ -153,6 +155,7 @@ void tui_init(void)
     pthread_mutex_unlock(&tui_events_lock);
 
     tui_write(TUI_ALT_BUF);
+    tui_write(TUI_CLEAR);
     tui_write(TUI_HIDE_CURSOR);
 }
 
@@ -293,12 +296,18 @@ static void tui_render_footer(const char *hint)
     tui_printf(" %s%s%s\n", TUI_YELLOW, hint, TUI_RESET);
 }
 
+static void tui_finish_frame(void)
+{
+    tui_write(TUI_CLEAR_REST);
+    fflush(stderr);
+}
+
 void tui_render_server(uint16_t port, const char *tun_name,
                        uint32_t virt_ip, uint32_t netmask,
                        time_t start_time,
                        int peer_count, const tui_peer_t *peers, int npeers)
 {
-    tui_write(TUI_CLEAR);
+    tui_write(TUI_HOME);
 
     tui_render_header(TUND_VERSION, "Server");
 
@@ -325,6 +334,7 @@ void tui_render_server(uint16_t port, const char *tun_name,
              "Ctrl+C quit · UDP %u · subnet 10.9.0.0/24 · authenticated, not encrypted",
              port);
     tui_render_footer(value);
+    tui_finish_frame();
 }
 
 void tui_render_client(const char *server_addr, uint16_t port,
@@ -332,7 +342,7 @@ void tui_render_client(const char *server_addr, uint16_t port,
                        bool has_server_rtt, uint64_t server_rtt_ms, time_t start_time,
                        int peer_count, const tui_peer_t *peers, int npeers)
 {
-    tui_write(TUI_CLEAR);
+    tui_write(TUI_HOME);
 
     tui_render_header(TUND_VERSION, "Client");
 
@@ -361,4 +371,5 @@ void tui_render_client(const char *server_addr, uint16_t port,
              "Ctrl+C quit · server %s:%u · authenticated, not encrypted",
              server_addr, port);
     tui_render_footer(value);
+    tui_finish_frame();
 }
