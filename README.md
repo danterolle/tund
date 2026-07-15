@@ -32,6 +32,7 @@ It behaves like Radmin VPN, but open source and cross-platform. Written in C —
 - [Features](#features)
 - [Virtual Network](#virtual-network)
 - [Game compatibility](#game-compatibility)
+- [Verify it works](#verify-it-works)
 - [Network details and troubleshooting](#network-details-and-troubleshooting)
   - [Windows notes](#windows-notes)
 - [Architecture](#architecture)
@@ -129,10 +130,10 @@ Or download the latest release — `tund.exe` and `wintun.dll` are already bundl
 
 - **Zero registration** — no accounts or external service
 - **Auto-discovery** — clients are automatically recognized when they connect
-- **NAT traversal** — works behind any type of NAT (relay mode)
+- **NAT-friendly clients** — clients only need outbound UDP to a reachable server
 - **Cross-platform** — Windows, macOS, and Linux
-- **Single binary** — one executable, server and client in one
-- **No external dependencies** — pure C, only uses system libraries
+- **Single executable** — server and client modes in one program
+- **Minimal dependencies** — Linux/macOS use system libraries; Windows ships with `wintun.dll`
 - **Graceful shutdown** — Ctrl+C cleanly disconnects and notifies peers
 - **Keepalive** — automatic peer timeout detection (30s) and RTT tracking
 - **Broadcast support** — LAN broadcast packets are forwarded
@@ -156,6 +157,28 @@ The shared key authenticates packets but does **not** encrypt traffic. Tund is n
 
 For Artemis, start the server first, connect every station with the same key, then use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
 
+## Verify it works
+
+After a client connects, the server TUI should show the peer, its virtual IP, and an RTT value. From the client, first try:
+
+```bash
+ping 10.9.0.1
+```
+
+If ping is blocked by the OS firewall, test real TCP traffic instead. On the server:
+
+```bash
+nc -l 10.9.0.1 7777
+```
+
+On the client:
+
+```bash
+nc 10.9.0.1 7777
+```
+
+Text typed on one side should appear on the other. With two clients connected, repeat the test between their assigned `10.9.0.x` addresses to verify client-to-client relay.
+
 ## Network details and troubleshooting
 
 - Tund listens on UDP port `9909` by default. Allow inbound UDP on the server firewall; clients normally need only outbound UDP.
@@ -165,7 +188,7 @@ For Artemis, start the server first, connect every station with the same key, th
   - **Windows:** `netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909`
   - **macOS:** usually no firewall blocks inbound by default; check System Settings → Network → Firewall
 - The tunnel MTU is `1400` bytes, leaving room for UDP encapsulation.
-- Each datagram has a 13-byte Tund header: magic/version/type/length plus an 8-byte SipHash integrity tag derived from the shared key. A mismatched key appears as a timeout by design.
+- Each datagram has a 13-byte Tund header: magic/version/type/length plus an 8-byte SipHash integrity tag derived from the shared key. A mismatched key appears as an authentication failure or timeout depending on which side can validate a reply.
 - The virtual subnet is fixed at `10.9.0.0/24`. Do not use Tund on a host already routing that subnet through a real LAN or another VPN.
 - All participants must run the same Tund protocol version: authenticated framing is not compatible with older builds.
 - To test connectivity, `ping 10.9.0.1` from each client after connecting. If ping fails despite a successful registration (the client gets a virtual IP), the server firewall is likely blocking ICMP.

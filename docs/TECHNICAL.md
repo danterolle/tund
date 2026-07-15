@@ -41,6 +41,7 @@ Each endpoint sets the TUN MTU to 1400 bytes. The lower-than-Ethernet MTU reserv
 4. A client resolves the server, binds an ephemeral UDP port and sends `MSG_REGISTER`.
 5. The server allocates an unused `10.9.0.x` address and replies with `MSG_ASSIGN`.
 6. The client configures its TUN interface and starts the TUN-reader and keepalive threads.
+7. Both sides exchange keepalive probes and acknowledgements to update liveness and RTT.
 
 ## Datagram format
 
@@ -57,6 +58,12 @@ Every Tund datagram uses the following 13-byte header followed by a payload:
 The tag covers the stable header fields and payload. `network.c` signs every outgoing packet and drops any incoming packet with an invalid tag before message parsing. All participants must therefore use the same access key and protocol version.
 
 Message types are `REGISTER`, `ASSIGN`, `PEER_LIST`, `DATA`, `KEEPALIVE`, `KEEPALIVE_ACK`, `DISCONNECT`, `PEER_JOIN`, and `PEER_LEAVE`.
+
+## Keepalive and RTT
+
+`KEEPALIVE` carries the sender's monotonic millisecond timestamp. The receiver replies with `KEEPALIVE_ACK` containing the same timestamp. The original sender compares it with its current monotonic time to estimate RTT.
+
+Clients periodically probe the server and display server RTT in the TUI. The server also probes each active peer, updates `last_seen`, and records per-peer RTT for the peer table.
 
 ## Packet forwarding
 
@@ -78,7 +85,7 @@ Clients accept traffic only when its UDP source address equals the configured se
 
 The server has a timeout thread and a TUN-reader thread. Each client has a keepalive thread and a TUN-reader thread. Peer-table access is protected by a mutex. UI state for the TUI is copied under the same peer lock.
 
-On shutdown, Tund sets the stop flags and closes the TUN before joining its reader thread. Closing the descriptor/session unblocks a pending TUN read on Linux, macOS and Windows.
+On shutdown, Tund sets stop flags, sends disconnect notifications where possible, and closes the TUN before joining its reader thread. Linux and macOS TUN reads are guarded by short `poll()` timeouts so Ctrl+C remains responsive even when closing the descriptor does not immediately unblock a read. Windows waits on Wintun's read event with a bounded timeout.
 
 ## Security model
 
@@ -90,7 +97,7 @@ Do not describe Tund as a confidential VPN until it uses a reviewed authenticate
 
 - **Linux:** requires `/dev/net/tun` and root/CAP_NET_ADMIN.
 - **macOS:** uses an OS-managed `utun` interface configured via `ioctl(SIOCAIFADDR)` and `ioctl(SIOCSIFMTU)`; the subnet route is added through `fork`+`exec(/sbin/route)` — no shell processes are spawned. Run with administrator rights.
-- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable.
+- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. If started without elevation, Tund relaunches itself through UAC with the same arguments. After `netsh`/`route` configuration, it verifies IP address, route, and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.
 
 ## Operational checklist
 
