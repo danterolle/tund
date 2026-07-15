@@ -9,7 +9,7 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 ## Components
 
 | Component | Responsibility |
-|---|---|---|
+|---|---|
 | `src/app/` | Entry point, CLI parsing, logging, platform startup, Windows elevation, common types, global state. |
 | `src/protocol/` | Datagram framing, message serialisation, virtual-network constants and SipHash MAC. |
 | `src/net/` | UDP sockets, hostname resolution, packet authentication, source-address comparison. |
