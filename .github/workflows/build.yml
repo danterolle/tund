@@ -39,6 +39,11 @@ jobs:
         shell: msys2 {0}
     steps:
       - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.6'
+          channel: stable
+          cache: true
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -51,6 +56,15 @@ jobs:
             curl
       - run: make
       - run: ./tund.exe --help
+      - name: Build GUI
+        shell: pwsh
+        run: |
+          cd gui
+          flutter config --enable-windows-desktop
+          flutter pub get
+          flutter analyze
+          flutter test
+          flutter build windows --release
       - name: Download wintun.dll
         shell: msys2 {0}
         env:
@@ -61,7 +75,12 @@ jobs:
           echo "$WINTUN_SHA256  /tmp/wintun.zip" | sha256sum -c -
           unzip -o /tmp/wintun.zip wintun/bin/amd64/wintun.dll -d /tmp >/dev/null
           cp /tmp/wintun/bin/amd64/wintun.dll .
-      - run: zip tund-windows-x86_64.zip tund.exe wintun.dll
+      - name: Package Windows release
+        run: |
+          cp gui/build/windows/x64/runner/Release/tund_gui.exe .
+          cp gui/build/windows/x64/runner/Release/flutter_windows.dll .
+          cp -R gui/build/windows/x64/runner/Release/data .
+          zip -r tund-windows-x86_64.zip tund.exe tund_gui.exe flutter_windows.dll data wintun.dll
       - uses: actions/upload-artifact@v4
         with:
           name: tund-windows-x86_64
