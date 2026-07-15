@@ -10,7 +10,7 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 
 | Component | Responsibility |
 |---|---|---|
-| `src/app/` | Entry point, CLI parsing, common types, logging, platform abstractions, global state. |
+| `src/app/` | Entry point, CLI parsing, logging, platform startup, Windows elevation, common types, global state. |
 | `src/protocol/` | Datagram framing, message serialisation, virtual-network constants and SipHash MAC. |
 | `src/net/` | UDP sockets, hostname resolution, packet authentication, source-address comparison. |
 | `src/core/` | Server/client state machines, peer management, packet forwarding, keepalive and RTT. |
@@ -18,14 +18,14 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 | `src/tun/linux/` | Linux `/dev/net/tun` implementation. |
 | `src/tun/darwin/` | macOS `utun` device and interface configuration. |
 | `src/tun/windows/` | Windows Wintun loading, process helpers, and IP/route/MTU configuration. |
-| `src/ui/` | Terminal UI and recent event log. |
+| `src/ui/` | Public TUI API, rendering helpers, and recent event log. |
 
 ## Repository layout
 
 ```text
 tund
 ├── src/
-│   ├── app/             # main.c, shared types and logging
+│   ├── app/             # startup, CLI, platform runtime, logging, shared types
 │   ├── core/            # server/client state machines
 │   ├── net/             # UDP socket helpers
 │   ├── protocol/        # wire protocol helpers
@@ -33,7 +33,7 @@ tund
 │   │   ├── linux/
 │   │   ├── darwin/
 │   │   └── windows/
-│   └── ui/              # terminal UI
+│   └── ui/              # terminal UI, rendering, events
 ├── docs/                # Usage, troubleshooting, and technical docs
 ├── tests/               # Protocol unit tests
 ├── Makefile

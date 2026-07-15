@@ -84,6 +84,14 @@ make windows
 
 Run `tund.exe` from the generated `dist` directory. If needed, Tund asks Windows for Administrator privileges through UAC.
 
+### Full local verification
+
+```bash
+make verify
+```
+
+This runs protocol tests, sanitizer tests, the native build, and the Windows cross-build.
+
 ## Verify it works
 
 After a client connects, the server TUI should show the peer, its virtual IP, and an RTT value. From the client, first try:
