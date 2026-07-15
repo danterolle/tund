@@ -157,6 +157,31 @@ static bool windows_route_applied(const tun_device_t *dev,
     return found;
 }
 
+static bool windows_add_onlink_route(const tun_device_t *dev,
+                                     uint32_t network, uint32_t netmask)
+{
+    if (!dev->has_luid)
+        return false;
+
+    MIB_IPFORWARD_ROW2 row;
+    InitializeIpForwardEntry(&row);
+    row.InterfaceLuid = dev->luid;
+    ConvertInterfaceLuidToIndex(&dev->luid, &row.InterfaceIndex);
+    row.DestinationPrefix.Prefix.si_family = AF_INET;
+    row.DestinationPrefix.Prefix.Ipv4.sin_addr.s_addr = network;
+    row.DestinationPrefix.PrefixLength = prefix_len_from_netmask(netmask);
+    row.NextHop.si_family = AF_INET;
+    row.NextHop.Ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
+    row.Metric = 2;
+
+    NETIO_STATUS status = CreateIpForwardEntry2(&row);
+    if (status == NO_ERROR || status == ERROR_OBJECT_ALREADY_EXISTS)
+        return true;
+
+    LOG_DEBUG("CreateIpForwardEntry2 failed: %lu", status);
+    return false;
+}
+
 static bool windows_mtu_applied(const tun_device_t *dev, int mtu)
 {
     if (!dev->has_luid)
@@ -347,16 +372,15 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
     uint32_t net = ntohl(ip) & ntohl(netmask);
     net_a.s_addr = htonl(net);
     inet_ntop(AF_INET, &net_a, net_s, sizeof(net_s));
-    snprintf(buf, sizeof(buf),
-             "add %s mask %s %s metric 2",
-             net_s, mask_s, ip_s);
-    if (run_cmd("route", buf) < 0) {
-        LOG_ERROR("Failed to add the Windows route for 10.9.0.0/24. Check for an existing route/VPN conflict and run as Administrator.");
+    if (!windows_route_applied(dev, net_a.s_addr, netmask) &&
+        !windows_add_onlink_route(dev, net_a.s_addr, netmask)) {
+        LOG_ERROR("Failed to add the Windows route for %s/%u. Check for an existing route/VPN conflict and run as Administrator.",
+                  net_s, prefix_len_from_netmask(netmask));
         return -1;
     }
     if (!wait_for_windows_route(dev, net_a.s_addr, netmask)) {
-        LOG_ERROR("Windows did not report the expected route for 10.9.0.0/24 on %s. Check for an existing route/VPN conflict.",
-                  dev->ifname);
+        LOG_ERROR("Windows did not report the expected route for %s/%u on %s. Check for an existing route/VPN conflict.",
+                  net_s, prefix_len_from_netmask(netmask), dev->ifname);
         return -1;
     }
 

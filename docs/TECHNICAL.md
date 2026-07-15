@@ -97,7 +97,7 @@ Do not describe Tund as a confidential VPN until it uses a reviewed authenticate
 
 - **Linux:** requires `/dev/net/tun` and root/CAP_NET_ADMIN.
 - **macOS:** uses an OS-managed `utun` interface configured via `ioctl(SIOCAIFADDR)` and `ioctl(SIOCSIFMTU)`; the subnet route is added through `fork`+`exec(/sbin/route)` — no shell processes are spawned. Run with administrator rights.
-- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. If started without elevation, Tund relaunches itself through UAC with the same arguments. After `netsh`/`route` configuration, it verifies IP address, route, and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.
+- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. If started without elevation, Tund relaunches itself through UAC with the same arguments. Tund uses `netsh` for adapter IP/MTU configuration, creates the tunnel route with IP Helper APIs, then verifies IP address, route, and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.
 
 ## Operational checklist
 
