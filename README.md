@@ -22,19 +22,11 @@ It behaves like Radmin VPN, but open source and cross-platform. Written in C —
 ## Table of Contents
 
 - [How it works](#how-it-works)
-- [Usage](#usage)
-  - [Start the server](#start-the-server)
-  - [Connect as a client](#connect-as-a-client)
-  - [Example](#example)
-- [Build](#build)
-  - [Linux / macOS](#linux--macos)
-  - [Windows](#windows)
+- [Quick start](#quick-start)
 - [Features](#features)
 - [Virtual Network](#virtual-network)
 - [Game compatibility](#game-compatibility)
-- [Verify it works](#verify-it-works)
-- [Network details and troubleshooting](#network-details-and-troubleshooting)
-  - [Windows notes](#windows-notes)
+- [Documentation](#documentation)
 - [Architecture](#architecture)
 - [Requirements](#requirements)
 - [License](#license)
@@ -56,9 +48,7 @@ It behaves like Radmin VPN, but open source and cross-platform. Written in C —
 4. Traffic is tunneled over UDP through the server
 5. Each client gets a virtual IP in the `10.9.0.0/24` range
 
-## Usage
-
-### Start the server
+## Quick start
 
 On a machine with a public IP:
 
@@ -66,65 +56,15 @@ On a machine with a public IP:
 sudo ./tund server -k "a-long-random-key"
 ```
 
-Options:
-```
--k, --key <key>      Shared network key (same on all computers, 12+ characters)
--p, --port <port>    UDP port (default: 9909)
--t, --no-tui         Disable terminal UI (live peer dashboard)
--v, --verbose        Debug logging
-```
-
-### Connect as a client
+On every machine that should join the LAN:
 
 ```bash
 sudo ./tund client -s <server_ip> -k "a-long-random-key"
 ```
 
-Options:
-```
--s, --server <ip>    Server IP/hostname (required)
--p, --port <port>    Server port (default: 9909)
--n, --name <name>    Display name (default: hostname)
--k, --key <key>      Shared network key (same on all computers, 12+ characters)
--t, --no-tui         Disable terminal UI (live peer dashboard)
--v, --verbose        Debug logging
-```
+Use the same key everywhere. On Windows, run `tund.exe` normally; if needed, Tund asks for Administrator privileges through UAC.
 
-### Example
-
-```bash
-# Machine A (server, e.g. IP 203.0.113.10):
-sudo ./tund server -k "a-long-random-key"
-
-# Machine B (client, behind NAT):
-sudo ./tund client -s 203.0.113.10 -n "Gaming-PC" -k "a-long-random-key"
-
-# Machine C (client, behind NAT):
-sudo ./tund client -s 203.0.113.10 -n "Work-Laptop" -k "a-long-random-key"
-
-# Now Machine B can ping Machine C:
-ping 10.9.0.3
-```
-
-## Build
-
-Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases).
-
-### Linux / macOS
-
-```bash
-make
-```
-
-### Windows
-
-```bash
-make windows
-```
-
-Run `tund.exe` from the generated `dist` directory. If needed, Tund asks Windows for Administrator privileges through UAC. Keep `wintun.dll` next to the executable.
-
-Or download the latest release — `tund.exe` and `wintun.dll` are already bundled together.
+Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). For full usage, build, and verification steps, see [Usage](docs/USAGE.md).
 
 ## Features
 
@@ -157,71 +97,11 @@ The shared key authenticates packets but does **not** encrypt traffic. Tund is n
 
 For Artemis, start the server first, connect every station with the same key, then use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
 
-## Verify it works
+## Documentation
 
-After a client connects, the server TUI should show the peer, its virtual IP, and an RTT value. From the client, first try:
-
-```bash
-ping 10.9.0.1
-```
-
-If ping is blocked by the OS firewall, test real TCP traffic instead. On the server:
-
-```bash
-nc -l 10.9.0.1 7777
-```
-
-On the client:
-
-```bash
-nc 10.9.0.1 7777
-```
-
-Text typed on one side should appear on the other. With two clients connected, repeat the test between their assigned `10.9.0.x` addresses to verify client-to-client relay.
-
-## Network details and troubleshooting
-
-- Tund listens on UDP port `9909` by default. Allow inbound UDP on the server firewall; clients normally need only outbound UDP.
-  - **Linux (ufw):** `sudo ufw allow 9909/udp`
-  - **Linux (firewalld):** `sudo firewall-cmd --add-port=9909/udp --permanent && sudo firewall-cmd --reload`
-  - **Linux (iptables):** `sudo iptables -A INPUT -p udp --dport 9909 -j ACCEPT`
-  - **Windows:** `netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909`
-  - **macOS:** usually no firewall blocks inbound by default; check System Settings → Network → Firewall
-- The tunnel MTU is `1400` bytes, leaving room for UDP encapsulation.
-- Each datagram has a 13-byte Tund header: magic/version/type/length plus an 8-byte SipHash integrity tag derived from the shared key. A mismatched key appears as an authentication failure or timeout depending on which side can validate a reply.
-- The virtual subnet is fixed at `10.9.0.0/24`. Do not use Tund on a host already routing that subnet through a real LAN or another VPN.
-- All participants must run the same Tund protocol version: authenticated framing is not compatible with older builds.
-- To test connectivity, `ping 10.9.0.1` from each client after connecting. If ping fails despite a successful registration (the client gets a virtual IP), the server firewall is likely blocking ICMP.
-
-### Windows notes
-
-- **Administrator privileges**: Tund creates a TUN interface, so Windows may show a UAC prompt on startup. Accept it to continue.
-
-- **Server firewall**: Tund does not change Windows Firewall automatically. If this machine is the server, allow inbound UDP on port `9909` or clients will not be able to reach it.
-  ```cmd
-  :: Persistent rule (recommended)
-  netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909
-
-  :: Temporarily disable (test only)
-  netsh advfirewall set allprofiles state off
-  netsh advfirewall set allprofiles state on
-  ```
-
-- **ICMP (ping)**: Windows Firewall often blocks ICMP echo requests on the virtual adapter. After verifying connectivity by temporarily disabling the firewall (above), re-enable it. Ping is not required for game traffic, only for connectivity checks.
-
-- **Console encoding**: `tund.exe` (the console build) sets UTF-8 automatically. If characters display incorrectly in older terminals, run `chcp 65001` before launching the program.
-
-### macOS notes
-
-- **Unverified developer warning**: the first time you run Tund, macOS may show *"apple cannot verify the identity of the developer"*. This happens because the binary is not signed with an Apple Developer certificate. To bypass:
-  ```bash
-  xattr -d com.apple.quarantine ./tund
-  ```
-  Run this once before launching. If the warning persists, open **System Settings → Privacy & Security** and click *Open Anyway* next to the blocked Tund entry.
-
-- **TUN interface**: macOS creates a `utun` device automatically when Tund starts. You may see a prompt asking for network configuration permission — enter your password to allow it.
-
-- **ICMP (ping)**: like Windows, macOS may block ICMP on the virtual interface. Ping is not required for game traffic.
+- [Usage](docs/USAGE.md) — commands, build steps, examples, and verification.
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — firewall, Windows/macOS notes, and common connectivity checks.
+- [Technical documentation](docs/TECHNICAL.md) — protocol, architecture, platform internals, and security boundaries.
 
 ## Architecture
 
@@ -244,6 +124,10 @@ tund
 │   ├── tui.h           # Terminal UI header
 │   ├── tui.c           # Terminal UI (live peer dashboard)
 │   └── wintun.h        # Wintun API declarations
+├── docs/
+│   ├── USAGE.md
+│   ├── TROUBLESHOOTING.md
+│   └── TECHNICAL.md
 ├── Makefile
 └── README.md
 ```
