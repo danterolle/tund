@@ -2,10 +2,12 @@
 
 #include <flutter_windows.h>
 #include <io.h>
+#include <shellapi.h>
 #include <stdio.h>
 #include <windows.h>
 
 #include <iostream>
+#include <string>
 
 void CreateAndAttachConsole() {
   if (::AllocConsole()) {
@@ -19,6 +21,72 @@ void CreateAndAttachConsole() {
     std::ios::sync_with_stdio();
     FlutterDesktopResyncOutputStreams();
   }
+}
+
+bool IsRunningAsAdministrator() {
+  BOOL is_admin = FALSE;
+  PSID admin_group = nullptr;
+  SID_IDENTIFIER_AUTHORITY nt_authority = SECURITY_NT_AUTHORITY;
+  if (::AllocateAndInitializeSid(&nt_authority, 2, SECURITY_BUILTIN_DOMAIN_RID,
+                                 DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0,
+                                 &admin_group)) {
+    ::CheckTokenMembership(nullptr, admin_group, &is_admin);
+    ::FreeSid(admin_group);
+  }
+  return is_admin != FALSE;
+}
+
+static std::wstring QuoteArgument(const wchar_t* argument) {
+  std::wstring quoted = L"\"";
+  size_t slashes = 0;
+  for (const wchar_t* ch = argument; ; ch++) {
+    if (*ch == L'\\') {
+      slashes++;
+      continue;
+    }
+    if (*ch == L'"' || *ch == L'\0') {
+      quoted.append(slashes * 2, L'\\');
+      slashes = 0;
+      if (*ch == L'"') {
+        quoted.append(L"\\\"");
+        continue;
+      }
+      break;
+    }
+    quoted.append(slashes, L'\\');
+    slashes = 0;
+    quoted.push_back(*ch);
+  }
+  quoted.push_back(L'"');
+  return quoted;
+}
+
+bool RelaunchAsAdministrator() {
+  wchar_t exe_path[MAX_PATH];
+  DWORD path_length = ::GetModuleFileNameW(nullptr, exe_path, MAX_PATH);
+  if (path_length == 0 || path_length >= MAX_PATH) {
+    return false;
+  }
+
+  int argc = 0;
+  wchar_t** argv = ::CommandLineToArgvW(::GetCommandLineW(), &argc);
+  if (argv == nullptr) {
+    return false;
+  }
+
+  std::wstring parameters;
+  for (int i = 1; i < argc; i++) {
+    if (!parameters.empty()) {
+      parameters.push_back(L' ');
+    }
+    parameters.append(QuoteArgument(argv[i]));
+  }
+  ::LocalFree(argv);
+
+  HINSTANCE result = ::ShellExecuteW(
+      nullptr, L"runas", exe_path,
+      parameters.empty() ? nullptr : parameters.c_str(), nullptr, SW_SHOWNORMAL);
+  return reinterpret_cast<INT_PTR>(result) > 32;
 }
 
 std::vector<std::string> GetCommandLineArguments() {
