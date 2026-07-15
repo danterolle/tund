@@ -15,6 +15,8 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 | `src/net/` | UDP sockets, hostname resolution, packet authentication, source-address comparison. |
 | `src/core/` | Server/client state machines, peer management, packet forwarding, keepalive and RTT. |
 | `src/tun/` | Cross-platform TUN API plus Linux, macOS, and Windows platform implementations. |
+| `src/tun/linux/` | Linux `/dev/net/tun` implementation. |
+| `src/tun/darwin/` | macOS `utun` device and interface configuration. |
 | `src/tun/windows/` | Windows Wintun loading, process helpers, and IP/route/MTU configuration. |
 | `src/ui/` | Terminal UI and recent event log. |
 
@@ -28,7 +30,9 @@ tund
 │   ├── net/             # UDP socket helpers
 │   ├── protocol/        # wire protocol helpers
 │   ├── tun/             # platform TUN implementations
-│   │   └── windows/     # Windows-specific Wintun/config helpers
+│   │   ├── linux/
+│   │   ├── darwin/
+│   │   └── windows/
 │   └── ui/              # terminal UI
 ├── docs/                # Usage, troubleshooting, and technical docs
 ├── tests/               # Protocol unit tests

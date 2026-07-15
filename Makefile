@@ -10,11 +10,11 @@ RUN_PREFIX := sudo ./
 UNAME_S  := $(shell uname -s)
 
 ifeq ($(UNAME_S),Linux)
-    TUN_SRC  := src/tun/linux.c
+    TUN_SRC  := src/tun/linux/tun.c
     CFLAGS   += -D_GNU_SOURCE
 endif
 ifeq ($(UNAME_S),Darwin)
-    TUN_SRC  := src/tun/darwin.c
+    TUN_SRC  := src/tun/darwin/tun.c src/tun/darwin/config.c
     CFLAGS   += -D_DARWIN_C_SOURCE
 endif
 ifneq ($(filter MINGW%,$(UNAME_S)),)
