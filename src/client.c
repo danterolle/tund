@@ -68,7 +68,7 @@ static void client_add_broadcast_traffic(client_t *cli, uint64_t bytes_out)
     pthread_mutex_unlock(&cli->peers_lock);
 }
 
-static void client_print_peers(client_t *cli)
+static void client_log_peers(client_t *cli)
 {
     pthread_mutex_lock(&cli->peers_lock);
 
@@ -263,7 +263,8 @@ static void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint1
     int entry_size = (int)sizeof(msg_peer_entry_t);
     int count = plen / entry_size;
 
-    LOG_INFO("Received peer list: %d peer(s)", count);
+    if (!g_tui_active)
+        LOG_INFO("Received peer list: %d peer(s)", count);
 
     for (int i = 0; i < count; i++) {
         const msg_peer_entry_t *entry =
@@ -271,8 +272,8 @@ static void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint1
         client_update_peer(cli, entry->virt_ip, entry->name, entry->status != 0);
     }
 
-    if (count > 0)
-        client_print_peers(cli);
+    if (!g_tui_active && count > 0)
+        client_log_peers(cli);
 }
 
 static void client_handle_peer_join(client_t *cli, const uint8_t *payload, uint16_t plen)
@@ -289,7 +290,8 @@ static void client_handle_peer_join(client_t *cli, const uint8_t *payload, uint1
     LOG_INFO("★ Peer joined: %s (%s)",
              name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)));
     client_update_peer(cli, vip, name, true);
-    client_print_peers(cli);
+    if (!g_tui_active)
+        client_log_peers(cli);
 }
 
 static void client_handle_peer_leave(client_t *cli, const uint8_t *payload, uint16_t plen)
@@ -316,9 +318,9 @@ static void client_handle_peer_leave(client_t *cli, const uint8_t *payload, uint
     LOG_INFO("✦ Peer left: %s (%s)",
              name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)));
 
-    if (remaining > 0)
-        client_print_peers(cli);
-    else
+    if (!g_tui_active && remaining > 0)
+        client_log_peers(cli);
+    else if (!g_tui_active)
         LOG_INFO("No peers connected.");
 }
 
