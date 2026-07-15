@@ -1,7 +1,14 @@
 #ifndef TUND_TUN_H
 #define TUND_TUN_H
 
+#include <stdbool.h>
 #include <stdint.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#include <netioapi.h>
+#endif
 
 #define TUN_IFNAME_MAX  32
 
@@ -13,6 +20,8 @@ typedef struct {
     void    *adapter;
     void    *session;
     void    *read_event;
+    NET_LUID luid;
+    bool    has_luid;
 #endif
 } tun_device_t;
 

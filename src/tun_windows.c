@@ -80,6 +80,134 @@ static int run_cmd(const char *exe, const char *args)
     return 0;
 }
 
+static uint8_t prefix_len_from_netmask(uint32_t netmask_nbo)
+{
+    uint32_t mask = ntohl(netmask_nbo);
+    uint8_t prefix = 0;
+
+    while (mask & 0x80000000U) {
+        prefix++;
+        mask <<= 1;
+    }
+    return prefix;
+}
+
+static bool same_luid(const NET_LUID *a, const NET_LUID *b)
+{
+    return a->Value == b->Value;
+}
+
+static bool windows_ip_config_applied(const tun_device_t *dev,
+                                      uint32_t ip, uint32_t netmask)
+{
+    if (!dev->has_luid)
+        return false;
+
+    PMIB_UNICASTIPADDRESS_TABLE table = NULL;
+    NETIO_STATUS status = GetUnicastIpAddressTable(AF_INET, &table);
+    if (status != NO_ERROR) {
+        LOG_DEBUG("GetUnicastIpAddressTable failed: %lu", status);
+        return false;
+    }
+
+    uint8_t prefix = prefix_len_from_netmask(netmask);
+    bool found = false;
+    for (ULONG i = 0; i < table->NumEntries; i++) {
+        MIB_UNICASTIPADDRESS_ROW *row = &table->Table[i];
+        if (same_luid(&row->InterfaceLuid, &dev->luid) &&
+            row->Address.si_family == AF_INET &&
+            row->Address.Ipv4.sin_addr.s_addr == ip &&
+            row->OnLinkPrefixLength == prefix) {
+            found = true;
+            break;
+        }
+    }
+
+    FreeMibTable(table);
+    return found;
+}
+
+static bool windows_route_applied(const tun_device_t *dev,
+                                  uint32_t network, uint32_t netmask)
+{
+    if (!dev->has_luid)
+        return false;
+
+    PMIB_IPFORWARD_TABLE2 table = NULL;
+    NETIO_STATUS status = GetIpForwardTable2(AF_INET, &table);
+    if (status != NO_ERROR) {
+        LOG_DEBUG("GetIpForwardTable2 failed: %lu", status);
+        return false;
+    }
+
+    uint8_t prefix = prefix_len_from_netmask(netmask);
+    bool found = false;
+    for (ULONG i = 0; i < table->NumEntries; i++) {
+        MIB_IPFORWARD_ROW2 *row = &table->Table[i];
+        if (same_luid(&row->InterfaceLuid, &dev->luid) &&
+            row->DestinationPrefix.Prefix.si_family == AF_INET &&
+            row->DestinationPrefix.Prefix.Ipv4.sin_addr.s_addr == network &&
+            row->DestinationPrefix.PrefixLength == prefix) {
+            found = true;
+            break;
+        }
+    }
+
+    FreeMibTable(table);
+    return found;
+}
+
+static bool windows_mtu_applied(const tun_device_t *dev, int mtu)
+{
+    if (!dev->has_luid)
+        return false;
+
+    MIB_IPINTERFACE_ROW row;
+    InitializeIpInterfaceEntry(&row);
+    row.Family = AF_INET;
+    row.InterfaceLuid = dev->luid;
+
+    NETIO_STATUS status = GetIpInterfaceEntry(&row);
+    if (status != NO_ERROR) {
+        LOG_DEBUG("GetIpInterfaceEntry failed: %lu", status);
+        return false;
+    }
+
+    return row.NlMtu == (ULONG)mtu;
+}
+
+static bool wait_for_windows_ip_config(const tun_device_t *dev,
+                                       uint32_t ip, uint32_t netmask)
+{
+    for (int i = 0; i < 20; i++) {
+        if (windows_ip_config_applied(dev, ip, netmask))
+            return true;
+        Sleep(100);
+    }
+    return false;
+}
+
+static bool wait_for_windows_route(const tun_device_t *dev,
+                                   uint32_t network, uint32_t netmask)
+{
+    for (int i = 0; i < 20; i++) {
+        if (windows_route_applied(dev, network, netmask))
+            return true;
+        Sleep(100);
+    }
+    return false;
+}
+
+static bool wait_for_windows_mtu(const tun_device_t *dev, int mtu)
+{
+    for (int i = 0; i < 20; i++) {
+        if (windows_mtu_applied(dev, mtu))
+            return true;
+        Sleep(100);
+    }
+    return false;
+}
+
 static WINTUN_ADAPTER_HANDLE (*pWintunCreateAdapter)(LPCWSTR, LPCWSTR, const GUID *);
 static void (*pWintunCloseAdapter)(WINTUN_ADAPTER_HANDLE);
 static WINTUN_ADAPTER_HANDLE (*pWintunOpenAdapter)(LPCWSTR);
@@ -129,6 +257,7 @@ int tun_open(tun_device_t *dev)
     dev->adapter = NULL;
     dev->session = NULL;
     dev->read_event = NULL;
+    dev->has_luid = false;
 
     if (wintun_load() < 0)
         return -1;
@@ -165,6 +294,8 @@ int tun_open(tun_device_t *dev)
     char ifname_a[256] = {0};
     if (pWintunGetAdapterLUID) {
         pWintunGetAdapterLUID(adapter, &luid);
+        dev->luid = luid;
+        dev->has_luid = true;
         if (ConvertInterfaceLuidToNameW(&luid, ifname_w, 256)) {
             WideCharToMultiByte(CP_UTF8, 0, ifname_w, -1, ifname_a, sizeof(ifname_a), NULL, NULL);
         }
@@ -207,6 +338,11 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
         LOG_ERROR("Failed to configure the Wintun IP address with netsh. Run from an elevated prompt and check Windows network policy.");
         return -1;
     }
+    if (!wait_for_windows_ip_config(dev, ip, netmask)) {
+        LOG_ERROR("Windows did not report the expected Wintun IP configuration on %s. Check network policy and existing routes.",
+                  dev->ifname);
+        return -1;
+    }
 
     uint32_t net = ntohl(ip) & ntohl(netmask);
     net_a.s_addr = htonl(net);
@@ -216,6 +352,11 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
              net_s, mask_s, ip_s);
     if (run_cmd("route", buf) < 0) {
         LOG_ERROR("Failed to add the Windows route for 10.9.0.0/24. Check for an existing route/VPN conflict and run as Administrator.");
+        return -1;
+    }
+    if (!wait_for_windows_route(dev, net_a.s_addr, netmask)) {
+        LOG_ERROR("Windows did not report the expected route for 10.9.0.0/24 on %s. Check for an existing route/VPN conflict.",
+                  dev->ifname);
         return -1;
     }
 
@@ -231,6 +372,10 @@ int tun_set_mtu(tun_device_t *dev, int mtu)
              dev->ifname, mtu);
     if (run_cmd("netsh", buf) < 0) {
         LOG_ERROR("Failed to set Wintun MTU with netsh. Run as Administrator and check Windows network policy.");
+        return -1;
+    }
+    if (!wait_for_windows_mtu(dev, mtu)) {
+        LOG_ERROR("Windows did not report MTU %d on %s after configuration.", mtu, dev->ifname);
         return -1;
     }
     dev->mtu = mtu;
