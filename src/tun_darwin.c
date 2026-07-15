@@ -177,6 +177,14 @@ int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize)
     if (maxread > (int)sizeof(tmp))
         maxread = (int)sizeof(tmp);
 
+    struct pollfd pfd;
+    pfd.fd = dev->fd;
+    pfd.events = POLLIN;
+
+    int ready = poll(&pfd, 1, 250);
+    if (ready <= 0)
+        return 0;
+
     int n = (int)read(dev->fd, tmp, (size_t)maxread);
     if (n <= 4)
         return -1;

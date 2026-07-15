@@ -303,9 +303,14 @@ static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *fr
 static void *server_timeout_thread(void *arg)
 {
     server_t *srv = (server_t *)arg;
+    unsigned int slept = 0;
 
     while (g_running && !srv->timeout_quit) {
-        platform_sleep(TUND_KEEPALIVE_INTERVAL);
+        platform_sleep(1);
+        slept++;
+        if (slept < TUND_KEEPALIVE_INTERVAL)
+            continue;
+        slept = 0;
         if (!g_running || srv->timeout_quit)
             break;
 

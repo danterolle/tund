@@ -131,6 +131,14 @@ int tun_set_mtu(tun_device_t *dev, int mtu)
 
 int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize)
 {
+    struct pollfd pfd;
+    pfd.fd = dev->fd;
+    pfd.events = POLLIN;
+
+    int ready = poll(&pfd, 1, 250);
+    if (ready <= 0)
+        return 0;
+
     return (int)read(dev->fd, buf, (size_t)bufsize);
 }
 

@@ -26,6 +26,7 @@
 #define TUI_WIDTH 76
 #define TUI_MAX_EVENTS 7
 #define TUI_EVENT_MESSAGE_LEN 128
+#define TUI_EVENT_DISPLAY_LEN 57
 
 typedef struct {
     time_t ts;
@@ -124,6 +125,23 @@ static void tui_format_rtt(bool has_rtt, uint64_t rtt_ms, char *buf, size_t len)
     } else {
         snprintf(buf, len, "%llums", (unsigned long long)rtt_ms);
     }
+}
+
+static void tui_truncate_event(const char *message, char *buf, size_t len)
+{
+    if (strlen(message) < len) {
+        snprintf(buf, len, "%s", message);
+        return;
+    }
+
+    if (len < 4) {
+        if (len > 0)
+            buf[0] = '\0';
+        return;
+    }
+
+    memcpy(buf, message, len - 4);
+    memcpy(buf + len - 4, "...", 4);
 }
 
 void tui_init(void)
@@ -257,13 +275,15 @@ static void tui_render_events(void)
     for (int i = 0; i < count; i++) {
         struct tm tm;
         char ts[9];
+        char message[TUI_EVENT_DISPLAY_LEN];
         localtime_r(&events[i].ts, &tm);
         snprintf(ts, sizeof(ts), "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+        tui_truncate_event(events[i].message, message, sizeof(message));
 
         const char *color = tui_event_level_color(events[i].level);
-        tui_printf(" %s %s%s%s %.56s\n",
+        tui_printf(" %s %s%s%s %s\n",
                    ts, color, tui_event_level_label(events[i].level), TUI_RESET,
-                   events[i].message);
+                   message);
     }
 }
 
