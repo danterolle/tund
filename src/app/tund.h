@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <stdarg.h>
 #include <errno.h>
 #include <time.h>
 #include <signal.h>
@@ -128,71 +127,15 @@ static inline uint64_t now_ms(void)
 
 #endif
 
+#include "log.h"
 #include "protocol.h"
 
 #define TUND_MAX_PEERS    253     /* 10.9.0.2 .. 10.9.0.254 */
 #define TUND_VERSION      "1.7"
 #define TUND_IP_STR_LEN   INET_ADDRSTRLEN
 
-enum log_level {
-    LOG_LEVEL_DEBUG = 0,
-    LOG_LEVEL_INFO  = 1,
-    LOG_LEVEL_WARN  = 2,
-    LOG_LEVEL_ERROR = 3,
-    LOG_LEVEL_COUNT = 4,
-};
-
-static const char *log_level_str[LOG_LEVEL_COUNT] UNUSED = {
-    "DEBUG", "INFO ", "WARN ", "ERROR"
-};
-
-static const char *log_level_color[LOG_LEVEL_COUNT] UNUSED = {
-    "\033[36m",   /* cyan   */
-    "\033[32m",   /* green  */
-    "\033[33m",   /* yellow */
-    "\033[31m",   /* red    */
-};
-
-#define LOG_RESET "\033[0m"
-
-extern int g_log_level;
 extern volatile bool g_tui_active;
 extern time_t g_start_time;
-
-bool tui_events_active(void);
-void tui_add_event(int level, const char *message);
-
-static inline void log_msg(enum log_level level, const char *fmt, ...)
-{
-    if ((int)level < g_log_level)
-        return;
-
-    int idx = (level >= 0 && level < LOG_LEVEL_COUNT) ? (int)level : LOG_LEVEL_ERROR;
-    char msg[8192];
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(msg, sizeof(msg), fmt, ap);
-    va_end(ap);
-
-    if (g_tui_active && tui_events_active()) {
-        tui_add_event(idx, msg);
-        return;
-    }
-
-    time_t t = time(NULL);
-    struct tm tm;
-    localtime_r(&t, &tm);
-    fprintf(stderr, "%s[%02d:%02d:%02d] [%s] %s" LOG_RESET "\n",
-            log_level_color[idx],
-            tm.tm_hour, tm.tm_min, tm.tm_sec,
-            log_level_str[idx],
-            msg);
-}
-
-#define LOG_DEBUG(...) log_msg(LOG_LEVEL_DEBUG, __VA_ARGS__)
-#define LOG_INFO(...)  log_msg(LOG_LEVEL_INFO,  __VA_ARGS__)
-#define LOG_WARN(...)  log_msg(LOG_LEVEL_WARN,  __VA_ARGS__)
-#define LOG_ERROR(...) log_msg(LOG_LEVEL_ERROR, __VA_ARGS__)
 
 typedef struct {
     bool                active;

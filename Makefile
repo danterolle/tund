@@ -26,8 +26,9 @@ ifneq ($(filter MINGW%,$(UNAME_S)),)
 endif
 
 PROTO_SRC := src/protocol/protocol.c
-SRCS     := src/app/main.c src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(PROTO_SRC) $(TUN_SRC)
-HDRS     := src/app/tund.h src/protocol/protocol.h src/tun/tun.h src/net/network.h src/core/server.h src/core/client.h src/ui/tui.h
+APP_SRC  := src/app/main.c src/app/log.c
+SRCS     := $(APP_SRC) src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(PROTO_SRC) $(TUN_SRC)
+HDRS     := src/app/tund.h src/app/log.h src/protocol/protocol.h src/tun/tun.h src/net/network.h src/core/server.h src/core/client.h src/ui/tui.h
 TEST_SRCS := tests/test_protocol.c
 
 .PHONY: all clean install uninstall windows test sanitize
@@ -50,7 +51,7 @@ $(TARGET): $(SRCS) $(HDRS)
 CROSS_W64   := x86_64-w64-mingw32
 DIST        := dist
 TARGET_WCON := $(DIST)/tund.exe
-WIN_SRCS    := src/app/main.c src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(PROTO_SRC) src/tun/windows.c
+WIN_SRCS    := $(APP_SRC) src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(PROTO_SRC) src/tun/windows.c
 WIN_CFLAGS  := -Wall -Wextra -O2 -std=c11 -D_WIN32_WINNT=0x0601 $(INCLUDES)
 WIN_LIBS    := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
 
