@@ -1,187 +1,4 @@
-#include "client.h"
-#include "network.h"
-#include "tun.h"
-#include "tui.h"
-
-static void client_update_peer(client_t *cli, uint32_t vip, const char *name, bool online)
-{
-    pthread_mutex_lock(&cli->peers_lock);
-
-    int idx = -1;
-    int free_idx = -1;
-    for (int i = 0; i < TUND_MAX_PEERS; i++) {
-        if (cli->peers[i].active && cli->peers[i].virt_ip == vip) {
-            idx = i;
-            break;
-        }
-        if (!cli->peers[i].active && free_idx < 0)
-            free_idx = i;
-    }
-
-    if (online) {
-        if (idx < 0) {
-            if (free_idx < 0) {
-                pthread_mutex_unlock(&cli->peers_lock);
-                return;
-            }
-            idx = free_idx;
-            cli->peers[idx].bytes_in = 0;
-            cli->peers[idx].bytes_out = 0;
-            cli->peer_count++;
-        }
-        cli->peers[idx].active = true;
-        cli->peers[idx].virt_ip = vip;
-        memset(cli->peers[idx].name, 0, TUND_NAME_LEN);
-        if (name) strncpy(cli->peers[idx].name, name, TUND_NAME_LEN - 1);
-        cli->peers[idx].last_seen = time(NULL);
-    } else {
-        if (idx >= 0) {
-            cli->peers[idx].active = false;
-            cli->peer_count--;
-        }
-    }
-
-    pthread_mutex_unlock(&cli->peers_lock);
-}
-
-static void client_add_peer_traffic(client_t *cli, uint32_t vip,
-                                    uint64_t bytes_in, uint64_t bytes_out)
-{
-    pthread_mutex_lock(&cli->peers_lock);
-    for (int i = 0; i < TUND_MAX_PEERS; i++) {
-        if (cli->peers[i].active && cli->peers[i].virt_ip == vip) {
-            cli->peers[i].bytes_in += bytes_in;
-            cli->peers[i].bytes_out += bytes_out;
-            break;
-        }
-    }
-    pthread_mutex_unlock(&cli->peers_lock);
-}
-
-static void client_add_broadcast_traffic(client_t *cli, uint64_t bytes_out)
-{
-    pthread_mutex_lock(&cli->peers_lock);
-    for (int i = 0; i < TUND_MAX_PEERS; i++) {
-        if (cli->peers[i].active)
-            cli->peers[i].bytes_out += bytes_out;
-    }
-    pthread_mutex_unlock(&cli->peers_lock);
-}
-
-static void client_log_peers(client_t *cli)
-{
-    pthread_mutex_lock(&cli->peers_lock);
-
-    LOG_INFO("┌─────────────────────────────────────────┐");
-    LOG_INFO("│         Connected Peers (%d)              │", cli->peer_count);
-    LOG_INFO("├──────────────┬──────────────────────────┤");
-
-    for (int i = 0; i < TUND_MAX_PEERS; i++) {
-        if (cli->peers[i].active) {
-            char peer_ip[TUND_IP_STR_LEN];
-            LOG_INFO("│ %-12s │ %-24s │",
-                     ip_to_str_buf(cli->peers[i].virt_ip, peer_ip, sizeof(peer_ip)),
-                     cli->peers[i].name);
-        }
-    }
-
-    LOG_INFO("└──────────────┴──────────────────────────┘");
-    pthread_mutex_unlock(&cli->peers_lock);
-}
-
-static int client_register(client_t *cli)
-{
-    uint8_t buf[TUND_MAX_PKT];
-    struct sockaddr_in from;
-    bool saw_auth_failure = false;
-    bool saw_protocol_mismatch = false;
-    bool saw_bad_reply = false;
-    bool saw_server_reply = false;
-
-    for (int attempt = 0; attempt < TUND_REGISTER_RETRIES; attempt++) {
-        LOG_INFO("Registering with server (attempt %d/%d)...",
-                 attempt + 1, TUND_REGISTER_RETRIES);
-
-        int len = proto_build_register(buf, cli->name);
-        if (net_send(cli->sockfd, buf, len, &cli->server_addr) < 0)
-            return -1;
-
-        int ret = platform_poll_one(cli->sockfd, TUND_REGISTER_TIMEOUT * 1000);
-        if (ret < 0) {
-            LOG_ERROR("poll() failed: %s", sock_errstr(SOCK_Error()));
-            return -1;
-        }
-        if (ret == 0) {
-            LOG_WARN("No response from server; check the IP, port, firewall, and that the server is running.");
-            continue;
-        }
-
-        int n = net_recv(cli->sockfd, buf, sizeof(buf), &from);
-        if (n == NET_RECV_AUTH_FAILED) {
-            if (net_addr_equal(&from, &cli->server_addr)) {
-                saw_auth_failure = true;
-                saw_server_reply = true;
-                LOG_WARN("Server replied, but authentication failed; check the shared key and protocol version.");
-            }
-            continue;
-        }
-        if (n <= 0)
-            continue;
-        if (!net_addr_equal(&from, &cli->server_addr))
-            continue;
-        saw_server_reply = true;
-
-        uint8_t type;
-        uint16_t payload_len;
-        int hdr_status = proto_read_hdr(buf, &type, &payload_len);
-        if (hdr_status < 0) {
-            saw_bad_reply = true;
-            if (hdr_status == TUND_HDR_BAD_VERSION) {
-                saw_protocol_mismatch = true;
-                LOG_WARN("Server uses unsupported protocol version %u (expected %u).",
-                         buf[1], TUND_PROTOCOL_VERSION);
-            } else {
-                LOG_WARN("Server sent an invalid handshake reply.");
-            }
-            continue;
-        }
-
-        if (TUND_HDR_SIZE + payload_len > n) {
-            saw_bad_reply = true;
-            LOG_WARN("Server sent a truncated handshake reply.");
-            continue;
-        }
-
-        if (type == MSG_ASSIGN && payload_len >= 10) {
-            uint8_t *p = buf + TUND_HDR_SIZE;
-            memcpy(&cli->virt_ip, p, 4);    p += 4;
-            memcpy(&cli->netmask, p, 4);    p += 4;
-            uint16_t mtu_n;
-            memcpy(&mtu_n, p, 2);
-            int mtu = ntohs(mtu_n);
-
-            char virt_ip[TUND_IP_STR_LEN];
-            LOG_INFO("★ Registered! Virtual IP: %s (MTU: %d)",
-                     ip_to_str_buf(cli->virt_ip, virt_ip, sizeof(virt_ip)), mtu);
-            return 0;
-        }
-        saw_bad_reply = true;
-        LOG_WARN("Server sent an unexpected handshake message type 0x%02X.", type);
-    }
-
-    if (saw_protocol_mismatch)
-        LOG_ERROR("Registration failed: server protocol is not compatible with this client.");
-    else if (saw_auth_failure)
-        LOG_ERROR("Registration failed: server replied but authentication failed; check the shared key and protocol compatibility.");
-    else if (saw_bad_reply)
-        LOG_ERROR("Registration failed: server replied with an invalid handshake.");
-    else if (!saw_server_reply)
-        LOG_ERROR("Registration timed out after %d attempts; check server address, UDP port, and firewall.",
-                  TUND_REGISTER_RETRIES);
-    else
-        LOG_ERROR("Registration failed after %d attempts", TUND_REGISTER_RETRIES);
-    return -1;
-}
+#include "client_internal.h"
 
 static void *client_keepalive_thread(void *arg)
 {
@@ -231,99 +48,6 @@ static void *client_tun_thread(void *arg)
     return NULL;
 }
 
-static void client_handle_keepalive(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
-    uint64_t sent_at = 0;
-    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at))
-        return;
-
-    uint8_t buf[TUND_MAX_PKT];
-    int len = proto_build_keepalive_ack(buf, sent_at);
-    if (net_send(cli->sockfd, buf, len, &cli->server_addr) < 0)
-        LOG_WARN("Keepalive reply to server failed");
-}
-
-static void client_handle_keepalive_ack(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
-    uint64_t sent_at = 0;
-    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at))
-        return;
-
-    uint64_t now = now_ms();
-    if (now < sent_at)
-        return;
-
-    cli->server_rtt_ms = now - sent_at;
-    cli->has_server_rtt = true;
-    LOG_DEBUG("Server RTT: %llums", (unsigned long long)cli->server_rtt_ms);
-}
-
-static void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
-    int entry_size = (int)sizeof(msg_peer_entry_t);
-    int count = plen / entry_size;
-
-    if (!g_tui_active)
-        LOG_INFO("Received peer list: %d peer(s)", count);
-
-    for (int i = 0; i < count; i++) {
-        const msg_peer_entry_t *entry =
-            (const msg_peer_entry_t *)(payload + i * entry_size);
-        client_update_peer(cli, entry->virt_ip, entry->name, entry->status != 0);
-    }
-
-    if (!g_tui_active && count > 0)
-        client_log_peers(cli);
-}
-
-static void client_handle_peer_join(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
-    if (plen < 4 + TUND_NAME_LEN) return;
-
-    uint32_t vip;
-    memcpy(&vip, payload, 4);
-    char name[TUND_NAME_LEN];
-    memset(name, 0, sizeof(name));
-    memcpy(name, payload + 4, TUND_NAME_LEN);
-
-    char vip_str[TUND_IP_STR_LEN];
-    LOG_INFO("★ Peer joined: %s (%s)",
-             name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)));
-    client_update_peer(cli, vip, name, true);
-    if (!g_tui_active)
-        client_log_peers(cli);
-}
-
-static void client_handle_peer_leave(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
-    if (plen < 4) return;
-
-    uint32_t vip;
-    memcpy(&vip, payload, 4);
-
-    pthread_mutex_lock(&cli->peers_lock);
-    char name[TUND_NAME_LEN] = "unknown";
-    for (int i = 0; i < TUND_MAX_PEERS; i++) {
-        if (cli->peers[i].active && cli->peers[i].virt_ip == vip) {
-            strncpy(name, cli->peers[i].name, TUND_NAME_LEN - 1);
-            cli->peers[i].active = false;
-            cli->peer_count--;
-            break;
-        }
-    }
-    int remaining = cli->peer_count;
-    pthread_mutex_unlock(&cli->peers_lock);
-
-    char vip_str[TUND_IP_STR_LEN];
-    LOG_INFO("✦ Peer left: %s (%s)",
-             name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)));
-
-    if (!g_tui_active && remaining > 0)
-        client_log_peers(cli);
-    else if (!g_tui_active)
-        LOG_INFO("No peers connected.");
-}
-
 int client_init(client_t *cli, const config_t *cfg)
 {
     memset(cli, 0, sizeof(*cli));
@@ -362,60 +86,9 @@ int client_init(client_t *cli, const config_t *cfg)
     return 0;
 }
 
-static void client_log_startup_checklist(const client_t *cli)
-{
-    char virt_ip[TUND_IP_STR_LEN];
-    char server_ip[TUND_IP_STR_LEN];
-
-    LOG_INFO("Startup checklist:");
-    LOG_INFO("Connected to server %s:%u.",
-             ip_to_str_buf(cli->server_addr.sin_addr.s_addr, server_ip, sizeof(server_ip)),
-             ntohs(cli->server_addr.sin_port));
-    LOG_INFO("Virtual IP assigned: %s on %s.",
-             ip_to_str_buf(cli->virt_ip, virt_ip, sizeof(virt_ip)),
-             cli->tun.ifname);
-    LOG_INFO("Shared key accepted by server.");
-    LOG_INFO("Waiting for peer updates and tunnel traffic.");
-}
-
 void client_run(client_t *cli)
 {
-    char version_str[64];
-    snprintf(version_str, sizeof(version_str), "Tund Client v%s", TUND_VERSION);
-    char ip_str[64];
-    char virt_ip[TUND_IP_STR_LEN];
-    snprintf(ip_str, sizeof(ip_str), "Virtual IP: %s",
-             ip_to_str_buf(cli->virt_ip, virt_ip, sizeof(virt_ip)));
-    char server_str[64];
-    char server_ip[TUND_IP_STR_LEN];
-    snprintf(server_str, sizeof(server_str), "Server: %s:%u",
-             ip_to_str_buf(cli->server_addr.sin_addr.s_addr, server_ip, sizeof(server_ip)),
-             ntohs(cli->server_addr.sin_port));
-    char tun_str[64];
-    snprintf(tun_str, sizeof(tun_str), "TUN: %s", cli->tun.ifname);
-    char name_str[64];
-    snprintf(name_str, sizeof(name_str), "Name: %s", cli->name);
-
-    int max_len = (int)strlen(version_str);
-    if ((int)strlen(ip_str) > max_len) max_len = (int)strlen(ip_str);
-    if ((int)strlen(server_str) > max_len) max_len = (int)strlen(server_str);
-    if ((int)strlen(tun_str) > max_len) max_len = (int)strlen(tun_str);
-    if ((int)strlen(name_str) > max_len) max_len = (int)strlen(name_str);
-
-    int inner = max_len + 4;
-    char line[128];
-    memset(line, '=', (size_t)inner);
-    line[inner] = '\0';
-
-    LOG_INFO("╔%s╗", line);
-    LOG_INFO("║  %-*s║", inner - 2, version_str);
-    LOG_INFO("║  %-*s║", inner - 2, ip_str);
-    LOG_INFO("║  %-*s║", inner - 2, server_str);
-    LOG_INFO("║  %-*s║", inner - 2, tun_str);
-    LOG_INFO("║  %-*s║", inner - 2, name_str);
-    LOG_INFO("╚%s╝", line);
-    LOG_INFO("Press Ctrl+C to disconnect.");
-
+    client_log_banner(cli);
     cli->ka_quit = false;
     cli->tun_quit = false;
 
@@ -463,70 +136,21 @@ void client_run(client_t *cli)
 
         struct sockaddr_in from;
         int n = net_recv(cli->sockfd, buf, sizeof(buf), &from);
-        if (n <= 0)
+        if (n <= 0 || !net_addr_equal(&from, &cli->server_addr))
             continue;
-        if (!net_addr_equal(&from, &cli->server_addr))
-            continue;
-
-        uint8_t type;
-        uint16_t payload_len;
-        int hdr_status = proto_read_hdr(buf, &type, &payload_len);
-        if (hdr_status < 0) {
-            if (hdr_status == TUND_HDR_BAD_VERSION)
-                LOG_DEBUG("Ignored packet with unsupported protocol version %u", buf[1]);
-            continue;
-        }
-
-        if (TUND_HDR_SIZE + payload_len > n)
-            continue;
-
-        uint8_t *payload = buf + TUND_HDR_SIZE;
-
-        switch (type) {
-        case MSG_DATA:
-        {
-            uint32_t src_ip = proto_get_src_ip(payload, payload_len);
-            client_add_peer_traffic(cli, src_ip, payload_len, 0);
-            tun_write(&cli->tun, payload, payload_len);
-            break;
-        }
-        case MSG_PEER_LIST:
-            client_handle_peer_list(cli, payload, payload_len);
-            break;
-        case MSG_PEER_JOIN:
-            client_handle_peer_join(cli, payload, payload_len);
-            break;
-        case MSG_PEER_LEAVE:
-            client_handle_peer_leave(cli, payload, payload_len);
-            break;
-        case MSG_KEEPALIVE:
-            client_handle_keepalive(cli, payload, payload_len);
-            break;
-        case MSG_KEEPALIVE_ACK:
-            client_handle_keepalive_ack(cli, payload, payload_len);
-            break;
-        case MSG_DISCONNECT:
-            LOG_WARN("Server disconnected!");
-            g_running = 0;
-            break;
-        default:
-            LOG_DEBUG("Unknown message type 0x%02X", type);
-            break;
-        }
+        client_handle_server_packet(cli, buf, n);
     }
 }
 
 void client_shutdown(client_t *cli)
 {
     LOG_INFO("Disconnecting...");
-
     cli->ka_quit = true;
     cli->tun_quit = true;
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_disconnect(buf);
     net_send(cli->sockfd, buf, len, &cli->server_addr);
-
     tun_close(&cli->tun);
 
     if (cli->ka_started) pthread_join(cli->ka_tid, NULL);
@@ -539,6 +163,5 @@ void client_shutdown(client_t *cli)
         cli->sockfd = SOCK_INVALID;
     }
     pthread_mutex_destroy(&cli->peers_lock);
-
     LOG_INFO("Disconnected cleanly.");
 }
