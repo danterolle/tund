@@ -23,6 +23,7 @@
 #define TUI_GRAY    "\033[90m"
 #define TUI_RESET   "\033[0m"
 
+#define TUI_WIDTH 76
 #define TUI_MAX_EVENTS 7
 #define TUI_EVENT_MESSAGE_LEN 128
 
@@ -32,15 +33,6 @@ typedef struct {
     char message[TUI_EVENT_MESSAGE_LEN];
 } tui_event_t;
 
-static const char *tui_logo[] = {
-    "  o",
-    " /|\\",
-    "o-o-o",
-    " \\|/",
-    "  o",
-};
-
-static const int tui_logo_n = 5;
 static pthread_mutex_t tui_events_lock = PTHREAD_MUTEX_INITIALIZER;
 static tui_event_t tui_events[TUI_MAX_EVENTS];
 static int tui_event_start = 0;
@@ -54,6 +46,33 @@ static void tui_printf(const char *fmt, ...)
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
+}
+
+static void tui_rule(void)
+{
+    tui_printf(" %s", TUI_GRAY);
+    for (int i = 0; i < TUI_WIDTH; i++)
+        tui_write("─");
+    tui_printf("%s\n", TUI_RESET);
+}
+
+static void tui_render_header(const char *version, const char *mode)
+{
+    tui_printf(" %s◆ Tund%s %sv%s%s %s— %s%s\n",
+               TUI_BOLD TUI_CYAN, TUI_RESET,
+               TUI_YELLOW, version, TUI_RESET,
+               TUI_GRAY, mode, TUI_RESET);
+    tui_rule();
+}
+
+static void tui_section(const char *title)
+{
+    tui_printf(" %s%s%s\n", TUI_BOLD TUI_CYAN, title, TUI_RESET);
+}
+
+static void tui_kv(const char *label, const char *value)
+{
+    tui_printf(" %s%-10s%s %s\n", TUI_GRAY, label, TUI_RESET, value);
 }
 
 static void tui_uptime(time_t start, char *buf, size_t len)
@@ -153,22 +172,13 @@ void tui_add_event(int level, const char *message)
     pthread_mutex_unlock(&tui_events_lock);
 }
 
-static void tui_render_logo(const char *version, const char *mode)
-{
-    for (int i = 0; i < tui_logo_n; i++) {
-        tui_printf("  %s%s%s", TUI_CYAN, tui_logo[i], TUI_RESET);
-        if (i == 1)
-            tui_printf("  %s%s v%s %s\xe2\x80\x94 %s%s", TUI_BOLD TUI_CYAN, "Tund", version, TUI_GRAY, mode, TUI_RESET);
-        tui_printf("\n");
-    }
-}
-
 static void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int npeers)
 {
-    tui_printf(" %s────────────────────────────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
-    tui_printf(" %sPeers: %s%d%s\n", TUI_GRAY, TUI_YELLOW, peer_count, TUI_RESET);
-    tui_printf(" %s%-8s %-15s %-18s %-8s %-8s %-8s %s%s\n",
-               TUI_GRAY, "Status", "Virtual IP", "Name", "RTT", "In", "Out", "Last Seen", TUI_RESET);
+    char title[32];
+    snprintf(title, sizeof(title), "Peers (%d)", peer_count);
+    tui_section(title);
+    tui_printf(" %s%-8s %-15s %-18s %7s %7s %7s %s%s\n",
+               TUI_GRAY, "Status", "Virtual IP", "Name", "RTT", "In", "Out", "Last", TUI_RESET);
 
     bool any = false;
     for (int i = 0; i < npeers; i++) {
@@ -195,7 +205,7 @@ static void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int n
             status = "timeout";
         }
 
-        tui_printf(" %s %-7s %-15s %-18s %-8s %-8s %-8s %s\n",
+        tui_printf(" %s %-7s %-15s %-18.18s %7s %7s %7s %s\n",
                    dot, status, ip_str, peers[i].name, rtt_str, in_str, out_str, ago_str);
     }
     if (!any)
@@ -237,8 +247,7 @@ static void tui_render_events(void)
     }
     pthread_mutex_unlock(&tui_events_lock);
 
-    tui_printf(" %s─────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
-    tui_printf(" %sEvents%s\n", TUI_GRAY, TUI_RESET);
+    tui_section("Events");
 
     if (count == 0) {
         tui_printf(" %s(no recent events)%s\n", TUI_GRAY, TUI_RESET);
@@ -252,7 +261,7 @@ static void tui_render_events(void)
         snprintf(ts, sizeof(ts), "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
 
         const char *color = tui_event_level_color(events[i].level);
-        tui_printf(" %s %s%s%s %s\n",
+        tui_printf(" %s %s%s%s %.56s\n",
                    ts, color, tui_event_level_label(events[i].level), TUI_RESET,
                    events[i].message);
     }
@@ -260,8 +269,8 @@ static void tui_render_events(void)
 
 static void tui_render_footer(const char *hint)
 {
-    tui_printf(" %s─────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
-    tui_printf(" [%s%s%s]\n", TUI_YELLOW, hint, TUI_RESET);
+    tui_rule();
+    tui_printf(" %s%s%s\n", TUI_YELLOW, hint, TUI_RESET);
 }
 
 void tui_render_server(uint16_t port, const char *tun_name,
@@ -271,8 +280,7 @@ void tui_render_server(uint16_t port, const char *tun_name,
 {
     tui_write(TUI_CLEAR);
 
-    tui_render_logo(TUND_VERSION, "Server Mode");
-    tui_printf("  %s────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
+    tui_render_header(TUND_VERSION, "Server");
 
     char uptime[16];
     tui_uptime(start_time, uptime, sizeof(uptime));
@@ -280,20 +288,23 @@ void tui_render_server(uint16_t port, const char *tun_name,
     inet_ntop(AF_INET, &virt_ip, ip_str, sizeof(ip_str));
     inet_ntop(AF_INET, &netmask, mask_str, sizeof(mask_str));
 
-    char line[128];
-    snprintf(line, sizeof(line),
-             "  Port: %s%u%s   TUN: %s%s%s   IP: %s%s/%s%s",
-             TUI_YELLOW, port, TUI_RESET,
-             TUI_YELLOW, tun_name, TUI_RESET,
-             TUI_YELLOW, ip_str, mask_str, TUI_RESET);
-    tui_write(line);
-    tui_printf("\n");
-
-    tui_printf("  Uptime: %s%s%s\n", TUI_YELLOW, uptime, TUI_RESET);
+    char value[128];
+    tui_section("Connection");
+    snprintf(value, sizeof(value), "%u", port);
+    tui_kv("UDP", value);
+    tui_kv("TUN", tun_name);
+    snprintf(value, sizeof(value), "%s/%s", ip_str, mask_str);
+    tui_kv("Virtual", value);
+    tui_kv("Uptime", uptime);
+    tui_rule();
 
     tui_render_peer_table(peer_count, peers, npeers);
+    tui_rule();
     tui_render_events();
-    tui_render_footer("Ctrl+C to stop");
+    snprintf(value, sizeof(value),
+             "Ctrl+C quit · UDP %u · subnet 10.9.0.0/24 · authenticated, not encrypted",
+             port);
+    tui_render_footer(value);
 }
 
 void tui_render_client(const char *server_addr, uint16_t port,
@@ -303,8 +314,7 @@ void tui_render_client(const char *server_addr, uint16_t port,
 {
     tui_write(TUI_CLEAR);
 
-    tui_render_logo(TUND_VERSION, "Client Mode");
-    tui_printf("  %s────────────────────────────────────────────────%s\n", TUI_GRAY, TUI_RESET);
+    tui_render_header(TUND_VERSION, "Client");
 
     char uptime[16];
     tui_uptime(start_time, uptime, sizeof(uptime));
@@ -312,24 +322,23 @@ void tui_render_client(const char *server_addr, uint16_t port,
     inet_ntop(AF_INET, &virt_ip, ip_str, sizeof(ip_str));
     inet_ntop(AF_INET, &netmask, mask_str, sizeof(mask_str));
 
-    char line[192], rtt_str[16];
+    char line[192], rtt_str[16], value[160];
     tui_format_rtt(has_server_rtt, server_rtt_ms, rtt_str, sizeof(rtt_str));
-    snprintf(line, sizeof(line),
-             "  Server: %s%s:%u%s   RTT: %s%s%s   TUN: %s%s%s",
-             TUI_YELLOW, server_addr, port, TUI_RESET,
-             TUI_YELLOW, rtt_str, TUI_RESET,
-             TUI_YELLOW, tun_name, TUI_RESET);
-    tui_write(line);
-    tui_printf("\n");
-
-    snprintf(line, sizeof(line),
-             "  Virtual IP: %s%s/%s%s   Uptime: %s%s%s",
-             TUI_YELLOW, ip_str, mask_str, TUI_RESET,
-             TUI_YELLOW, uptime, TUI_RESET);
-    tui_write(line);
-    tui_printf("\n");
+    tui_section("Connection");
+    snprintf(line, sizeof(line), "%s:%u", server_addr, port);
+    tui_kv("Server", line);
+    tui_kv("RTT", rtt_str);
+    tui_kv("TUN", tun_name);
+    snprintf(line, sizeof(line), "%s/%s", ip_str, mask_str);
+    tui_kv("Virtual", line);
+    tui_kv("Uptime", uptime);
+    tui_rule();
 
     tui_render_peer_table(peer_count, peers, npeers);
+    tui_rule();
     tui_render_events();
-    tui_render_footer("Ctrl+C to disconnect");
+    snprintf(value, sizeof(value),
+             "Ctrl+C quit · server %s:%u · authenticated, not encrypted",
+             server_addr, port);
+    tui_render_footer(value);
 }
