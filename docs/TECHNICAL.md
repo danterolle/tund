@@ -10,24 +10,24 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 
 | Component | Responsibility |
 |---|---|---|
-| `tund.h` | Common types, logging macros, platform abstractions, global state. |
-| `main.c` | Parses configuration, derives the network key, starts server or client mode. |
-| `protocol.h` | Datagram framing, message serialisation, virtual-network constants and SipHash MAC. |
-| `network.h` / `network.c` | UDP sockets, hostname resolution, packet authentication, source-address comparison. |
-| `server.h` / `server.c` | Address assignment, peer table, packet forwarding and timeout handling. |
-| `client.h` / `client.c` | Server registration, keepalive, peer table and local TUN forwarding. |
-| `tun.h` | TUN device struct and API declarations. |
-| `tun_linux.c` | Linux `/dev/net/tun` implementation. |
-| `tun_darwin.c` | macOS `utun` implementation. |
-| `tun_windows.c` | Windows Wintun implementation, loaded dynamically from `wintun.dll`. |
-| `tui.h` / `tui.c` | Terminal UI (live peer dashboard). |
-| `wintun.h` | Wintun adapter/session handle typedefs. |
+| `src/app/` | Entry point, CLI parsing, common types, logging, platform abstractions, global state. |
+| `src/protocol/` | Datagram framing, message serialisation, virtual-network constants and SipHash MAC. |
+| `src/net/` | UDP sockets, hostname resolution, packet authentication, source-address comparison. |
+| `src/core/` | Server/client state machines, peer management, packet forwarding, keepalive and RTT. |
+| `src/tun/` | Cross-platform TUN API plus Linux, macOS, Windows and Wintun implementations. |
+| `src/ui/` | Terminal UI and recent event log. |
 
 ## Repository layout
 
 ```text
 tund
-├── src/                 # C source and headers
+├── src/
+│   ├── app/             # main.c, shared types and logging
+│   ├── core/            # server/client state machines
+│   ├── net/             # UDP socket helpers
+│   ├── protocol/        # wire protocol helpers
+│   ├── tun/             # platform TUN implementations
+│   └── ui/              # terminal UI
 ├── docs/                # Usage, troubleshooting, and technical docs
 ├── tests/               # Protocol unit tests
 ├── Makefile

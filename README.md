@@ -105,7 +105,7 @@ For Artemis, start the server first, connect every station with the same key, th
 
 ## Project structure
 
-Source code lives in `src/`; user-facing guides live in `docs/`. For implementation details, protocol framing, security boundaries, and platform lifecycle notes, see [Technical documentation](docs/TECHNICAL.md).
+Source code is organized by module under `src/`; user-facing guides live in `docs/`. For implementation details, protocol framing, security boundaries, and platform lifecycle notes, see [Technical documentation](docs/TECHNICAL.md).
 
 ## Requirements
 

@@ -1,5 +1,6 @@
 CC       := cc
 CFLAGS   := -Wall -Wextra -O2 -std=c11
+INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/tun -Isrc/ui
 LDFLAGS  := -pthread
 TARGET   := tund
 EXEEXT   :=
@@ -9,23 +10,23 @@ RUN_PREFIX := sudo ./
 UNAME_S  := $(shell uname -s)
 
 ifeq ($(UNAME_S),Linux)
-    TUN_SRC  := src/tun_linux.c
+    TUN_SRC  := src/tun/linux.c
     CFLAGS   += -D_GNU_SOURCE
 endif
 ifeq ($(UNAME_S),Darwin)
-    TUN_SRC  := src/tun_darwin.c
+    TUN_SRC  := src/tun/darwin.c
     CFLAGS   += -D_DARWIN_C_SOURCE
 endif
 ifneq ($(filter MINGW%,$(UNAME_S)),)
-    TUN_SRC  := src/tun_windows.c
+    TUN_SRC  := src/tun/windows.c
     TARGET   := tund.exe
     EXEEXT   := .exe
     RUN_PREFIX :=
     LDFLAGS  := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
 endif
 
-SRCS     := src/main.c src/network.c src/server.c src/client.c src/tui.c $(TUN_SRC)
-HDRS     := src/tund.h src/protocol.h src/tun.h src/network.h src/server.h src/client.h src/tui.h
+SRCS     := src/app/main.c src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(TUN_SRC)
+HDRS     := src/app/tund.h src/protocol/protocol.h src/tun/tun.h src/net/network.h src/core/server.h src/core/client.h src/ui/tui.h
 TEST_SRCS := tests/test_protocol.c
 
 .PHONY: all clean install uninstall windows test sanitize
@@ -33,7 +34,7 @@ TEST_SRCS := tests/test_protocol.c
 all: $(TARGET)
 
 $(TARGET): $(SRCS) $(HDRS)
-	$(CC) $(CFLAGS) -o $@ $(SRCS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(SRCS) $(LDFLAGS)
 	@echo ""
 	@echo "  ✓ Built $(TARGET) for $(UNAME_S)"
 	@echo "  Run with: $(RUN_PREFIX)$(TARGET) server"
@@ -48,8 +49,8 @@ $(TARGET): $(SRCS) $(HDRS)
 CROSS_W64   := x86_64-w64-mingw32
 DIST        := dist
 TARGET_WCON := $(DIST)/tund.exe
-WIN_SRCS    := src/main.c src/network.c src/server.c src/client.c src/tui.c src/tun_windows.c
-WIN_CFLAGS  := -Wall -Wextra -O2 -std=c11 -D_WIN32_WINNT=0x0601
+WIN_SRCS    := src/app/main.c src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c src/tun/windows.c
+WIN_CFLAGS  := -Wall -Wextra -O2 -std=c11 -D_WIN32_WINNT=0x0601 $(INCLUDES)
 WIN_LIBS    := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
 
 $(DIST):
@@ -65,14 +66,14 @@ SAN_TEST_TARGET := $(DIST)/test_protocol_sanitize$(EXEEXT)
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
-$(TEST_TARGET): $(TEST_SRCS) src/protocol.h | $(DIST)
-	$(CC) $(CFLAGS) -I. -o $@ $(TEST_SRCS) $(LDFLAGS)
+$(TEST_TARGET): $(TEST_SRCS) src/protocol/protocol.h | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SRCS) $(LDFLAGS)
 
 sanitize: $(SAN_TEST_TARGET)
 	./$(SAN_TEST_TARGET)
 
-$(SAN_TEST_TARGET): $(TEST_SRCS) src/protocol.h | $(DIST)
-	$(CC) $(CFLAGS) $(SAN_FLAGS) -I. -o $@ $(TEST_SRCS) $(LDFLAGS) $(SAN_FLAGS)
+$(SAN_TEST_TARGET): $(TEST_SRCS) src/protocol/protocol.h | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SRCS) $(LDFLAGS) $(SAN_FLAGS)
 
 WINTUN_URL    := https://www.wintun.net/builds/wintun-0.14.1.zip
 WINTUN_SHA256 := 07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51
