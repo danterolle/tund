@@ -1,4 +1,4 @@
-#include "client_internal.h"
+#include "internal.h"
 
 static void client_handle_keepalive(client_t *cli, const uint8_t *payload, uint16_t plen)
 {

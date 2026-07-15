@@ -1,4 +1,4 @@
-#include "client_internal.h"
+#include "internal.h"
 
 void client_log_banner(const client_t *cli)
 {

@@ -1,6 +1,6 @@
 CC       := cc
 CFLAGS   := -Wall -Wextra -O2 -std=c11
-INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/tun -Isrc/ui
+INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/core/client -Isrc/tun -Isrc/ui
 LDFLAGS  := -pthread
 TARGET   := tund
 EXEEXT   :=
@@ -29,12 +29,12 @@ PROTO_SRC := src/protocol/protocol.c
 APP_SRC  := src/app/main.c src/app/cli.c src/app/log.c src/app/platform.c
 WIN_RUNTIME_SRC := src/app/win_runtime.c
 UI_SRC   := src/ui/tui.c src/ui/render.c src/ui/events.c
-CLIENT_SRC := src/core/client.c src/core/client_peers.c src/core/client_register.c src/core/client_handlers.c src/core/client_log.c
+CLIENT_SRC := src/core/client/client.c src/core/client/peers.c src/core/client/register.c src/core/client/handlers.c src/core/client/log.c
 ifneq ($(filter MINGW%,$(UNAME_S)),)
     APP_SRC += $(WIN_RUNTIME_SRC)
 endif
 SRCS     := $(APP_SRC) src/net/network.c src/core/server.c $(CLIENT_SRC) $(UI_SRC) $(PROTO_SRC) $(TUN_SRC)
-HDRS     := src/app/tund.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server.h src/core/client.h src/core/client_internal.h src/ui/tui.h src/ui/tui_internal.h
+HDRS     := src/app/tund.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server.h src/core/client/client.h src/core/client/internal.h src/ui/tui.h src/ui/tui_internal.h
 TEST_SRCS := tests/test_protocol.c
 
 .PHONY: all clean install uninstall windows test sanitize verify

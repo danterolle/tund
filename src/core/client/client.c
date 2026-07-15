@@ -1,4 +1,4 @@
-#include "client_internal.h"
+#include "internal.h"
 
 static void *client_keepalive_thread(void *arg)
 {

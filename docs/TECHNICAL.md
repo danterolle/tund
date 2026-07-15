@@ -13,7 +13,8 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 | `src/app/` | Entry point, CLI parsing, logging, platform startup, Windows elevation, common types, global state. |
 | `src/protocol/` | Datagram framing, message serialisation, virtual-network constants and SipHash MAC. |
 | `src/net/` | UDP sockets, hostname resolution, packet authentication, source-address comparison. |
-| `src/core/` | Server/client state machines, peer management, packet forwarding, keepalive and RTT. |
+| `src/core/` | Core server/client state machines and shared orchestration. |
+| `src/core/client/` | Client registration, peer table, server message handlers, logging, and tunnel lifecycle. |
 | `src/tun/` | Cross-platform TUN API plus Linux, macOS, and Windows platform implementations. |
 | `src/tun/linux/` | Linux `/dev/net/tun` implementation. |
 | `src/tun/darwin/` | macOS `utun` device and interface configuration. |
@@ -27,6 +28,7 @@ tund
 ├── src/
 │   ├── app/             # startup, CLI, platform runtime, logging, shared types
 │   ├── core/            # server/client state machines
+│   │   └── client/       # client-specific internals
 │   ├── net/             # UDP socket helpers
 │   ├── protocol/        # wire protocol helpers
 │   ├── tun/             # platform TUN implementations
