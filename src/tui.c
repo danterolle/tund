@@ -236,10 +236,10 @@ static void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int n
 static const char *tui_event_level_color(int level)
 {
     switch (level) {
-    case LOG_DEBUG: return TUI_CYAN;
-    case LOG_INFO:  return TUI_GREEN;
-    case LOG_WARN:  return TUI_YELLOW;
-    case LOG_ERROR: return TUI_RED;
+    case LOG_LEVEL_DEBUG: return TUI_CYAN;
+    case LOG_LEVEL_INFO:  return TUI_GREEN;
+    case LOG_LEVEL_WARN:  return TUI_YELLOW;
+    case LOG_LEVEL_ERROR: return TUI_RED;
     default:        return TUI_GRAY;
     }
 }
@@ -247,10 +247,10 @@ static const char *tui_event_level_color(int level)
 static const char *tui_event_level_label(int level)
 {
     switch (level) {
-    case LOG_DEBUG: return "DEBUG";
-    case LOG_INFO:  return "INFO ";
-    case LOG_WARN:  return "WARN ";
-    case LOG_ERROR: return "ERROR";
+    case LOG_LEVEL_DEBUG: return "DEBUG";
+    case LOG_LEVEL_INFO:  return "INFO ";
+    case LOG_LEVEL_WARN:  return "WARN ";
+    case LOG_LEVEL_ERROR: return "ERROR";
     default:        return "LOG  ";
     }
 }

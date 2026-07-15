@@ -3,7 +3,7 @@
 #include "client.h"
 #include <getopt.h>
 
-int g_log_level = LOG_INFO;
+int g_log_level = LOG_LEVEL_INFO;
 volatile bool g_tui_active = true;
 time_t g_start_time = 0;
 volatile int g_running = 1;
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
     config_t cfg;
     memset(&cfg, 0, sizeof(cfg));
     cfg.port = TUND_PORT;
-    cfg.log_level = LOG_INFO;
+    cfg.log_level = LOG_LEVEL_INFO;
     cfg.tui_mode = true;
 
     if (argc < 2) {
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
             cfg.tui_mode = false;
             break;
         case 'v':
-            cfg.log_level = LOG_DEBUG;
+            cfg.log_level = LOG_LEVEL_DEBUG;
             break;
         case 'h':
             print_usage(argv[0], true);
