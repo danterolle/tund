@@ -25,7 +25,8 @@ ifneq ($(filter MINGW%,$(UNAME_S)),)
     LDFLAGS  := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
 endif
 
-SRCS     := src/app/main.c src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(TUN_SRC)
+PROTO_SRC := src/protocol/protocol.c
+SRCS     := src/app/main.c src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(PROTO_SRC) $(TUN_SRC)
 HDRS     := src/app/tund.h src/protocol/protocol.h src/tun/tun.h src/net/network.h src/core/server.h src/core/client.h src/ui/tui.h
 TEST_SRCS := tests/test_protocol.c
 
@@ -49,7 +50,7 @@ $(TARGET): $(SRCS) $(HDRS)
 CROSS_W64   := x86_64-w64-mingw32
 DIST        := dist
 TARGET_WCON := $(DIST)/tund.exe
-WIN_SRCS    := src/app/main.c src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c src/tun/windows.c
+WIN_SRCS    := src/app/main.c src/net/network.c src/core/server.c src/core/client.c src/ui/tui.c $(PROTO_SRC) src/tun/windows.c
 WIN_CFLAGS  := -Wall -Wextra -O2 -std=c11 -D_WIN32_WINNT=0x0601 $(INCLUDES)
 WIN_LIBS    := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
 
@@ -66,14 +67,14 @@ SAN_TEST_TARGET := $(DIST)/test_protocol_sanitize$(EXEEXT)
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
-$(TEST_TARGET): $(TEST_SRCS) src/protocol/protocol.h | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SRCS) $(LDFLAGS)
+$(TEST_TARGET): $(TEST_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SRCS) $(PROTO_SRC) $(LDFLAGS)
 
 sanitize: $(SAN_TEST_TARGET)
 	./$(SAN_TEST_TARGET)
 
-$(SAN_TEST_TARGET): $(TEST_SRCS) src/protocol/protocol.h | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SRCS) $(LDFLAGS) $(SAN_FLAGS)
+$(SAN_TEST_TARGET): $(TEST_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SRCS) $(PROTO_SRC) $(LDFLAGS) $(SAN_FLAGS)
 
 WINTUN_URL    := https://www.wintun.net/builds/wintun-0.14.1.zip
 WINTUN_SHA256 := 07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51
