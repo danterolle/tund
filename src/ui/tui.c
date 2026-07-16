@@ -65,7 +65,7 @@ void tui_render_client(const char *server_addr, uint16_t port,
     tui_section("Connection");
     snprintf(line, sizeof(line), "%s:%u", server_addr, port);
     tui_kv("Server", line);
-    tui_kv("RTT", rtt_str);
+    tui_kv("Keepalive", rtt_str);
     tui_kv("TUN", tun_name);
     snprintf(line, sizeof(line), "%s/%s", ip_str, mask_str);
     tui_kv("Virtual", line);

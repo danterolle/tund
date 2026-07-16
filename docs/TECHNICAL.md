@@ -41,7 +41,7 @@ Each endpoint sets the TUN MTU to 1400 bytes. The lower-than-Ethernet MTU reserv
 4. A client resolves the server, binds an ephemeral UDP port and sends `MSG_REGISTER`.
 5. The server allocates an unused `10.9.0.x` address and replies with `MSG_ASSIGN`.
 6. The client configures its TUN interface and starts the TUN-reader and keepalive threads.
-7. Both sides exchange keepalive probes and acknowledgements to update liveness and RTT.
+7. Both sides exchange keepalive probes and acknowledgements to update liveness and keepalive RTT.
 
 ## Datagram format
 
@@ -63,7 +63,7 @@ Message types are `REGISTER`, `ASSIGN`, `PEER_LIST`, `DATA`, `KEEPALIVE`, `KEEPA
 
 `KEEPALIVE` carries the sender's monotonic millisecond timestamp. The receiver replies with `KEEPALIVE_ACK` containing the same timestamp. The original sender compares it with its current monotonic time to estimate RTT.
 
-Clients periodically probe the server and display server RTT in the TUI. The server also probes each active peer, updates `last_seen`, and records per-peer RTT for the peer table.
+Clients periodically probe the server and display smoothed keepalive RTT in the TUI. The server also probes each active peer, updates `last_seen`, and records smoothed per-peer keepalive RTT for the peer table. Tund uses a simple EWMA (`7/8` previous value, `1/8` latest sample) to hide scheduler spikes while still following real changes. This is an application-level health metric, not an ICMP ping measurement.
 
 ## Packet forwarding
 

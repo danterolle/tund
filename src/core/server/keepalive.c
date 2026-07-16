@@ -38,8 +38,11 @@ void server_handle_keepalive_ack(server_t *srv, const uint8_t *payload,
     pthread_mutex_lock(&srv->peers_lock);
     int idx = server_find_peer_by_addr(srv, from);
     if (idx >= 0) {
+        uint64_t sample = now - sent_at;
         srv->peers[idx].last_seen = time(NULL);
-        srv->peers[idx].rtt_ms = now - sent_at;
+        srv->peers[idx].rtt_ms = smooth_rtt_ms(srv->peers[idx].rtt_ms,
+                                               sample,
+                                               srv->peers[idx].has_rtt);
         srv->peers[idx].has_rtt = true;
     }
     pthread_mutex_unlock(&srv->peers_lock);

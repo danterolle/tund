@@ -89,7 +89,7 @@ void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int npeers)
     snprintf(title, sizeof(title), "Peers (%d)", peer_count);
     tui_section(title);
     tui_printf(" %s%-8s %-15s %-18s %7s %7s %7s %s%s\n",
-               TUI_GRAY, "Status", "Virtual IP", "Name", "RTT", "In", "Out", "Last", TUI_RESET);
+               TUI_GRAY, "Status", "Virtual IP", "Name", "KA RTT", "In", "Out", "Last", TUI_RESET);
 
     bool any = false;
     for (int i = 0; i < npeers; i++) {

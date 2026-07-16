@@ -110,7 +110,7 @@ This covers registration, authenticated keepalives, and optional client-to-clien
 
 ## Verify it works
 
-After a client connects, the server TUI should show the peer, its virtual IP, and an RTT value. From the client, first try:
+After a client connects, the server TUI should show the peer, its virtual IP, and a keepalive RTT value. From the client, first try:
 
 ```bash
 ping 10.9.0.1

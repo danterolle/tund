@@ -133,6 +133,7 @@ static inline uint64_t now_ms(void)
 #define TUND_MAX_PEERS    253     /* 10.9.0.2 .. 10.9.0.254 */
 #define TUND_VERSION      "1.9"
 #define TUND_IP_STR_LEN   INET_ADDRSTRLEN
+#define TUND_RTT_SMOOTHING_WEIGHT 7  /* EWMA: 7/8 previous, 1/8 latest sample */
 
 extern volatile bool g_tui_active;
 extern time_t g_start_time;
@@ -171,6 +172,15 @@ static inline const char *ip_to_str_buf(uint32_t ip_nbo, char *buf, size_t len)
     if (!inet_ntop(AF_INET, &a, buf, (socklen_t)len))
         snprintf(buf, len, "<invalid>");
     return buf;
+}
+
+static inline uint64_t smooth_rtt_ms(uint64_t current, uint64_t sample, bool has_current)
+{
+    if (!has_current)
+        return sample;
+    return (current * TUND_RTT_SMOOTHING_WEIGHT + sample +
+            TUND_RTT_SMOOTHING_WEIGHT / 2) /
+           (TUND_RTT_SMOOTHING_WEIGHT + 1);
 }
 
 extern volatile int g_running;

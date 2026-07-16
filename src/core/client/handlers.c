@@ -21,9 +21,12 @@ static void client_handle_keepalive_ack(client_t *cli, const uint8_t *payload, u
     if (now < sent_at)
         return;
 
-    cli->server_rtt_ms = now - sent_at;
+    uint64_t sample = now - sent_at;
+    cli->server_rtt_ms = smooth_rtt_ms(cli->server_rtt_ms, sample,
+                                       cli->has_server_rtt);
     cli->has_server_rtt = true;
-    LOG_DEBUG("Server RTT: %llums", (unsigned long long)cli->server_rtt_ms);
+    LOG_DEBUG("Server keepalive RTT: %llums",
+              (unsigned long long)cli->server_rtt_ms);
 }
 
 static void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint16_t plen)
