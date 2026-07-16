@@ -21,6 +21,7 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 | `src/tun/darwin/` | macOS `utun` device and interface configuration. |
 | `src/tun/windows/` | Windows Wintun loading, process helpers, and IP/route/MTU configuration. |
 | `src/ui/` | Public TUI API, rendering helpers, and recent event log. |
+| [`gui/`](../gui/README.md) | Optional Flutter Windows launcher that starts `tund.exe` without reimplementing the tunnel. |
 
 ## Repository layout
 
@@ -38,6 +39,7 @@ tund
 │   │   ├── darwin/
 │   │   └── windows/
 │   └── ui/              # terminal UI, rendering, events
+├── gui/                 # optional Windows Flutter launcher
 ├── docs/                # Usage, troubleshooting, and technical docs
 ├── tests/               # Protocol unit tests
 ├── Makefile

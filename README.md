@@ -62,7 +62,7 @@ On every machine that should join the LAN:
 sudo ./tund client -s <server_ip> -k "a-long-random-key"
 ```
 
-Use the same key everywhere. On Windows, run `tund_gui.exe` for the GUI or `tund.exe` for the CLI; if needed, Windows asks for Administrator privileges through UAC.
+Use the same key everywhere. On Windows, run `tund_gui.exe` for the GUI or `tund.exe` for the CLI; if needed, Windows asks for Administrator privileges through UAC. See the [GUI README](gui/README.md) for details.
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). For full usage, build, and verification steps, see [Usage](docs/USAGE.md).
 
@@ -72,7 +72,7 @@ Pre-built binaries are available on the [releases page](https://github.com/dante
 - **Auto-discovery** — clients are automatically recognized when they connect
 - **NAT-friendly clients** — clients only need outbound UDP to a reachable server
 - **Cross-platform** — Windows, macOS, and Linux
-- **Windows GUI** — optional Flutter launcher for non-terminal users
+- **Windows GUI** — optional Flutter launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
 - **Single executable** — server and client modes in one program
 - **Minimal dependencies** — Linux/macOS use system libraries; Windows ships with `wintun.dll`
 - **Graceful shutdown** — Ctrl+C cleanly disconnects and notifies peers
@@ -103,10 +103,11 @@ For Artemis, start the server first, connect every station with the same key, th
 - [Usage](docs/USAGE.md) — commands, build steps, examples, and verification.
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — firewall, Windows/macOS notes, and common connectivity checks.
 - [Technical documentation](docs/TECHNICAL.md) — protocol, architecture, platform internals, and security boundaries.
+- [GUI README](gui/README.md) — Windows Flutter launcher notes and build details.
 
 ## Project structure
 
-Source code is organized by module under `src/`: app startup and CLI, core server/client logic, UDP networking, protocol helpers, platform TUN backends, and terminal UI. The optional Windows GUI lives in `gui/`. User-facing guides live in `docs/`. For implementation details, protocol framing, security boundaries, and platform lifecycle notes, see [Technical documentation](docs/TECHNICAL.md).
+Source code is organized by module under `src/`: app startup and CLI, core server/client logic, UDP networking, protocol helpers, platform TUN backends, and terminal UI. The optional Windows GUI lives in [`gui/`](gui/README.md). User-facing guides live in `docs/`. For implementation details, protocol framing, security boundaries, and platform lifecycle notes, see [Technical documentation](docs/TECHNICAL.md).
 
 ## Requirements
 

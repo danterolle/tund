@@ -8,7 +8,7 @@ Windows releases include `tund_gui.exe`, `tund.exe`, `flutter_windows.dll`, the 
 
 ## Windows GUI
 
-On Windows 10/11, run `tund_gui.exe` if you prefer not to use a terminal. The GUI starts `tund.exe` with the selected mode and shows the process log.
+On Windows 10/11, run `tund_gui.exe` if you prefer not to use a terminal. The GUI starts `tund.exe` with the selected mode and shows the process log. See the [GUI README](../gui/README.md) for GUI-specific notes.
 
 ## Start the server
 
@@ -86,7 +86,7 @@ make
 make windows
 ```
 
-Run `tund.exe` from the generated `dist` directory. Release builds also include the Flutter GUI, which is built by GitHub Actions on Windows.
+Run `tund.exe` from the generated `dist` directory. Release builds also include the Flutter GUI, which is built by GitHub Actions on Windows; details live in [`gui/README.md`](../gui/README.md).
 
 ### Full local verification
 
