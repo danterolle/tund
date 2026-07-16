@@ -66,17 +66,13 @@ class TundHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            color: TundColors.blue.withValues(alpha: 0.16),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: TundColors.blue.withValues(alpha: 0.45)),
-          ),
-          child: const Center(
-            child: Text('T',
-                style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900)),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Image.asset(
+            'assets/logo.png',
+            width: 64,
+            height: 64,
+            semanticLabel: 'Tund logo',
           ),
         ),
         const SizedBox(width: 18),
@@ -86,7 +82,7 @@ class TundHeader extends StatelessWidget {
             children: [
               Text('Tund',
                   style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900)),
-              Text('Virtual LAN launcher for Windows',
+              Text('Virtual LAN launcher',
                   style: TextStyle(color: TundColors.muted, fontSize: 15)),
             ],
           ),
