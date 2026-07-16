@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:tund_gui/main.dart';
+import 'package:tund_gui/app.dart';
 
 void main() {
   testWidgets('renders the launcher shell', (tester) async {

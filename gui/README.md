@@ -7,7 +7,6 @@ It starts the existing `tund.exe`; it does not reimplement the tunnel.
 ## Build
 
 ```powershell
-flutter create --platforms=windows --project-name tund_gui .
 flutter build windows --release
 ```
 

@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'theme.dart';
 import 'tund_launcher.dart';
-import 'widgets.dart';
+import 'widgets/widgets.dart';
 
 class TundHomePage extends StatefulWidget {
   const TundHomePage({super.key});
@@ -42,6 +42,8 @@ class _TundHomePageState extends State<TundHomePage> {
   }
 
   Future<void> startTund() async {
+    if (running) return;
+
     final config = currentConfig();
     final error = config.validate();
     if (error != null) {
@@ -98,10 +100,7 @@ class _TundHomePageState extends State<TundHomePage> {
 
   void appendLog(String text) {
     if (!mounted) return;
-    setState(() {
-      status = launcher.running ? 'Running' : status;
-      log.write(text);
-    });
+    setState(() => log.write(text));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (logScroll.hasClients) {
         logScroll.jumpTo(logScroll.position.maxScrollExtent);
