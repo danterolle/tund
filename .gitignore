@@ -1,6 +1,7 @@
 *.o
 *.exe
 tund
+tund-cli
 *.dll
 dist/
 dist.zip

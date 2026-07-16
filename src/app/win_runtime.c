@@ -129,7 +129,7 @@ static LONG WINAPI crash_handler(EXCEPTION_POINTERS *ep)
         "  - Stack overflow in the network thread\n"
         "  - Wintun driver not installed correctly\n\n"
         "Make sure you are running as Administrator and that wintun.dll\n"
-        "is in the same directory as tund.exe.\n\n"
+        "is in the same directory as tund-cli.exe.\n\n"
         "Details saved to: tund_crash.log",
         "Tund - Fatal Error", MB_OK | MB_ICONERROR);
     return EXCEPTION_EXECUTE_HANDLER;

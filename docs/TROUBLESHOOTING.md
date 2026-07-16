@@ -19,7 +19,7 @@ If ping fails but registration succeeded, ICMP may be blocked by a firewall. Tes
 ## Windows notes
 
 - **Administrator privileges**: Tund creates a TUN interface, so Windows may show a UAC prompt on startup. Accept it to continue.
-- **Wintun**: keep `wintun.dll` next to `tund.exe`. The release zip already bundles both files.
+- **Wintun**: keep `wintun.dll` next to `tund-cli.exe`. The release zip already bundles both files.
 - **Server firewall**: Tund does not change Windows Firewall automatically. If this machine is the server, allow inbound UDP on port `9909` or clients will not be able to reach it.
 
 ```cmd
@@ -32,7 +32,7 @@ netsh advfirewall set allprofiles state on
 ```
 
 - **ICMP (ping)**: Windows Firewall often blocks ICMP echo requests on the virtual adapter. Ping is not required for game traffic, only for connectivity checks.
-- **Console encoding**: `tund.exe` sets UTF-8 automatically. If characters display incorrectly in older terminals, run `chcp 65001` before launching the program.
+- **Console encoding**: `tund-cli.exe` sets UTF-8 automatically. If characters display incorrectly in older terminals, run `chcp 65001` before launching the program.
 
 ## macOS notes
 
@@ -55,5 +55,5 @@ Run this once before launching. If the warning persists, open **System Settings 
 | Authentication failure | Shared key mismatch or incompatible protocol version |
 | Route/subnet error | Another VPN or LAN already uses `10.9.0.0/24` |
 | Ping fails but peer is connected | ICMP blocked by host firewall |
-| Windows cannot load Wintun | `wintun.dll` missing or not beside `tund.exe` |
+| Windows cannot load Wintun | `wintun.dll` missing or not beside `tund-cli.exe` |
 | TUI flickers in old `cmd.exe` | Use Windows Terminal or run with `--no-tui` |

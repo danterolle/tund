@@ -18,8 +18,8 @@ jobs:
       - run: make sanitize
       - uses: actions/upload-artifact@v4
         with:
-          name: tund-linux-x86_64
-          path: tund
+          name: tund-cli-linux-x86_64
+          path: tund-cli
 
   macos:
     runs-on: macos-latest
@@ -31,8 +31,8 @@ jobs:
       - run: make sanitize
       - uses: actions/upload-artifact@v4
         with:
-          name: tund-darwin-arm64
-          path: tund
+          name: tund-cli-darwin-arm64
+          path: tund-cli
 
   windows:
     runs-on: windows-latest
@@ -57,7 +57,7 @@ jobs:
             zip
             curl
       - run: make
-      - run: ./tund.exe --help
+      - run: ./tund-cli.exe --help
       - run: make tools
       - name: Build GUI
         shell: pwsh
@@ -80,10 +80,10 @@ jobs:
           cp /tmp/wintun/bin/amd64/wintun.dll .
       - name: Package Windows release
         run: |
-          cp gui/build/windows/x64/runner/Release/tund_gui.exe .
+          cp gui/build/windows/x64/runner/Release/tund-gui.exe .
           cp gui/build/windows/x64/runner/Release/flutter_windows.dll .
           cp -R gui/build/windows/x64/runner/Release/data .
-          zip -r tund-windows-x86_64.zip tund.exe tund_gui.exe flutter_windows.dll data wintun.dll
+          zip -r tund-windows-x86_64.zip tund-cli.exe tund-gui.exe flutter_windows.dll data wintun.dll
       - uses: actions/upload-artifact@v4
         with:
           name: tund-windows-x86_64
@@ -99,8 +99,8 @@ jobs:
       - uses: actions/download-artifact@v4
       - run: |
           mkdir release
-          cp tund-linux-x86_64/tund                    release/tund-linux-x86_64
-          cp tund-darwin-arm64/tund                    release/tund-darwin-arm64
+          cp tund-cli-linux-x86_64/tund-cli            release/tund-cli-linux-x86_64
+          cp tund-cli-darwin-arm64/tund-cli            release/tund-cli-darwin-arm64
           cp tund-windows-x86_64/tund-windows-x86_64.zip release/
       - uses: softprops/action-gh-release@v2
         with:

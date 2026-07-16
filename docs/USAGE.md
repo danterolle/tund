@@ -4,20 +4,20 @@
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases).
 
-Windows releases include `tund_gui.exe`, `tund.exe`, `flutter_windows.dll`, the Flutter `data` folder, and `wintun.dll`; keep them together. For GUI-specific notes, see the [GUI README](../gui/README.md).
+Windows releases include `tund-gui.exe`, `tund-cli.exe`, `flutter_windows.dll`, the Flutter `data` folder, and `wintun.dll`; keep them together. For GUI-specific notes, see the [GUI README](../gui/README.md).
 
 ## Start the server
 
 On the machine that should act as the hub:
 
 ```bash
-sudo ./tund server -k "a-long-random-key"
+sudo ./tund-cli server -k "a-long-random-key"
 ```
 
 On Windows:
 
 ```powershell
-.\tund.exe server -k "a-long-random-key"
+.\tund-cli.exe server -k "a-long-random-key"
 ```
 
 Options:
@@ -32,13 +32,13 @@ Options:
 ## Connect as a client
 
 ```bash
-sudo ./tund client -s <server_ip> -k "a-long-random-key"
+sudo ./tund-cli client -s <server_ip> -k "a-long-random-key"
 ```
 
 On Windows:
 
 ```powershell
-.\tund.exe client -s <server_ip> -k "a-long-random-key"
+.\tund-cli.exe client -s <server_ip> -k "a-long-random-key"
 ```
 
 Options:
@@ -56,13 +56,13 @@ Options:
 
 ```bash
 # Machine A (server, e.g. IP 203.0.113.10):
-sudo ./tund server -k "a-long-random-key"
+sudo ./tund-cli server -k "a-long-random-key"
 
 # Machine B (client, behind NAT):
-sudo ./tund client -s 203.0.113.10 -n "Gaming-PC" -k "a-long-random-key"
+sudo ./tund-cli client -s 203.0.113.10 -n "Gaming-PC" -k "a-long-random-key"
 
 # Machine C (client, behind NAT):
-sudo ./tund client -s 203.0.113.10 -n "Work-Laptop" -k "a-long-random-key"
+sudo ./tund-cli client -s 203.0.113.10 -n "Work-Laptop" -k "a-long-random-key"
 
 # Now Machine B can ping Machine C:
 ping 10.9.0.3
@@ -82,7 +82,7 @@ make
 make windows
 ```
 
-Run `tund.exe` from the generated `dist` directory.
+Run `tund-cli.exe` from the generated `dist` directory.
 
 ### Full local verification
 

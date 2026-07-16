@@ -379,16 +379,16 @@
         </svg>
         <h1>Tund</h1>
       </div>
-      <p class="tagline">A lightweight, self-hosted virtual LAN tool. Single executable, minimal dependencies, written in pure C.</p>
+      <p class="tagline">A lightweight, self-hosted virtual LAN tool. C core, minimal dependencies, optional Windows GUI.</p>
 
       <div class="buttons">
         <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1.9/tund-windows-x86_64.zip">
           <i class="ti ti-brand-windows"></i>Windows 10/11
         </a>
-        <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1.9/tund-linux-x86_64">
+        <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1.9/tund-cli-linux-x86_64">
           <i class="ti ti-brand-debian"></i>GNU/Linux
         </a>
-        <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1.9/tund-darwin-arm64">
+        <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1.9/tund-cli-darwin-arm64">
           <i class="ti ti-brand-apple"></i>macOS
         </a>
       </div>
@@ -434,11 +434,11 @@
       <ol class="win-steps">
         <li>
           <span class="num"></span>
-          <span class="step-text">Download <code>tund-windows-x86_64.zip</code> above and extract both files into the same folder.</span>
+          <span class="step-text">Download <code>tund-windows-x86_64.zip</code> above and extract all files into the same folder.</span>
         </li>
         <li>
           <span class="num"></span>
-          <span class="step-text">Run <code>tund.exe</code> with the command you need. If Windows shows a UAC prompt, accept it so Tund can create the TUN interface.</span>
+          <span class="step-text">Run <code>tund-gui.exe</code> for the GUI or <code>tund-cli.exe</code> for the CLI. If Windows shows a UAC prompt, accept it so Tund can create the TUN interface.</span>
         </li>
         <li>
           <span class="num"></span>
@@ -455,7 +455,7 @@
         </li>
         <li>
           <span class="num"></span>
-          <span class="step-text">Launch with the same commands as Linux/macOS, e.g. <code>tund.exe server -k "a-long-random-key"</code>.</span>
+          <span class="step-text">Launch with the same commands as Linux/macOS, e.g. <code>tund-cli.exe server -k "a-long-random-key"</code>.</span>
         </li>
       </ol>
       <p class="win-note"><i class="ti ti-info-circle"></i>Windows Firewall often blocks ping (ICMP) on the virtual adapter even when the tunnel works fine — this doesn't affect game traffic, only connectivity checks.</p>

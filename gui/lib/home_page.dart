@@ -55,7 +55,8 @@ class _TundHomePageState extends State<TundHomePage> {
       status = 'Starting';
       log.clear();
     });
-    appendLog('> tund.exe ${config.displayArgs()}\n\n');
+    appendLog(
+        '> ${launcher.executable().uri.pathSegments.last} ${config.displayArgs()}\n\n');
 
     try {
       final exitCode = await launcher.start(
@@ -77,7 +78,7 @@ class _TundHomePageState extends State<TundHomePage> {
     } catch (error) {
       if (!mounted) return;
       setState(() => status = 'Failed');
-      showError('Cannot start tund.exe: $error');
+      showError('Cannot start tund-cli.exe: $error');
     }
   }
 

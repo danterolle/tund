@@ -73,7 +73,17 @@ class TundLauncher {
 
   File executable() {
     final app = File(Platform.resolvedExecutable);
-    return File('${app.parent.path}${Platform.pathSeparator}tund.exe');
+    final names = Platform.isWindows
+        ? const ['tund-cli.exe', 'tund.exe']
+        : const ['tund-cli', 'tund'];
+    for (final name in names) {
+      final candidate =
+          File('${app.parent.path}${Platform.pathSeparator}$name');
+      if (candidate.existsSync()) {
+        return candidate;
+      }
+    }
+    return File('${app.parent.path}${Platform.pathSeparator}${names.first}');
   }
 
   Future<int> start(
@@ -88,7 +98,7 @@ class TundLauncher {
     final exe = executable();
     if (!await exe.exists()) {
       throw const TundLaunchException(
-          'Place tund.exe in the same folder as tund_gui.exe.');
+          'Place tund-cli.exe in the same folder as tund-gui.exe.');
     }
 
     final process = await Process.start(

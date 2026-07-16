@@ -17,7 +17,7 @@ Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge
 
 Built iteratively with DeepSeek V4 Flash: observing the generated code, refactoring and modularising as it grew. A "one-shot" tool made for fun, for a specific purpose and perhaps to learn something along the way.
 
-It behaves like Radmin VPN, but open source and cross-platform. Written in C — Linux and macOS use only system libraries; Windows bundles Wintun for TUN support.
+It behaves like Radmin VPN, but open source and cross-platform. The core is written in C — Linux and macOS use only system libraries; Windows bundles Wintun for TUN support.
 
 ## How it works
 
@@ -41,31 +41,27 @@ It behaves like Radmin VPN, but open source and cross-platform. Written in C —
 On a machine with a public IP:
 
 ```bash
-sudo ./tund server -k "a-long-random-key"
+sudo ./tund-cli server -k "a-long-random-key"
 ```
 
 On every machine that should join the LAN:
 
 ```bash
-sudo ./tund client -s <server_ip> -k "a-long-random-key"
+sudo ./tund-cli client -s <server_ip> -k "a-long-random-key"
 ```
 
-Use the same key everywhere. On Windows, run `tund_gui.exe` for the GUI or `tund.exe` for the CLI; if needed, Windows asks for Administrator privileges through UAC. See the [GUI README](gui/README.md) for details.
+Use the same key everywhere. On Windows, run `tund-gui.exe` for the GUI or `tund-cli.exe` for the CLI; if needed, Windows asks for Administrator privileges through UAC. See the [GUI README](gui/README.md) for details.
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). For full usage, build, and verification steps, see [Usage](docs/USAGE.md).
 
 ## Features
 
 - **Zero registration** — no accounts or external service
-- **Auto-discovery** — clients are automatically recognized when they connect
 - **NAT-friendly clients** — clients only need outbound UDP to a reachable server
 - **Cross-platform** — Windows, macOS, and Linux
 - **Windows GUI** — optional Flutter launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
-- **Single executable** — server and client modes in one program
-- **Minimal dependencies** — Linux/macOS use system libraries; Windows ships with `wintun.dll`
-- **Graceful shutdown** — Ctrl+C cleanly disconnects and notifies peers
-- **Keepalive** — automatic peer timeout detection (30s) and RTT tracking
-- **Broadcast support** — LAN broadcast packets are forwarded
+- **Single CLI binary** — server and client modes in one program
+- **IPv4 broadcast support** — useful for LAN-style discovery in compatible games
 - **Authenticated membership** — packets without the shared network key are discarded
 
 ## Game compatibility
@@ -88,7 +84,7 @@ For Artemis, start the server first, connect every station with the same key, th
 - C11 compiler (gcc, clang)
 - Root/sudo (for TUN interface creation)
 - Windows 10/11 x64, macOS 10.10+, or Linux 2.6+
-- Windows: bundled `tund_gui.exe` and `wintun.dll` in release zips; macOS/Linux: native TUN support enabled by the OS
+- Windows: bundled `tund-gui.exe`, `tund-cli.exe`, and `wintun.dll` in release zips; macOS/Linux: native TUN support enabled by the OS
 
 ## License
 

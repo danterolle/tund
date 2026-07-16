@@ -28,7 +28,7 @@ int wintun_load(void)
 
     g_wintun_dll = LoadLibraryW(L"wintun.dll");
     if (!g_wintun_dll) {
-        LOG_ERROR("Failed to load wintun.dll (error %lu); keep wintun.dll next to tund.exe or use the bundled Windows release.",
+        LOG_ERROR("Failed to load wintun.dll (error %lu); keep wintun.dll next to tund-cli.exe or use the bundled Windows release.",
                   GetLastError());
         return -1;
     }

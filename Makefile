@@ -2,7 +2,7 @@ CC       := cc
 CFLAGS   := -Wall -Wextra -O2 -std=c11
 INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/core/client -Isrc/core/server -Isrc/tun -Isrc/ui
 LDFLAGS  := -pthread
-TARGET   := tund
+TARGET   := tund-cli
 EXEEXT   :=
 SAN_FLAGS := -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer
 RUN_PREFIX := sudo ./
@@ -19,7 +19,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 ifneq ($(filter MINGW%,$(UNAME_S)),)
     TUN_SRC  := src/tun/windows/tun.c src/tun/windows/config.c src/tun/windows/process.c src/tun/windows/wintun_loader.c
-    TARGET   := tund.exe
+    TARGET   := tund-cli.exe
     EXEEXT   := .exe
     RUN_PREFIX :=
     LDFLAGS  := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32
@@ -54,11 +54,11 @@ $(TARGET): $(SRCS) $(HDRS)
 # Windows cross-compilation via mingw-w64
 #   Requires: brew install mingw-w64
 #   Build:    make windows
-#   Result:   dist/tund.exe + dist/wintun.dll
+#   Result:   dist/tund-cli.exe + dist/wintun.dll
 
 CROSS_W64   := x86_64-w64-mingw32
 DIST        := dist
-TARGET_WCON := $(DIST)/tund.exe
+TARGET_WCON := $(DIST)/tund-cli.exe
 WIN_TUN_SRCS := src/tun/windows/tun.c src/tun/windows/config.c src/tun/windows/process.c src/tun/windows/wintun_loader.c
 WIN_APP_SRC := src/app/main.c src/app/cli.c src/app/log.c src/app/platform.c $(WIN_RUNTIME_SRC)
 WIN_SRCS    := $(WIN_APP_SRC) src/net/network.c $(SERVER_SRC) $(CLIENT_SRC) $(UI_SRC) $(PROTO_SRC) $(WIN_TUN_SRCS)
@@ -116,8 +116,8 @@ windows: $(TARGET_WCON) $(DIST)/wintun.dll
 	@echo ""
 	@echo "  ✓ Deployed to dist/"
 	@echo "  Run on Windows (UAC prompt if needed):"
-	@echo "    dist/tund.exe server -k <key>"
-	@echo "    dist/tund.exe client -s <ip> -k <key>"
+	@echo "    dist/tund-cli.exe server -k <key>"
+	@echo "    dist/tund-cli.exe client -s <ip> -k <key>"
 
 install: $(TARGET)
 	install -m 755 $(TARGET) /usr/local/bin/$(TARGET)
