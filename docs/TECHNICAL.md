@@ -23,29 +23,6 @@ It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement fo
 | `src/ui/` | Public TUI API, rendering helpers, and recent event log. |
 | [`gui/`](../gui/README.md) | Optional Flutter Windows launcher that starts `tund.exe` without reimplementing the tunnel. |
 
-## Repository layout
-
-```text
-tund
-├── src/
-│   ├── app/             # startup, CLI, platform runtime, logging, shared types
-│   ├── core/            # server/client state machines
-│   │   ├── server/       # server-specific internals
-│   │   └── client/       # client-specific internals
-│   ├── net/             # UDP socket helpers
-│   ├── protocol/        # wire protocol helpers
-│   ├── tun/             # platform TUN implementations
-│   │   ├── linux/
-│   │   ├── darwin/
-│   │   └── windows/
-│   └── ui/              # terminal UI, rendering, events
-├── gui/                 # optional Windows Flutter launcher
-├── docs/                # Usage, troubleshooting, and technical docs
-├── tests/               # Protocol unit tests
-├── Makefile
-└── README.md
-```
-
 ## Virtual network
 
 The virtual network is fixed to `10.9.0.0/24`.

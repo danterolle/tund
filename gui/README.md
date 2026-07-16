@@ -6,7 +6,7 @@ It starts the existing `tund.exe`; it does not reimplement the tunnel.
 
 This GUI exists because a friend explicitly asked for a Windows-friendly way to use Tund without opening a single terminal window. I am not familiar with Flutter or Dart so this code was primarily produced by AI under my supervision and practical engineering experience.
 
-## Build
+## Local build
 
 ```powershell
 flutter build windows --release

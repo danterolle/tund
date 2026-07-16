@@ -1,15 +1,8 @@
 # Tund — Troubleshooting
 
-## Network details
+## Network basics
 
 - Tund listens on UDP port `9909` by default. Allow inbound UDP on the server firewall; clients normally need only outbound UDP.
-  - **Linux (ufw):** `sudo ufw allow 9909/udp`
-  - **Linux (firewalld):** `sudo firewall-cmd --add-port=9909/udp --permanent && sudo firewall-cmd --reload`
-  - **Linux (iptables):** `sudo iptables -A INPUT -p udp --dport 9909 -j ACCEPT`
-  - **Windows:** `netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909`
-  - **macOS:** usually no firewall blocks inbound by default; check System Settings → Network → Firewall
-- The tunnel MTU is `1400` bytes, leaving room for UDP encapsulation.
-- Each datagram has a 13-byte Tund header: magic/version/type/length plus an 8-byte SipHash integrity tag derived from the shared key.
 - The virtual subnet is fixed at `10.9.0.0/24`. Do not use Tund on a host already routing that subnet through a real LAN or another VPN.
 - All participants must run the same Tund protocol version: authenticated framing is not compatible with older builds.
 

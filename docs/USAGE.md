@@ -4,11 +4,7 @@
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases).
 
-Windows releases include `tund_gui.exe`, `tund.exe`, `flutter_windows.dll`, the Flutter `data` folder, and `wintun.dll`; keep them in the same folder.
-
-## Windows GUI
-
-On Windows 10/11, run `tund_gui.exe` if you prefer not to use a terminal. The GUI starts `tund.exe` with the selected mode and shows the process log. See the [GUI README](../gui/README.md) for GUI-specific notes.
+Windows releases include `tund_gui.exe`, `tund.exe`, `flutter_windows.dll`, the Flutter `data` folder, and `wintun.dll`; keep them together. For GUI-specific notes, see the [GUI README](../gui/README.md).
 
 ## Start the server
 
@@ -86,7 +82,7 @@ make
 make windows
 ```
 
-Run `tund.exe` from the generated `dist` directory. Release builds also include the Flutter GUI, which is built by GitHub Actions on Windows; details live in [`gui/README.md`](../gui/README.md).
+Run `tund.exe` from the generated `dist` directory.
 
 ### Full local verification
 

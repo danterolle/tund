@@ -19,18 +19,6 @@ Built iteratively with DeepSeek V4 Flash: observing the generated code, refactor
 
 It behaves like Radmin VPN, but open source and cross-platform. Written in C — Linux and macOS use only system libraries; Windows bundles Wintun for TUN support.
 
-## Table of Contents
-
-- [How it works](#how-it-works)
-- [Quick start](#quick-start)
-- [Features](#features)
-- [Virtual Network](#virtual-network)
-- [Game compatibility](#game-compatibility)
-- [Documentation](#documentation)
-- [Project structure](#project-structure)
-- [Requirements](#requirements)
-- [License](#license)
-
 ## How it works
 
 ```
@@ -80,16 +68,6 @@ Pre-built binaries are available on the [releases page](https://github.com/dante
 - **Broadcast support** — LAN broadcast packets are forwarded
 - **Authenticated membership** — packets without the shared network key are discarded
 
-## Virtual Network
-
-| Address | Role |
-|---------|------|
-| `10.9.0.1` | Server |
-| `10.9.0.2` - `10.9.0.254` | Clients (auto-assigned) |
-| `10.9.0.255` | Broadcast |
-
-Maximum 253 simultaneous clients per network.
-
 ## Game compatibility
 
 Tund transports IPv4 traffic (including the IPv4 subnet broadcast address). It is suitable for direct-IP games and games such as Artemis that use ordinary IPv4 networking. It is not an Ethernet bridge: games requiring Layer-2 discovery, IPv6, or multicast discovery may need direct IP entry or may not work.
@@ -104,10 +82,6 @@ For Artemis, start the server first, connect every station with the same key, th
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — firewall, Windows/macOS notes, and common connectivity checks.
 - [Technical documentation](docs/TECHNICAL.md) — protocol, architecture, platform internals, and security boundaries.
 - [GUI README](gui/README.md) — Windows Flutter launcher notes and build details.
-
-## Project structure
-
-Source code is organized by module under `src/`: app startup and CLI, core server/client logic, UDP networking, protocol helpers, platform TUN backends, and terminal UI. The optional Windows GUI lives in [`gui/`](gui/README.md). User-facing guides live in `docs/`. For implementation details, protocol framing, security boundaries, and platform lifecycle notes, see [Technical documentation](docs/TECHNICAL.md).
 
 ## Requirements
 
