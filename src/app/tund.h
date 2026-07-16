@@ -131,7 +131,7 @@ static inline uint64_t now_ms(void)
 #include "protocol.h"
 
 #define TUND_MAX_PEERS    253     /* 10.9.0.2 .. 10.9.0.254 */
-#define TUND_VERSION      "1.9"
+#define TUND_VERSION      "1.10"
 #define TUND_IP_STR_LEN   INET_ADDRSTRLEN
 #define TUND_RTT_SMOOTHING_WEIGHT 7  /* EWMA: 7/8 previous, 1/8 latest sample */
 
