@@ -92,6 +92,22 @@ make verify
 
 This runs protocol tests, sanitizer tests, the native build, and the Windows cross-build.
 
+### Peerforge diagnostic tool
+
+Build Peerforge, the UDP client simulator:
+
+```bash
+make tools
+```
+
+With a Tund server already running, simulate clients without creating real TUN interfaces:
+
+```bash
+./dist/peerforge -s 127.0.0.1 -k "a-long-random-key" -n 253 -K 1 -d 32
+```
+
+This covers registration, authenticated keepalives, and optional client-to-client DATA probes. It does not test OS routing or real TUN drivers.
+
 ## Verify it works
 
 After a client connects, the server TUI should show the peer, its virtual IP, and an RTT value. From the client, first try:

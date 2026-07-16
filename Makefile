@@ -37,8 +37,9 @@ endif
 SRCS     := $(APP_SRC) src/net/network.c $(SERVER_SRC) $(CLIENT_SRC) $(UI_SRC) $(PROTO_SRC) $(TUN_SRC)
 HDRS     := src/app/tund.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server/server.h src/core/server/internal.h src/core/client/client.h src/core/client/internal.h src/ui/tui.h src/ui/tui_internal.h
 TEST_SRCS := tests/test_protocol.c
+TOOL_SRCS := tools/peerforge/main.c tools/peerforge/options.c tools/peerforge/net.c tools/peerforge/client.c
 
-.PHONY: all clean install uninstall windows test sanitize verify
+.PHONY: all clean install uninstall windows test sanitize tools verify
 
 all: $(TARGET)
 
@@ -73,6 +74,7 @@ $(TARGET_WCON): $(WIN_SRCS) | $(DIST)
 
 TEST_TARGET := $(DIST)/test_protocol$(EXEEXT)
 SAN_TEST_TARGET := $(DIST)/test_protocol_sanitize$(EXEEXT)
+TOOL_TARGET := $(DIST)/peerforge$(EXEEXT)
 
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
@@ -86,8 +88,15 @@ sanitize: $(SAN_TEST_TARGET)
 $(SAN_TEST_TARGET): $(TEST_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SRCS) $(PROTO_SRC) $(LDFLAGS) $(SAN_FLAGS)
 
+tools: $(TOOL_TARGET)
+	@echo "  Run with: ./$(TOOL_TARGET) -s 127.0.0.1 -k <key> -n 253"
+
+$(TOOL_TARGET): $(TOOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TOOL_SRCS) $(PROTO_SRC) $(LDFLAGS)
+
 verify:
 	$(MAKE) test
+	$(MAKE) tools
 	$(MAKE) sanitize
 	$(MAKE) all
 	$(MAKE) windows
@@ -119,6 +128,6 @@ uninstall:
 	@echo "  ✓ Uninstalled from /usr/local/bin"
 
 clean:
-	rm -f $(TARGET) $(TARGET_WCON)
+	rm -f $(TARGET) $(TARGET_WCON) $(TOOL_TARGET)
 	rm -rf $(DIST)/
 	@echo "  ✓ Cleaned"
