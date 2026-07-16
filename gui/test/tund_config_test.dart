@@ -1,0 +1,110 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tund_gui/tund_launcher.dart';
+
+void main() {
+  group('TundConfig validation', () {
+    test('accepts a valid server configuration', () {
+      const config = TundConfig(
+        mode: TundMode.server,
+        server: '',
+        port: '9909',
+        name: '',
+        key: 'a-long-random-key',
+        verbose: false,
+      );
+
+      expect(config.validate(), isNull);
+    });
+
+    test('rejects invalid ports and short keys', () {
+      const invalidPort = TundConfig(
+        mode: TundMode.server,
+        server: '',
+        port: '0',
+        name: '',
+        key: 'a-long-random-key',
+        verbose: false,
+      );
+      const shortKey = TundConfig(
+        mode: TundMode.server,
+        server: '',
+        port: '9909',
+        name: '',
+        key: 'short',
+        verbose: false,
+      );
+
+      expect(invalidPort.validate(), 'Use a port between 1 and 65535.');
+      expect(
+          shortKey.validate(), 'Use a network key of at least 12 characters.');
+    });
+
+    test('requires a server address in client mode', () {
+      const config = TundConfig(
+        mode: TundMode.client,
+        server: '',
+        port: '9909',
+        name: 'Bridge',
+        key: 'a-long-random-key',
+        verbose: false,
+      );
+
+      expect(config.validate(), 'Enter the server IP or hostname.');
+    });
+  });
+
+  group('TundConfig arguments', () {
+    test('builds server arguments', () {
+      const config = TundConfig(
+        mode: TundMode.server,
+        server: '',
+        port: '9909',
+        name: '',
+        key: 'a-long-random-key',
+        verbose: false,
+      );
+
+      expect(config.toArgs(),
+          ['server', '-p', '9909', '-k', 'a-long-random-key', '-t']);
+    });
+
+    test('builds client arguments with default name and verbose flag', () {
+      const config = TundConfig(
+        mode: TundMode.client,
+        server: '203.0.113.10',
+        port: '12345',
+        name: '',
+        key: 'a-long-random-key',
+        verbose: true,
+      );
+
+      expect(config.toArgs(), [
+        'client',
+        '-p',
+        '12345',
+        '-k',
+        'a-long-random-key',
+        '-t',
+        '-s',
+        '203.0.113.10',
+        '-n',
+        'tund-client',
+        '-v',
+      ]);
+    });
+
+    test('hides the network key in display arguments', () {
+      const config = TundConfig(
+        mode: TundMode.client,
+        server: 'example.test',
+        port: '9909',
+        name: 'Gaming PC',
+        key: 'a-long-random-key',
+        verbose: false,
+      );
+
+      expect(config.displayArgs(),
+          'client -p 9909 -k ******** -t -s example.test -n "Gaming PC"');
+    });
+  });
+}
