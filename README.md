@@ -11,13 +11,25 @@
 
 # Tund
 
-**A lightweight, self-hosted virtual IPv4 LAN.**
-
 Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge Simulator) LAN parties and direct-IP multiplayer with friends.
 
-Built iteratively with DeepSeek V4 Flash: observing the generated code, refactoring and modularising as it grew. A "one-shot" tool made for fun, for a specific purpose and perhaps to learn something along the way.
-
 It behaves like Radmin VPN, but open source and cross-platform. The core is written in C — Linux and macOS use only system libraries; Windows bundles Wintun for TUN support.
+
+## Project rationale
+
+### Why not just wrap WireGuard?
+
+WireGuard would be the right foundation for a production VPN: it is easier to trust, much more secure, and already reviewed. Tund is deliberately narrower. It is a small, self-hosted LAN-party tool with a fixed virtual IPv4 subnet, automatic peer assignment, and enough broadcast support for LAN-style games. A thin WireGuard wrapper would still need to own configuration, routing, platform setup, privileges and much more around a tool that was not designed specifically for this workflow.
+
+Do not use Tund when you need a confidential VPN.
+
+### Why C?
+
+The core talks directly to UDP sockets, TUN devices, platform routing APIs, and Wintun. C keeps that layer small, explicit, dependency-light, and close to the operating-system interfaces involved. It also made the project useful as a learning exercise rather than just glue around a larger stack.
+
+### AI-assisted development
+
+The C core was built with AI used as a pair-programming assistant: generated code was inspected, refactored, modularised, and corrected under my supervision. The Flutter GUI relied more heavily on AI-generated code because I do not know Flutter/Dart at all; Flutter was simply the most effective path to a cross-platform GUI. In both cases, the final shape reflects my software engineering experience and review, not blind code generation.
 
 ## How it works
 
