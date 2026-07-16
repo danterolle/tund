@@ -1,5 +1,5 @@
 name: tund_gui
-description: Minimal Windows GUI launcher for Tund.
+description: Minimal desktop GUI launcher for Tund.
 publish_to: "none"
 version: 1.9.0+9
 

@@ -44,6 +44,7 @@ void main() {
 
     await tester.enterText(fieldByLabel('UDP port'), '0');
     await tester.enterText(fieldByLabel('Network key'), 'a-long-random-key');
+    await tester.ensureVisible(find.text('Start'));
     await tester.tap(find.text('Start'));
     await tester.pumpAndSettle();
 
@@ -56,6 +57,7 @@ void main() {
     await tester.tap(find.text('Join LAN'));
     await tester.pumpAndSettle();
     await tester.enterText(fieldByLabel('Network key'), 'a-long-random-key');
+    await tester.ensureVisible(find.text('Start'));
     await tester.tap(find.text('Start'));
     await tester.pumpAndSettle();
 

@@ -12,27 +12,66 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.6'
+          channel: stable
+          cache: true
+      - run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
       - run: make
       - run: make test
       - run: make tools
       - run: make sanitize
+      - name: Build GUI
+        run: |
+          cd gui
+          flutter config --enable-linux-desktop
+          flutter pub get
+          flutter analyze
+          flutter test
+          flutter build linux --release
+          cp ../tund-cli build/linux/x64/release/bundle/tund-cli
+          tar -C build/linux/x64/release/bundle -czf ../tund-gui-linux-x86_64.tar.gz .
       - uses: actions/upload-artifact@v4
         with:
           name: tund-cli-linux-x86_64
           path: tund-cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tund-gui-linux-x86_64
+          path: tund-gui-linux-x86_64.tar.gz
 
   macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.6'
+          channel: stable
+          cache: true
       - run: make
       - run: make test
       - run: make tools
       - run: make sanitize
+      - name: Build GUI
+        run: |
+          cd gui
+          flutter config --enable-macos-desktop
+          flutter pub get
+          flutter analyze
+          flutter test
+          flutter build macos --release
+          cp ../tund-cli build/macos/Build/Products/Release/tund-gui.app/Contents/MacOS/tund-cli
+          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/tund-gui.app ../tund-gui-darwin-arm64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: tund-cli-darwin-arm64
           path: tund-cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tund-gui-darwin-arm64
+          path: tund-gui-darwin-arm64.zip
 
   windows:
     runs-on: windows-latest
@@ -101,6 +140,8 @@ jobs:
           mkdir release
           cp tund-cli-linux-x86_64/tund-cli            release/tund-cli-linux-x86_64
           cp tund-cli-darwin-arm64/tund-cli            release/tund-cli-darwin-arm64
+          cp tund-gui-linux-x86_64/tund-gui-linux-x86_64.tar.gz release/
+          cp tund-gui-darwin-arm64/tund-gui-darwin-arm64.zip release/
           cp tund-windows-x86_64/tund-windows-x86_64.zip release/
       - uses: softprops/action-gh-release@v2
         with:

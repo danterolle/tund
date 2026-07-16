@@ -26,6 +26,7 @@ class _TundHomePageState extends State<TundHomePage> {
   TundMode mode = TundMode.server;
   bool verbose = false;
   bool showKey = false;
+  bool privilegeNoticeAccepted = false;
   String status = 'Ready';
 
   bool get running => status == 'Starting' || launcher.running;
@@ -48,6 +49,9 @@ class _TundHomePageState extends State<TundHomePage> {
     final error = config.validate();
     if (error != null) {
       showError(error);
+      return;
+    }
+    if (!await confirmPrivileges()) {
       return;
     }
 
@@ -86,6 +90,42 @@ class _TundHomePageState extends State<TundHomePage> {
     setState(() => status = 'Stopping');
     appendLog('\nStopping Tund...\n');
     launcher.stop();
+  }
+
+  Future<bool> confirmPrivileges() async {
+    if (privilegeNoticeAccepted) return true;
+
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Privileges required'),
+          content: Text(privilegeMessage()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
+    if (accepted == true && mounted) {
+      setState(() => privilegeNoticeAccepted = true);
+      return true;
+    }
+    return false;
+  }
+
+  String privilegeMessage() {
+    if (Platform.isWindows) {
+      return 'Tund needs Administrator privileges to create the virtual network adapter. Accept the Windows UAC prompt if it appears.';
+    }
+    return 'Tund needs administrator/root privileges to create and configure the TUN interface. Launch the GUI with the required privileges, or run tund-cli directly with sudo if startup fails.';
   }
 
   TundConfig currentConfig() {
@@ -128,6 +168,8 @@ class _TundHomePageState extends State<TundHomePage> {
           children: [
             TundHeader(status: status, running: running),
             const SizedBox(height: 26),
+            TundPrivilegeNotice(message: privilegeMessage()),
+            const SizedBox(height: 20),
             TundModeSelector(
               mode: mode,
               enabled: !running,

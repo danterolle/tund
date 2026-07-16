@@ -50,7 +50,7 @@ On every machine that should join the LAN:
 sudo ./tund-cli client -s <server_ip> -k "a-long-random-key"
 ```
 
-Use the same key everywhere. On Windows, run `tund-gui.exe` for the GUI or `tund-cli.exe` for the CLI; if needed, Windows asks for Administrator privileges through UAC. See the [GUI README](gui/README.md) for details.
+Use the same key everywhere. On desktop releases, run `tund-gui` for the GUI or `tund-cli` for the CLI; if needed, the CLI still requires administrator/root privileges for TUN setup. See the [GUI README](gui/README.md) for details.
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). For full usage, build, and verification steps, see [Usage](docs/USAGE.md).
 
@@ -59,7 +59,7 @@ Pre-built binaries are available on the [releases page](https://github.com/dante
 - **Zero registration** — no accounts or external service
 - **NAT-friendly clients** — clients only need outbound UDP to a reachable server
 - **Cross-platform** — Windows, macOS, and Linux
-- **Windows GUI** — optional Flutter launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
+- **Desktop GUI** — optional Flutter launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
 - **Single CLI binary** — server and client modes in one program
 - **IPv4 broadcast support** — useful for LAN-style discovery in compatible games
 - **Authenticated membership** — packets without the shared network key are discarded
@@ -84,7 +84,7 @@ For Artemis, start the server first, connect every station with the same key, th
 - C11 compiler (gcc, clang)
 - Root/sudo (for TUN interface creation)
 - Windows 10/11 x64, macOS 10.10+, or Linux 2.6+
-- Windows: bundled `tund-gui.exe`, `tund-cli.exe`, and `wintun.dll` in release zips; macOS/Linux: native TUN support enabled by the OS
+- Release builds include `tund-cli` and optional GUI bundles; Windows also ships `wintun.dll`
 
 ## License
 

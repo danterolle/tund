@@ -147,3 +147,34 @@ class TundHostNotice extends StatelessWidget {
     );
   }
 }
+
+class TundPrivilegeNotice extends StatelessWidget {
+  const TundPrivilegeNotice({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: TundColors.field.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: TundColors.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.admin_panel_settings_outlined,
+              color: TundColors.blue2),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: TundColors.muted, height: 1.35),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
