@@ -19,8 +19,8 @@ void main() {
     expect(find.text('Ready'), findsWidgets);
     expect(find.text('Choose a mode, enter the shared key, then start Tund.'),
         findsOneWidget);
-    expect(find.text('Host LAN'), findsOneWidget);
-    expect(find.text('Join LAN'), findsOneWidget);
+    expect(find.text('Host a LAN'), findsOneWidget);
+    expect(find.text('Join a LAN'), findsOneWidget);
   });
 
   testWidgets('switches between host and join forms', (tester) async {
@@ -32,7 +32,7 @@ void main() {
         findsOneWidget);
     expect(find.text('Server IP or hostname'), findsNothing);
 
-    await tester.tap(find.text('Join LAN'));
+    await tester.tap(find.text('Join a LAN'));
     await tester.pumpAndSettle();
 
     expect(find.text('Server IP or hostname'), findsOneWidget);
@@ -57,7 +57,7 @@ void main() {
   testWidgets('requires a server address in join mode', (tester) async {
     await tester.pumpWidget(const TundApp());
 
-    await tester.tap(find.text('Join LAN'));
+    await tester.tap(find.text('Join a LAN'));
     await tester.pumpAndSettle();
     await tester.enterText(fieldByLabel('Network key'), 'a-long-random-key');
     await tester.ensureVisible(find.text('Start'));

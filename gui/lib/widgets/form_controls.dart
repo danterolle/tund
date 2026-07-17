@@ -18,19 +18,108 @@ class TundModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<TundMode>(
-      selected: {mode},
-      onSelectionChanged: enabled ? (value) => onChanged(value.first) : null,
-      segments: const [
-        ButtonSegment(
-            value: TundMode.server,
-            icon: Icon(Icons.hub_outlined),
-            label: Text('Host LAN')),
-        ButtonSegment(
-            value: TundMode.client,
-            icon: Icon(Icons.link_outlined),
-            label: Text('Join LAN')),
+    return Row(
+      children: [
+        Expanded(
+          child: TundModeCard(
+            title: 'Host a LAN',
+            description:
+                'Create the virtual LAN and let friends join this computer.',
+            icon: Icons.hub_outlined,
+            selected: mode == TundMode.server,
+            enabled: enabled,
+            onTap: () => onChanged(TundMode.server),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: TundModeCard(
+            title: 'Join a LAN',
+            description:
+                'Connect this computer to a Tund host that is already running.',
+            icon: Icons.link_outlined,
+            selected: mode == TundMode.client,
+            enabled: enabled,
+            onTap: () => onChanged(TundMode.client),
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class TundModeCard extends StatelessWidget {
+  const TundModeCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String title;
+  final String description;
+  final IconData icon;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = selected ? TundColors.blue2 : TundColors.border;
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(18),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: selected
+              ? TundColors.blue.withValues(alpha: 0.12)
+              : TundColors.field.withValues(alpha: enabled ? 0.72 : 0.38),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: borderColor, width: selected ? 1.4 : 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon,
+                    color: selected ? TundColors.blue2 : TundColors.muted),
+                const Spacer(),
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: selected ? TundColors.blue2 : TundColors.faint,
+                  size: 18,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                color: TundColors.text,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              description,
+              style: TextStyle(
+                color: enabled ? TundColors.muted : TundColors.faint,
+                fontSize: 12.5,
+                height: 1.32,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
