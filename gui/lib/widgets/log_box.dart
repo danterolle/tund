@@ -11,29 +11,58 @@ class TundLogBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 180,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: TundColors.bg2,
+        color: TundColors.field.withValues(alpha: 0.42),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: TundColors.border),
       ),
-      child: Scrollbar(
-        controller: controller,
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          controller: controller,
-          child: SelectableText(
-            text.isEmpty ? 'Logs will appear here after Tund starts.' : text,
-            style: const TextStyle(
-              color: TundColors.muted,
-              fontFamily: 'Cascadia Mono',
-              fontFamilyFallback: ['Consolas', 'monospace'],
-              fontSize: 12.5,
-              height: 1.35,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.terminal_rounded, size: 18, color: TundColors.blue2),
+              SizedBox(width: 8),
+              Text(
+                'Logs',
+                style: TextStyle(
+                  color: TundColors.text,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            height: 148,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: TundColors.bg2,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: TundColors.border),
+            ),
+            child: Scrollbar(
+              controller: controller,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: controller,
+                child: SelectableText(
+                  text.isEmpty
+                      ? 'Logs will appear here after Tund starts.'
+                      : text,
+                  style: const TextStyle(
+                    color: TundColors.muted,
+                    fontFamily: 'Cascadia Mono',
+                    fontFamilyFallback: ['Consolas', 'monospace'],
+                    fontSize: 12.5,
+                    height: 1.35,
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
