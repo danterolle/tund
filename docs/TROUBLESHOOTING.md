@@ -39,10 +39,11 @@ netsh advfirewall set allprofiles state on
 - **Unverified developer warning**: the first time you run Tund, macOS may show "Apple cannot verify the identity of the developer". This happens because the binary is not signed with an Apple Developer certificate. To bypass:
 
 ```bash
-xattr -d com.apple.quarantine ./tund
+xattr -d com.apple.quarantine ./tund-cli
+xattr -dr com.apple.quarantine ./tund-gui.app
 ```
 
-Run this once before launching. If the warning persists, open **System Settings → Privacy & Security** and click **Open Anyway** next to the blocked Tund entry.
+Run the relevant command once before launching the CLI or GUI. If the warning persists, open **System Settings → Privacy & Security** and click **Open Anyway** next to the blocked Tund entry.
 
 - **TUN interface**: macOS creates a `utun` device automatically when Tund starts. You may see a prompt asking for network configuration permission; enter your password to allow it.
 - **ICMP (ping)**: like Windows, macOS may block ICMP on the virtual interface. Ping is not required for game traffic.

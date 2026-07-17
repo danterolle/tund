@@ -7,6 +7,7 @@
   <a href="https://github.com/danterolle/tund/releases"><img src="https://img.shields.io/github/v/release/danterolle/tund" alt="Release"></a>
   <img src="https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-378ADD" alt="Platform">
   <img src="https://img.shields.io/badge/language-C-555555.svg" alt="Language">
+  <img src="https://img.shields.io/badge/GUI-Flutter-378ADD.svg" alt="Flutter GUI">
 </p>
 
 # Tund
@@ -71,7 +72,7 @@ Pre-built binaries are available on the [releases page](https://github.com/dante
 - **Zero registration** — no accounts or external service
 - **NAT-friendly clients** — clients only need outbound UDP to a reachable server
 - **Cross-platform** — Windows, macOS, and Linux
-- **Desktop GUI** — optional Flutter launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
+- **Flutter desktop GUI** — optional launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
 - **Single CLI binary** — server and client modes in one program
 - **IPv4 broadcast support** — useful for LAN-style discovery in compatible games
 - **Authenticated membership** — packets without the shared network key are discarded
@@ -89,7 +90,7 @@ For Artemis, start the server first, connect every station with the same key, th
 - [Usage](docs/USAGE.md) — commands, build steps, examples, and verification.
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — firewall, Windows/macOS notes, and common connectivity checks.
 - [Technical documentation](docs/TECHNICAL.md) — protocol, architecture, platform internals, and security boundaries.
-- [GUI README](gui/README.md) — Windows Flutter launcher notes and build details.
+- [GUI README](gui/README.md) — Desktop Flutter launcher notes and build details.
 
 ## Requirements
 
