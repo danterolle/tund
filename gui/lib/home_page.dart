@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'error_guidance.dart';
 import 'status.dart';
 import 'theme.dart';
 import 'tund_launcher.dart';
@@ -29,6 +30,7 @@ class _TundHomePageState extends State<TundHomePage> {
   bool showKey = false;
   bool privilegeNoticeAccepted = false;
   GuiStatus status = GuiStatus.ready;
+  GuidedError? guidedError;
 
   bool get running => status == GuiStatus.starting || launcher.running;
 
@@ -58,6 +60,7 @@ class _TundHomePageState extends State<TundHomePage> {
 
     setState(() {
       status = GuiStatus.starting;
+      guidedError = null;
       log.clear();
     });
     appendLog(
@@ -74,16 +77,31 @@ class _TundHomePageState extends State<TundHomePage> {
         },
       );
       if (!mounted) return;
-      setState(
-          () => status = exitCode == 0 ? GuiStatus.stopped : GuiStatus.failed);
+      setState(() {
+        status = exitCode == 0 ? GuiStatus.stopped : GuiStatus.failed;
+        guidedError = exitCode == 0 ? null : guideTundFailure(log.toString());
+      });
       appendLog('\nTund exited with code $exitCode.\n');
     } on TundLaunchException catch (error) {
       if (!mounted) return;
-      setState(() => status = GuiStatus.failed);
+      setState(() {
+        status = GuiStatus.failed;
+        guidedError = GuidedError(
+          title: 'tund-cli was not found',
+          message: error.message,
+        );
+      });
       showError(error.message);
     } catch (error) {
       if (!mounted) return;
-      setState(() => status = GuiStatus.failed);
+      setState(() {
+        status = GuiStatus.failed;
+        guidedError = const GuidedError(
+          title: 'Could not start tund-cli',
+          message:
+              'The process could not be launched. Check the app folder and raw logs.',
+        );
+      });
       showError('Cannot start tund-cli.exe: $error');
     }
   }
@@ -168,9 +186,13 @@ class _TundHomePageState extends State<TundHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TundHeader(status: status, running: running),
+            TundHeader(status: status),
             const SizedBox(height: 16),
             TundStatusCard(status: status),
+            if (guidedError != null) ...[
+              const SizedBox(height: 12),
+              TundGuidedErrorNotice(error: guidedError!),
+            ],
             const SizedBox(height: 20),
             TundPrivilegeNotice(message: privilegeMessage()),
             const SizedBox(height: 20),

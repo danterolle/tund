@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../error_guidance.dart';
 import '../status.dart';
 import '../theme.dart';
 
@@ -58,10 +59,9 @@ class TundPanel extends StatelessWidget {
 }
 
 class TundHeader extends StatelessWidget {
-  const TundHeader({super.key, required this.status, required this.running});
+  const TundHeader({super.key, required this.status});
 
   final GuiStatus status;
-  final bool running;
 
   @override
   Widget build(BuildContext context) {
@@ -88,18 +88,16 @@ class TundHeader extends StatelessWidget {
             ],
           ),
         ),
-        TundStatusPill(status: status, running: running),
+        TundStatusPill(status: status),
       ],
     );
   }
 }
 
 class TundStatusPill extends StatelessWidget {
-  const TundStatusPill(
-      {super.key, required this.status, required this.running});
+  const TundStatusPill({super.key, required this.status});
 
   final GuiStatus status;
-  final bool running;
 
   @override
   Widget build(BuildContext context) {
@@ -240,6 +238,52 @@ class TundPrivilegeNotice extends StatelessWidget {
             child: Text(
               message,
               style: const TextStyle(color: TundColors.muted, height: 1.35),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TundGuidedErrorNotice extends StatelessWidget {
+  const TundGuidedErrorNotice({super.key, required this.error});
+
+  final GuidedError error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: TundColors.red.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: TundColors.red.withValues(alpha: 0.36)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.tips_and_updates_outlined, color: TundColors.red),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  error.title,
+                  style: const TextStyle(
+                    color: TundColors.red,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  error.message,
+                  style: const TextStyle(
+                    color: TundColors.muted,
+                    height: 1.35,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
