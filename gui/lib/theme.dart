@@ -12,6 +12,7 @@ class TundColors {
   static const blue = Color(0xFF378ADD);
   static const blue2 = Color(0xFF85B7EB);
   static const green = Color(0xFF5CD39A);
+  static const yellow = Color(0xFFE3B85C);
   static const red = Color(0xFFE16B6B);
 }
 

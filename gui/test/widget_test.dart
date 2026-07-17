@@ -16,6 +16,9 @@ void main() {
     await tester.pumpWidget(const TundApp());
 
     expect(find.text('Tund'), findsOneWidget);
+    expect(find.text('Ready'), findsWidgets);
+    expect(find.text('Choose a mode, enter the shared key, then start Tund.'),
+        findsOneWidget);
     expect(find.text('Host LAN'), findsOneWidget);
     expect(find.text('Join LAN'), findsOneWidget);
   });

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'status.dart';
 import 'theme.dart';
 import 'tund_launcher.dart';
 import 'widgets/widgets.dart';
@@ -27,9 +28,9 @@ class _TundHomePageState extends State<TundHomePage> {
   bool verbose = false;
   bool showKey = false;
   bool privilegeNoticeAccepted = false;
-  String status = 'Ready';
+  GuiStatus status = GuiStatus.ready;
 
-  bool get running => status == 'Starting' || launcher.running;
+  bool get running => status == GuiStatus.starting || launcher.running;
 
   @override
   void dispose() {
@@ -56,7 +57,7 @@ class _TundHomePageState extends State<TundHomePage> {
     }
 
     setState(() {
-      status = 'Starting';
+      status = GuiStatus.starting;
       log.clear();
     });
     appendLog(
@@ -68,26 +69,27 @@ class _TundHomePageState extends State<TundHomePage> {
         appendLog,
         onStarted: () {
           if (mounted) {
-            setState(() => status = 'Running');
+            setState(() => status = GuiStatus.running);
           }
         },
       );
       if (!mounted) return;
-      setState(() => status = exitCode == 0 ? 'Stopped' : 'Stopped with error');
+      setState(
+          () => status = exitCode == 0 ? GuiStatus.stopped : GuiStatus.failed);
       appendLog('\nTund exited with code $exitCode.\n');
     } on TundLaunchException catch (error) {
       if (!mounted) return;
-      setState(() => status = 'Failed');
+      setState(() => status = GuiStatus.failed);
       showError(error.message);
     } catch (error) {
       if (!mounted) return;
-      setState(() => status = 'Failed');
+      setState(() => status = GuiStatus.failed);
       showError('Cannot start tund-cli.exe: $error');
     }
   }
 
   void stopTund() {
-    setState(() => status = 'Stopping');
+    setState(() => status = GuiStatus.stopping);
     appendLog('\nStopping Tund...\n');
     launcher.stop();
   }
@@ -167,7 +169,9 @@ class _TundHomePageState extends State<TundHomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TundHeader(status: status, running: running),
-            const SizedBox(height: 26),
+            const SizedBox(height: 16),
+            TundStatusCard(status: status),
+            const SizedBox(height: 20),
             TundPrivilegeNotice(message: privilegeMessage()),
             const SizedBox(height: 20),
             TundModeSelector(
