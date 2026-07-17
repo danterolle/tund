@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tund_gui/tund_launcher.dart';
 
@@ -105,6 +107,19 @@ void main() {
 
       expect(config.displayArgs(),
           'client -p 9909 -k ******** -t -s example.test -n "Gaming PC"');
+    });
+  });
+
+  group('TundLauncher platform messages', () {
+    test('uses platform-specific executable names', () {
+      final launcher = TundLauncher();
+      final cliName = Platform.isWindows ? 'tund-cli.exe' : 'tund-cli';
+      final guiName = Platform.isWindows ? 'tund-gui.exe' : 'tund-gui';
+
+      expect(launcher.primaryExecutableName, cliName);
+      expect(launcher.guiExecutableName, guiName);
+      expect(launcher.missingExecutableMessage,
+          'Place $cliName in the same folder as $guiName.');
     });
   });
 }

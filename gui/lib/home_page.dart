@@ -102,7 +102,7 @@ class _TundHomePageState extends State<TundHomePage> {
               'The process could not be launched. Check the app folder and raw logs.',
         );
       });
-      showError('Cannot start tund-cli.exe: $error');
+      showError('Cannot start ${launcher.primaryExecutableName}: $error');
     }
   }
 

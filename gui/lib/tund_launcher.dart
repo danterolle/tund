@@ -70,20 +70,29 @@ class TundLauncher {
   StreamSubscription<String>? _stderr;
 
   bool get running => _process != null;
+  String get primaryExecutableName => executableNames.first;
+  String get guiExecutableName =>
+      Platform.isWindows ? 'tund-gui.exe' : 'tund-gui';
+  String get missingExecutableMessage =>
+      'Place $primaryExecutableName in the same folder as $guiExecutableName.';
+
+  List<String> get executableNames {
+    return Platform.isWindows
+        ? const ['tund-cli.exe', 'tund.exe']
+        : const ['tund-cli', 'tund'];
+  }
 
   File executable() {
     final app = File(Platform.resolvedExecutable);
-    final names = Platform.isWindows
-        ? const ['tund-cli.exe', 'tund.exe']
-        : const ['tund-cli', 'tund'];
-    for (final name in names) {
+    for (final name in executableNames) {
       final candidate =
           File('${app.parent.path}${Platform.pathSeparator}$name');
       if (candidate.existsSync()) {
         return candidate;
       }
     }
-    return File('${app.parent.path}${Platform.pathSeparator}${names.first}');
+    return File(
+        '${app.parent.path}${Platform.pathSeparator}$primaryExecutableName');
   }
 
   Future<int> start(
@@ -97,8 +106,7 @@ class TundLauncher {
 
     final exe = executable();
     if (!await exe.exists()) {
-      throw const TundLaunchException(
-          'Place tund-cli.exe in the same folder as tund-gui.exe.');
+      throw TundLaunchException(missingExecutableMessage);
     }
 
     final process = await Process.start(
