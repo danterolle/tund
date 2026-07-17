@@ -73,8 +73,12 @@ class TundLauncher {
   String get primaryExecutableName => executableNames.first;
   String get guiExecutableName =>
       Platform.isWindows ? 'tund-gui.exe' : 'tund-gui';
-  String get missingExecutableMessage =>
-      'Place $primaryExecutableName in the same folder as $guiExecutableName.';
+  String get missingExecutableMessage {
+    if (Platform.isMacOS) {
+      return 'Place $primaryExecutableName next to $guiExecutableName.app or inside $guiExecutableName.app/Contents/MacOS.';
+    }
+    return 'Place $primaryExecutableName in the same folder as $guiExecutableName.';
+  }
 
   List<String> get executableNames {
     return Platform.isWindows
@@ -83,16 +87,32 @@ class TundLauncher {
   }
 
   File executable() {
-    final app = File(Platform.resolvedExecutable);
     for (final name in executableNames) {
-      final candidate =
-          File('${app.parent.path}${Platform.pathSeparator}$name');
-      if (candidate.existsSync()) {
-        return candidate;
+      for (final directory in executableSearchDirs()) {
+        final candidate =
+            File('${directory.path}${Platform.pathSeparator}$name');
+        if (candidate.existsSync()) {
+          return candidate;
+        }
       }
     }
+    final fallbackDirectory = executableSearchDirs().first;
     return File(
-        '${app.parent.path}${Platform.pathSeparator}$primaryExecutableName');
+        '${fallbackDirectory.path}${Platform.pathSeparator}$primaryExecutableName');
+  }
+
+  List<Directory> executableSearchDirs() {
+    final executableDir = File(Platform.resolvedExecutable).parent;
+    final dirs = <Directory>[executableDir];
+
+    if (Platform.isMacOS &&
+        executableDir.path.endsWith(
+            '${Platform.pathSeparator}Contents${Platform.pathSeparator}MacOS')) {
+      final appBundle = executableDir.parent.parent;
+      dirs.add(appBundle.parent);
+    }
+
+    return dirs;
   }
 
   Future<int> start(

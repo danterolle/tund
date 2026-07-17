@@ -115,11 +115,13 @@ void main() {
       final launcher = TundLauncher();
       final cliName = Platform.isWindows ? 'tund-cli.exe' : 'tund-cli';
       final guiName = Platform.isWindows ? 'tund-gui.exe' : 'tund-gui';
+      final message = Platform.isMacOS
+          ? 'Place $cliName next to $guiName.app or inside $guiName.app/Contents/MacOS.'
+          : 'Place $cliName in the same folder as $guiName.';
 
       expect(launcher.primaryExecutableName, cliName);
       expect(launcher.guiExecutableName, guiName);
-      expect(launcher.missingExecutableMessage,
-          'Place $cliName in the same folder as $guiName.');
+      expect(launcher.missingExecutableMessage, message);
     });
   });
 }
