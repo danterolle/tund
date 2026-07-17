@@ -111,6 +111,56 @@
     color: var(--accent-light);
   }
 
+  .download-menu {
+    position: relative;
+  }
+
+  .download-menu summary {
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .download-menu summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .download-menu summary::after {
+    content: "⌄";
+    color: var(--text-muted);
+    font-size: 18px;
+    margin-left: 2px;
+  }
+
+  .download-options {
+    position: absolute;
+    z-index: 10;
+    left: 0;
+    right: 0;
+    top: calc(100% + 8px);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: 0 16px 40px rgba(0,0,0,.28);
+  }
+
+  .download-options a {
+    display: block;
+    padding: .85rem 1rem;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-decoration: none;
+    text-align: left;
+  }
+
+  .download-options a + a {
+    border-top: 1px solid var(--border);
+  }
+
+  .download-options a:hover {
+    background: var(--surface-2);
+  }
+
   .license {
     font-size: 13px;
     color: var(--text-muted);
@@ -388,9 +438,13 @@
         <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1.11/tund-cli-linux-x86_64">
           <i class="ti ti-brand-debian"></i>GNU/Linux
         </a>
-        <a class="btn" href="https://github.com/danterolle/tund/releases/download/v1.11/tund-cli-darwin-arm64">
-          <i class="ti ti-brand-apple"></i>macOS
-        </a>
+        <details class="download-menu">
+          <summary class="btn"><i class="ti ti-brand-apple"></i>macOS</summary>
+          <div class="download-options">
+            <a href="https://github.com/danterolle/tund/releases/download/v1.11/tund-cli-darwin-arm64">Apple Silicon</a>
+            <a href="https://github.com/danterolle/tund/releases/download/v1.11/tund-cli-darwin-x86_64">Intel</a>
+          </div>
+        </details>
       </div>
 
       <p class="license">MIT license · <a href="https://github.com/danterolle/tund">source code on GitHub</a></p>

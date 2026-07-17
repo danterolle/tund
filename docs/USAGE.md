@@ -4,7 +4,7 @@
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases).
 
-Release assets include `tund-cli` binaries and optional desktop GUI bundles. Windows releases also include `wintun.dll`; keep all files from the Windows zip together. For GUI-specific notes, see the [GUI README](../gui/README.md).
+Release assets include `tund-cli` binaries and optional desktop GUI bundles. macOS is published for Apple Silicon and Intel. Windows releases also include `wintun.dll`; keep all files from the Windows zip together. For GUI-specific notes, see the [GUI README](../gui/README.md).
 
 ## Start the server
 

@@ -97,7 +97,7 @@ For Artemis, start the server first, connect every station with the same key, th
 - C11 compiler (gcc, clang)
 - Root/sudo (for TUN interface creation)
 - Windows 10/11 x64, macOS 10.10+, or Linux 2.6+
-- Release builds include `tund-cli` and optional GUI bundles; Windows also ships `wintun.dll`
+- Release builds include `tund-cli` and optional GUI bundles for Windows, Linux, and macOS Apple Silicon/Intel; Windows also ships `wintun.dll`
 
 ## License
 

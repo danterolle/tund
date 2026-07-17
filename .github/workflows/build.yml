@@ -73,6 +73,38 @@ jobs:
           name: tund-gui-darwin-arm64
           path: tund-gui-darwin-arm64.zip
 
+  macos-intel:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.6'
+          channel: stable
+          cache: true
+      - run: make
+      - run: make test
+      - run: make tools
+      - run: make sanitize
+      - name: Build GUI
+        run: |
+          cd gui
+          flutter config --enable-macos-desktop
+          flutter pub get
+          flutter analyze
+          flutter test
+          flutter build macos --release
+          cp ../tund-cli build/macos/Build/Products/Release/tund-gui.app/Contents/MacOS/tund-cli
+          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/tund-gui.app ../tund-gui-darwin-x86_64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tund-cli-darwin-x86_64
+          path: tund-cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tund-gui-darwin-x86_64
+          path: tund-gui-darwin-x86_64.zip
+
   windows:
     runs-on: windows-latest
     defaults:
@@ -130,7 +162,7 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [linux, macos, windows]
+    needs: [linux, macos, macos-intel, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -140,8 +172,10 @@ jobs:
           mkdir release
           cp tund-cli-linux-x86_64/tund-cli            release/tund-cli-linux-x86_64
           cp tund-cli-darwin-arm64/tund-cli            release/tund-cli-darwin-arm64
+          cp tund-cli-darwin-x86_64/tund-cli           release/tund-cli-darwin-x86_64
           cp tund-gui-linux-x86_64/tund-gui-linux-x86_64.tar.gz release/
           cp tund-gui-darwin-arm64/tund-gui-darwin-arm64.zip release/
+          cp tund-gui-darwin-x86_64/tund-gui-darwin-x86_64.zip release/
           cp tund-windows-x86_64/tund-windows-x86_64.zip release/
       - uses: softprops/action-gh-release@v2
         with:
