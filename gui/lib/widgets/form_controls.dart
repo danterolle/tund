@@ -18,32 +18,44 @@ class TundModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: TundModeCard(
-            title: 'Host a LAN',
-            description:
-                'Create the virtual LAN and let friends join this computer.',
-            icon: Icons.hub_outlined,
-            selected: mode == TundMode.server,
-            enabled: enabled,
-            onTap: () => onChanged(TundMode.server),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: TundModeCard(
-            title: 'Join a LAN',
-            description:
-                'Connect this computer to a Tund host that is already running.',
-            icon: Icons.link_outlined,
-            selected: mode == TundMode.client,
-            enabled: enabled,
-            onTap: () => onChanged(TundMode.client),
-          ),
-        ),
-      ],
+    final host = TundModeCard(
+      title: 'Host a LAN',
+      description: 'Create the virtual LAN and let friends join this computer.',
+      icon: Icons.hub_outlined,
+      selected: mode == TundMode.server,
+      enabled: enabled,
+      onTap: () => onChanged(TundMode.server),
+    );
+    final join = TundModeCard(
+      title: 'Join a LAN',
+      description:
+          'Connect this computer to a Tund host that is already running.',
+      icon: Icons.link_outlined,
+      selected: mode == TundMode.client,
+      enabled: enabled,
+      onTap: () => onChanged(TundMode.client),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 520) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              host,
+              const SizedBox(height: 14),
+              join,
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: host),
+            const SizedBox(width: 14),
+            Expanded(child: join),
+          ],
+        );
+      },
     );
   }
 }

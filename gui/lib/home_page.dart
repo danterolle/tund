@@ -183,98 +183,151 @@ class _TundHomePageState extends State<TundHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: TundShell(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TundHeader(status: status),
-            const SizedBox(height: 16),
-            TundStatusCard(status: status),
-            if (guidedError != null) ...[
-              const SizedBox(height: 12),
-              TundGuidedErrorNotice(error: guidedError!),
-            ],
-            const SizedBox(height: 20),
-            TundPrivilegeNotice(message: privilegeMessage()),
-            const SizedBox(height: 20),
-            TundModeSelector(
-              mode: mode,
-              enabled: !running,
-              onChanged: (value) => setState(() => mode = value),
-            ),
-            const SizedBox(height: 20),
-            if (mode == TundMode.client)
-              TundField(
-                controller: server,
-                label: 'Server IP or hostname',
-                hint: '203.0.113.10',
-                running: running,
-                maxLength: 63,
-              )
-            else
-              const TundHostNotice(),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                SizedBox(
-                  width: 150,
-                  child: TundField(
-                    controller: port,
-                    label: 'UDP port',
-                    running: running,
-                    maxLength: 5,
-                    formatters: [FilteringTextInputFormatter.digitsOnly],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 980;
+            if (wide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: 6,
+                    child: TundCard(
+                      child: SingleChildScrollView(child: controls()),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: TundField(
-                    controller: name,
-                    label: 'Display name',
-                    running: running,
-                    enabled: mode == TundMode.client,
-                    maxLength: 31,
+                  const SizedBox(width: 20),
+                  Expanded(
+                    flex: 5,
+                    child: TundLogBox(
+                      text: log.toString(),
+                      controller: logScroll,
+                      expanded: true,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TundField(
-              controller: key,
-              label: 'Network key',
-              hint: 'at least 12 characters',
-              running: running,
-              obscure: !showKey,
-              maxLength: 127,
-              suffix: IconButton(
-                onPressed: () => setState(() => showKey = !showKey),
-                icon: Icon(showKey
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined),
+                ],
+              );
+            }
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TundCard(child: controls()),
+                  const SizedBox(height: 18),
+                  TundLogBox(text: log.toString(), controller: logScroll),
+                ],
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Switch(
-                  value: verbose,
-                  onChanged: running
-                      ? null
-                      : (value) => setState(() => verbose = value),
-                ),
-                const Text('Verbose logs',
-                    style: TextStyle(color: TundColors.muted)),
-                const Spacer(),
-                const Text('Authenticated, not encrypted',
-                    style: TextStyle(color: TundColors.faint, fontSize: 12)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TundActions(running: running, onStart: startTund, onStop: stopTund),
-            const SizedBox(height: 18),
-            TundLogBox(text: log.toString(), controller: logScroll),
-          ],
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Widget controls() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TundHeader(status: status),
+        const SizedBox(height: 16),
+        TundStatusCard(status: status),
+        if (guidedError != null) ...[
+          const SizedBox(height: 12),
+          TundGuidedErrorNotice(error: guidedError!),
+        ],
+        const SizedBox(height: 20),
+        TundPrivilegeNotice(message: privilegeMessage()),
+        const SizedBox(height: 20),
+        TundModeSelector(
+          mode: mode,
+          enabled: !running,
+          onChanged: (value) => setState(() => mode = value),
+        ),
+        const SizedBox(height: 20),
+        if (mode == TundMode.client)
+          TundField(
+            controller: server,
+            label: 'Server IP or hostname',
+            hint: '203.0.113.10',
+            running: running,
+            maxLength: 63,
+          )
+        else
+          const TundHostNotice(),
+        const SizedBox(height: 16),
+        endpointFields(),
+        const SizedBox(height: 16),
+        TundField(
+          controller: key,
+          label: 'Network key',
+          hint: 'at least 12 characters',
+          running: running,
+          obscure: !showKey,
+          maxLength: 127,
+          suffix: IconButton(
+            onPressed: () => setState(() => showKey = !showKey),
+            icon: Icon(showKey
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Switch(
+              value: verbose,
+              onChanged:
+                  running ? null : (value) => setState(() => verbose = value),
+            ),
+            const Text('Verbose logs',
+                style: TextStyle(color: TundColors.muted)),
+            const Spacer(),
+            const Text('Authenticated, not encrypted',
+                style: TextStyle(color: TundColors.faint, fontSize: 12)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        TundActions(running: running, onStart: startTund, onStop: stopTund),
+      ],
+    );
+  }
+
+  Widget endpointFields() {
+    final portField = TundField(
+      controller: port,
+      label: 'UDP port',
+      running: running,
+      maxLength: 5,
+      formatters: [FilteringTextInputFormatter.digitsOnly],
+    );
+    final nameField = TundField(
+      controller: name,
+      label: 'Display name',
+      running: running,
+      enabled: mode == TundMode.client,
+      maxLength: 31,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 430) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              portField,
+              const SizedBox(height: 14),
+              nameField,
+            ],
+          );
+        }
+        return Row(
+          children: [
+            SizedBox(width: 150, child: portField),
+            const SizedBox(width: 14),
+            Expanded(child: nameField),
+          ],
+        );
+      },
     );
   }
 }

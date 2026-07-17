@@ -19,12 +19,14 @@ class TundShell extends StatelessWidget {
           colors: [TundColors.bg, TundColors.bg2],
         ),
       ),
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(28),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 820),
-            child: TundPanel(child: child),
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1160),
+              child: child,
+            ),
           ),
         ),
       ),
@@ -52,6 +54,25 @@ class TundPanel extends StatelessWidget {
             offset: const Offset(0, 18),
           ),
         ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class TundCard extends StatelessWidget {
+  const TundCard({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: TundColors.card.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: TundColors.border),
       ),
       child: child,
     );

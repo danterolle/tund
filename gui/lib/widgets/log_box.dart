@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 
 class TundLogBox extends StatelessWidget {
-  const TundLogBox({super.key, required this.text, required this.controller});
+  const TundLogBox({
+    super.key,
+    required this.text,
+    required this.controller,
+    this.expanded = false,
+  });
 
   final String text;
   final ScrollController controller;
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -34,29 +40,32 @@ class TundLogBox extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Container(
-            height: 148,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: TundColors.bg2,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: TundColors.border),
-            ),
-            child: Scrollbar(
-              controller: controller,
-              thumbVisibility: true,
-              child: SingleChildScrollView(
+          SizedBox(
+            height: expanded ? null : 148,
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: TundColors.bg2,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: TundColors.border),
+              ),
+              child: Scrollbar(
                 controller: controller,
-                child: SelectableText(
-                  text.isEmpty
-                      ? 'Logs will appear here after Tund starts.'
-                      : text,
-                  style: const TextStyle(
-                    color: TundColors.muted,
-                    fontFamily: 'Cascadia Mono',
-                    fontFamilyFallback: ['Consolas', 'monospace'],
-                    fontSize: 12.5,
-                    height: 1.35,
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(14),
+                  controller: controller,
+                  child: SelectableText(
+                    text.isEmpty
+                        ? 'Logs will appear here after Tund starts.'
+                        : text,
+                    style: const TextStyle(
+                      color: TundColors.muted,
+                      fontFamily: 'Cascadia Mono',
+                      fontFamilyFallback: ['Consolas', 'monospace'],
+                      fontSize: 12.5,
+                      height: 1.35,
+                    ),
                   ),
                 ),
               ),
