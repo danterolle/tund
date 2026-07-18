@@ -87,7 +87,7 @@ int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize)
             return -1;
         }
         WaitForSingleObject(re, 500);
-        if (!g_running) return -1;
+        if (!tund_is_running()) return -1;
     }
 }
 

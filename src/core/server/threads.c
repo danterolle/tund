@@ -5,12 +5,12 @@ void *server_timeout_thread(void *arg)
     server_t *srv = (server_t *)arg;
     unsigned int slept = 0;
 
-    while (g_running && !srv->timeout_quit) {
+    while (tund_is_running() && !tund_stop_flag_load(&srv->timeout_quit)) {
         platform_sleep(1);
         slept++;
         if (slept < TUND_KEEPALIVE_INTERVAL) continue;
         slept = 0;
-        if (!g_running || srv->timeout_quit) break;
+        if (!tund_is_running() || tund_stop_flag_load(&srv->timeout_quit)) break;
 
         time_t now = time(NULL);
         uint8_t keepalive_buf[TUND_MAX_PKT];
@@ -48,10 +48,10 @@ void *server_tun_thread(void *arg)
     uint8_t pkt_buf[TUND_MAX_PAYLOAD];
     uint8_t msg_buf[TUND_MAX_PKT];
 
-    while (g_running && !srv->tun_quit) {
+    while (tund_is_running() && !tund_stop_flag_load(&srv->tun_quit)) {
         int n = tun_read(&srv->tun, pkt_buf, sizeof(pkt_buf));
         if (n <= 0) {
-            if (!g_running || srv->tun_quit) break;
+            if (!tund_is_running() || tund_stop_flag_load(&srv->tun_quit)) break;
             continue;
         }
 

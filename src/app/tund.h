@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #include <string.h>
 #include <errno.h>
 #include <time.h>
@@ -122,8 +123,26 @@ static inline uint64_t now_ms(void)
 #define TUND_IP_STR_LEN   INET_ADDRSTRLEN
 #define TUND_RTT_SMOOTHING_WEIGHT 7  /* EWMA: 7/8 previous, 1/8 latest sample */
 
-extern volatile bool g_tui_active;
+extern bool g_tui_active;
 extern time_t g_start_time;
+
+typedef atomic_bool tund_stop_flag_t;
+
+/* Stop flags only request loop termination; they do not publish thread data. */
+static inline void tund_stop_flag_init(tund_stop_flag_t *flag, bool value)
+{
+    atomic_init(flag, value);
+}
+
+static inline bool tund_stop_flag_load(tund_stop_flag_t *flag)
+{
+    return atomic_load_explicit(flag, memory_order_relaxed);
+}
+
+static inline void tund_stop_flag_store(tund_stop_flag_t *flag, bool value)
+{
+    atomic_store_explicit(flag, value, memory_order_relaxed);
+}
 
 typedef struct {
     bool                active;
@@ -170,8 +189,18 @@ static inline uint64_t smooth_rtt_ms(uint64_t current, uint64_t sample, bool has
            (TUND_RTT_SMOOTHING_WEIGHT + 1);
 }
 
-extern volatile int g_running;
+extern tund_stop_flag_t g_running;
 extern uint64_t g_auth_key0;
 extern uint64_t g_auth_key1;
+
+static inline bool tund_is_running(void)
+{
+    return tund_stop_flag_load(&g_running);
+}
+
+static inline void tund_request_stop(void)
+{
+    tund_stop_flag_store(&g_running, false);
+}
 
 #endif /* TUND_H */

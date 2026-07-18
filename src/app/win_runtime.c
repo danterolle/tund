@@ -7,7 +7,7 @@
 static BOOL WINAPI console_handler(DWORD dwCtrlType)
 {
     (void)dwCtrlType;
-    g_running = 0;
+    tund_request_stop();
     return TRUE;
 }
 

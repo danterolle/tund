@@ -2,8 +2,15 @@
 
 int server_init(server_t *srv, const config_t *cfg)
 {
-    memset(srv, 0, sizeof(*srv));
+    srv->sockfd = SOCK_INVALID;
+    memset(&srv->tun, 0, sizeof(srv->tun));
+    memset(srv->peers, 0, sizeof(srv->peers));
+    srv->peer_count = 0;
     srv->port = cfg->port;
+    srv->timeout_started = false;
+    srv->tun_started = false;
+    tund_stop_flag_init(&srv->timeout_quit, false);
+    tund_stop_flag_init(&srv->tun_quit, false);
     srv->tun.fd = -1;
     pthread_mutex_init(&srv->peers_lock, NULL);
 
@@ -35,22 +42,22 @@ int server_init(server_t *srv, const config_t *cfg)
 void server_run(server_t *srv)
 {
     server_log_banner(srv);
-    srv->timeout_quit = false;
-    srv->tun_quit = false;
+    tund_stop_flag_store(&srv->timeout_quit, false);
+    tund_stop_flag_store(&srv->tun_quit, false);
 
     if (pthread_create(&srv->timeout_tid, NULL, server_timeout_thread, srv) != 0) {
         LOG_ERROR("Failed to create timeout thread");
-        g_running = 0;
+        tund_request_stop();
         return;
     }
     srv->timeout_started = true;
 
     if (pthread_create(&srv->tun_tid, NULL, server_tun_thread, srv) != 0) {
         LOG_ERROR("Failed to create TUN thread");
-        srv->timeout_quit = true;
+        tund_stop_flag_store(&srv->timeout_quit, true);
         pthread_join(srv->timeout_tid, NULL);
         srv->timeout_started = false;
-        g_running = 0;
+        tund_request_stop();
         return;
     }
     srv->tun_started = true;
@@ -65,7 +72,7 @@ void server_run(server_t *srv)
     tui_peer_t tui_peers[TUND_MAX_PEERS];
     int npeers;
 
-    while (g_running) {
+    while (tund_is_running()) {
         int ret = net_poll_peers(srv->sockfd, srv->peers, TUND_MAX_PEERS,
                                  &srv->peers_lock, tui_peers, &npeers);
         if (ret < 0)
@@ -87,8 +94,8 @@ void server_run(server_t *srv)
 void server_shutdown(server_t *srv)
 {
     LOG_INFO("Shutting down server...");
-    srv->timeout_quit = true;
-    srv->tun_quit = true;
+    tund_stop_flag_store(&srv->timeout_quit, true);
+    tund_stop_flag_store(&srv->tun_quit, true);
 
     pthread_mutex_lock(&srv->peers_lock);
     for (int i = 0; i < TUND_MAX_PEERS; i++) {

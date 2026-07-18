@@ -15,8 +15,8 @@ typedef struct {
     pthread_t       tun_tid;                    /* TUN reader thread handle */
     bool            timeout_started;
     bool            tun_started;
-    volatile bool   timeout_quit;               /* Signal timeout thread to stop */
-    volatile bool   tun_quit;                   /* Signal TUN thread to stop */
+    tund_stop_flag_t timeout_quit;              /* Signal timeout thread to stop */
+    tund_stop_flag_t tun_quit;                  /* Signal TUN thread to stop */
 } server_t;
 
 int server_init(server_t *srv, const config_t *cfg);

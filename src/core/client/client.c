@@ -6,13 +6,13 @@ static void *client_keepalive_thread(void *arg)
     uint8_t buf[TUND_MAX_PKT];
     unsigned int slept = 0;
 
-    while (g_running && !cli->ka_quit) {
+    while (tund_is_running() && !tund_stop_flag_load(&cli->ka_quit)) {
         platform_sleep(1);
         slept++;
         if (slept < TUND_KEEPALIVE_INTERVAL)
             continue;
         slept = 0;
-        if (!g_running || cli->ka_quit) break;
+        if (!tund_is_running() || tund_stop_flag_load(&cli->ka_quit)) break;
 
         int len = proto_build_keepalive(buf, now_ms());
         if (net_send(cli->sockfd, buf, len, &cli->server_addr) < 0)
@@ -27,10 +27,10 @@ static void *client_tun_thread(void *arg)
     uint8_t pkt_buf[TUND_MAX_PAYLOAD];
     uint8_t msg_buf[TUND_MAX_PKT];
 
-    while (g_running && !cli->tun_quit) {
+    while (tund_is_running() && !tund_stop_flag_load(&cli->tun_quit)) {
         int n = tun_read(&cli->tun, pkt_buf, sizeof(pkt_buf));
         if (n <= 0) {
-            if (!g_running || cli->tun_quit) break;
+            if (!tund_is_running() || tund_stop_flag_load(&cli->tun_quit)) break;
             continue;
         }
         int msg_len = proto_build_data(msg_buf, pkt_buf, (uint16_t)n);
@@ -50,7 +50,20 @@ static void *client_tun_thread(void *arg)
 
 int client_init(client_t *cli, const config_t *cfg)
 {
-    memset(cli, 0, sizeof(*cli));
+    cli->sockfd = SOCK_INVALID;
+    memset(&cli->tun, 0, sizeof(cli->tun));
+    memset(&cli->server_addr, 0, sizeof(cli->server_addr));
+    cli->virt_ip = 0;
+    cli->netmask = 0;
+    cli->server_rtt_ms = 0;
+    cli->has_server_rtt = false;
+    memset(cli->name, 0, sizeof(cli->name));
+    memset(cli->peers, 0, sizeof(cli->peers));
+    cli->peer_count = 0;
+    cli->ka_started = false;
+    cli->tun_started = false;
+    tund_stop_flag_init(&cli->ka_quit, false);
+    tund_stop_flag_init(&cli->tun_quit, false);
     cli->tun.fd = -1;
     snprintf(cli->name, TUND_NAME_LEN, "%s", cfg->client_name);
     pthread_mutex_init(&cli->peers_lock, NULL);
@@ -89,22 +102,22 @@ int client_init(client_t *cli, const config_t *cfg)
 void client_run(client_t *cli)
 {
     client_log_banner(cli);
-    cli->ka_quit = false;
-    cli->tun_quit = false;
+    tund_stop_flag_store(&cli->ka_quit, false);
+    tund_stop_flag_store(&cli->tun_quit, false);
 
     if (pthread_create(&cli->ka_tid, NULL, client_keepalive_thread, cli) != 0) {
         LOG_ERROR("Failed to create keepalive thread");
-        g_running = 0;
+        tund_request_stop();
         return;
     }
     cli->ka_started = true;
 
     if (pthread_create(&cli->tun_tid, NULL, client_tun_thread, cli) != 0) {
         LOG_ERROR("Failed to create TUN thread");
-        cli->ka_quit = true;
+        tund_stop_flag_store(&cli->ka_quit, true);
         pthread_join(cli->ka_tid, NULL);
         cli->ka_started = false;
-        g_running = 0;
+        tund_request_stop();
         return;
     }
     cli->tun_started = true;
@@ -120,7 +133,7 @@ void client_run(client_t *cli)
     inet_ntop(AF_INET, &cli->server_addr.sin_addr, server_ip_str, sizeof(server_ip_str));
     int npeers;
 
-    while (g_running) {
+    while (tund_is_running()) {
         int ret = net_poll_peers(cli->sockfd, cli->peers, TUND_MAX_PEERS,
                                  &cli->peers_lock, tui_peers, &npeers);
         if (ret < 0)
@@ -145,8 +158,8 @@ void client_run(client_t *cli)
 void client_shutdown(client_t *cli)
 {
     LOG_INFO("Disconnecting...");
-    cli->ka_quit = true;
-    cli->tun_quit = true;
+    tund_stop_flag_store(&cli->ka_quit, true);
+    tund_stop_flag_store(&cli->tun_quit, true);
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_disconnect(buf);

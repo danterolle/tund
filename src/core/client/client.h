@@ -20,8 +20,8 @@ typedef struct {
     pthread_t           tun_tid;                    /* TUN reader thread handle */
     bool                ka_started;
     bool                tun_started;
-    volatile bool       ka_quit;                    /* Signal keepalive thread to stop */
-    volatile bool       tun_quit;                   /* Signal TUN reader thread to stop */
+    tund_stop_flag_t    ka_quit;                    /* Signal keepalive thread to stop */
+    tund_stop_flag_t    tun_quit;                   /* Signal TUN reader thread to stop */
 } client_t;
 
 int client_init(client_t *cli, const config_t *cfg);

@@ -1,0 +1,13 @@
+-std=c11
+-D_DARWIN_C_SOURCE
+-D_GNU_SOURCE
+-D_WIN32_WINNT=0x0601
+-I.
+-Isrc/app
+-Isrc/protocol
+-Isrc/net
+-Isrc/core
+-Isrc/core/client
+-Isrc/core/server
+-Isrc/tun
+-Isrc/ui

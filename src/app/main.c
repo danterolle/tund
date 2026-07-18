@@ -5,9 +5,9 @@
 #include "client.h"
 
 int g_log_level = LOG_LEVEL_INFO;
-volatile bool g_tui_active = true;
+bool g_tui_active = true;
 time_t g_start_time = 0;
-volatile int g_running = 1;
+tund_stop_flag_t g_running = ATOMIC_VAR_INIT(true);
 uint64_t g_auth_key0 = 0;
 uint64_t g_auth_key1 = 0;
 

@@ -58,7 +58,7 @@ app_startup_result_t app_prepare_runtime(int argc, char *argv[], const config_t 
 static void signal_handler(int sig)
 {
     (void)sig;
-    g_running = 0;
+    tund_request_stop();
 }
 
 void app_setup_signals(void)

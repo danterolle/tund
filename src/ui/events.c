@@ -2,6 +2,7 @@
 #include "log.h"
 
 #include <pthread.h>
+#include <stdatomic.h>
 
 #define TUI_MAX_EVENTS 7
 #define TUI_EVENT_MESSAGE_LEN 128
@@ -17,11 +18,11 @@ static pthread_mutex_t tui_events_lock = PTHREAD_MUTEX_INITIALIZER;
 static tui_event_t tui_events[TUI_MAX_EVENTS];
 static int tui_event_start = 0;
 static int tui_event_count = 0;
-static volatile bool tui_active = false;
+static atomic_bool tui_active = ATOMIC_VAR_INIT(false);
 
 bool tui_events_active(void)
 {
-    return tui_active;
+    return atomic_load_explicit(&tui_active, memory_order_relaxed);
 }
 
 void tui_events_start(void)
@@ -29,14 +30,14 @@ void tui_events_start(void)
     pthread_mutex_lock(&tui_events_lock);
     tui_event_start = 0;
     tui_event_count = 0;
-    tui_active = true;
+    atomic_store_explicit(&tui_active, true, memory_order_relaxed);
     pthread_mutex_unlock(&tui_events_lock);
 }
 
 void tui_events_stop(void)
 {
     pthread_mutex_lock(&tui_events_lock);
-    tui_active = false;
+    atomic_store_explicit(&tui_active, false, memory_order_relaxed);
     pthread_mutex_unlock(&tui_events_lock);
 }
 

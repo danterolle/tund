@@ -12,7 +12,7 @@
 
 #define LOG_RESET "\033[0m"
 
-extern volatile bool g_tui_active;
+extern bool g_tui_active;
 
 static const char *log_level_str[LOG_LEVEL_COUNT] = {
     "DEBUG", "INFO ", "WARN ", "ERROR"

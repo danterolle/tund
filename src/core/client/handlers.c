@@ -109,7 +109,7 @@ void client_handle_server_packet(client_t *cli, uint8_t *buf, int len)
     case MSG_PEER_LEAVE:    client_handle_peer_leave(cli, payload, payload_len); break;
     case MSG_KEEPALIVE:     client_handle_keepalive(cli, payload, payload_len); break;
     case MSG_KEEPALIVE_ACK: client_handle_keepalive_ack(cli, payload, payload_len); break;
-    case MSG_DISCONNECT:    LOG_WARN("Server disconnected!"); g_running = 0; break;
+    case MSG_DISCONNECT:    LOG_WARN("Server disconnected!"); tund_request_stop(); break;
     default:                LOG_DEBUG("Unknown message type 0x%02X", type); break;
     }
 }
