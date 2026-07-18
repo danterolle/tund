@@ -10,12 +10,6 @@
 #include <time.h>
 #include <signal.h>
 
-#ifdef __GNUC__
-#define UNUSED __attribute__((unused))
-#else
-#define UNUSED
-#endif
-
 #ifdef _WIN32
 #define _WIN32_WINNT 0x0601
 #include <winsock2.h>
@@ -67,7 +61,6 @@ static inline uint64_t now_ms(void)
 
 static inline int platform_poll_one(socket_t fd, int timeout_ms)
 {
-#ifdef _WIN32
     fd_set readfds;
     struct timeval tv;
     FD_ZERO(&readfds);
@@ -75,12 +68,6 @@ static inline int platform_poll_one(socket_t fd, int timeout_ms)
     tv.tv_sec = timeout_ms / 1000;
     tv.tv_usec = (timeout_ms % 1000) * 1000;
     return select(0, &readfds, NULL, NULL, &tv);
-#else
-    struct pollfd pfd;
-    pfd.fd = fd;
-    pfd.events = POLLIN;
-    return poll(&pfd, 1, timeout_ms);
-#endif
 }
 
 #else  /* POSIX */
