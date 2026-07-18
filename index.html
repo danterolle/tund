@@ -473,9 +473,9 @@
       </div>
       <div class="quickstart-body">
         <pre id="quickstartCode"><span class="comment"># on the machine with a public IP</span>
-<span class="cmd">sudo ./tund server</span> -k <span class="str">"a-long-random-key"</span>
+<span class="cmd">sudo ./tund-cli server</span> -k <span class="str">"a-long-random-key"</span>
 <span class="gap"></span><span class="comment"># on every machine that should join the LAN</span>
-<span class="cmd">sudo ./tund client</span> -s &lt;server_ip&gt; -k <span class="str">"a-long-random-key"</span></pre>
+<span class="cmd">sudo ./tund-cli client</span> -s &lt;server_ip&gt; -k <span class="str">"a-long-random-key"</span></pre>
       </div>
     </div>
 
@@ -524,7 +524,7 @@
         <button class="copy-btn" id="copyXattrBtn"><i class="ti ti-copy"></i>Copy</button>
       </div>
       <div class="quickstart-body" style="padding:.5rem 1.25rem .75rem">
-        <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:14px;margin:0;white-space:pre-wrap;line-height:1.9"><span class="cmd">xattr -d com.apple.quarantine ./tund</span></pre>
+        <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:14px;margin:0;white-space:pre-wrap;line-height:1.9"><span class="cmd">xattr -d com.apple.quarantine ./tund-cli</span></pre>
       </div>
       <p class="win-note" style="border-top:none;padding-top:.5rem">
         <i class="ti ti-info-circle"></i>
@@ -566,8 +566,8 @@
         });
       });
     }
-    setupCopy('copyBtn', 'sudo ./tund server -k "a-long-random-key"\nsudo ./tund client -s <server_ip> -k "a-long-random-key"');
-    setupCopy('copyXattrBtn', 'xattr -d com.apple.quarantine ./tund');
+    setupCopy('copyBtn', 'sudo ./tund-cli server -k "a-long-random-key"\nsudo ./tund-cli client -s <server_ip> -k "a-long-random-key"');
+    setupCopy('copyXattrBtn', 'xattr -d com.apple.quarantine ./tund-cli');
     setupCopy('copyNetshBtn', 'netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909');
   </script>
 </body>
