@@ -22,7 +22,6 @@ jobs:
       - run: make test
       - run: make tools
       - run: make sanitize
-      - run: make macos-universal
       - name: Build GUI
         run: |
           cd gui
@@ -55,6 +54,7 @@ jobs:
       - run: make test
       - run: make tools
       - run: make sanitize
+      - run: make macos-universal
       - name: Build GUI
         run: |
           cd gui
