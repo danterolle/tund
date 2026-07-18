@@ -22,6 +22,7 @@ jobs:
       - run: make test
       - run: make tools
       - run: make sanitize
+      - run: make macos-universal
       - name: Build GUI
         run: |
           cd gui
@@ -62,48 +63,16 @@ jobs:
           flutter analyze
           flutter test
           flutter build macos --release
-          cp ../tund-cli build/macos/Build/Products/Release/tund-gui.app/Contents/MacOS/tund-cli
-          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/tund-gui.app ../tund-gui-darwin-arm64.zip
+          cp ../dist/tund-cli-darwin-universal build/macos/Build/Products/Release/tund-gui.app/Contents/MacOS/tund-cli
+          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/tund-gui.app ../tund-gui-darwin-universal.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: tund-cli-darwin-arm64
-          path: tund-cli
+          name: tund-cli-darwin-universal
+          path: dist/tund-cli-darwin-universal
       - uses: actions/upload-artifact@v4
         with:
-          name: tund-gui-darwin-arm64
-          path: tund-gui-darwin-arm64.zip
-
-  macos-intel:
-    runs-on: macos-13
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.44.6'
-          channel: stable
-          cache: true
-      - run: make
-      - run: make test
-      - run: make tools
-      - run: make sanitize
-      - name: Build GUI
-        run: |
-          cd gui
-          flutter config --enable-macos-desktop
-          flutter pub get
-          flutter analyze
-          flutter test
-          flutter build macos --release
-          cp ../tund-cli build/macos/Build/Products/Release/tund-gui.app/Contents/MacOS/tund-cli
-          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/tund-gui.app ../tund-gui-darwin-x86_64.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: tund-cli-darwin-x86_64
-          path: tund-cli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: tund-gui-darwin-x86_64
-          path: tund-gui-darwin-x86_64.zip
+          name: tund-gui-darwin-universal
+          path: tund-gui-darwin-universal.zip
 
   windows:
     runs-on: windows-latest
@@ -162,7 +131,7 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [linux, macos, macos-intel, windows]
+    needs: [linux, macos, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -171,11 +140,9 @@ jobs:
       - run: |
           mkdir release
           cp tund-cli-linux-x86_64/tund-cli            release/tund-cli-linux-x86_64
-          cp tund-cli-darwin-arm64/tund-cli            release/tund-cli-darwin-arm64
-          cp tund-cli-darwin-x86_64/tund-cli           release/tund-cli-darwin-x86_64
+          cp tund-cli-darwin-universal/tund-cli-darwin-universal release/
           cp tund-gui-linux-x86_64/tund-gui-linux-x86_64.tar.gz release/
-          cp tund-gui-darwin-arm64/tund-gui-darwin-arm64.zip release/
-          cp tund-gui-darwin-x86_64/tund-gui-darwin-x86_64.zip release/
+          cp tund-gui-darwin-universal/tund-gui-darwin-universal.zip release/
           cp tund-windows-x86_64/tund-windows-x86_64.zip release/
       - uses: softprops/action-gh-release@v2
         with:

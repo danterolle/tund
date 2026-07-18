@@ -38,8 +38,9 @@ SRCS     := $(APP_SRC) src/net/network.c $(SERVER_SRC) $(CLIENT_SRC) $(UI_SRC) $
 HDRS     := src/app/tund.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server/server.h src/core/server/internal.h src/core/client/client.h src/core/client/internal.h src/ui/tui.h src/ui/tui_internal.h
 TEST_SRCS := tests/test_protocol.c
 TOOL_SRCS := tools/peerforge/main.c tools/peerforge/options.c tools/peerforge/net.c tools/peerforge/client.c
+MACOS_UNIVERSAL_TARGET = $(DIST)/tund-cli-darwin-universal
 
-.PHONY: all clean install uninstall windows test sanitize tools verify
+.PHONY: all clean install uninstall macos-universal windows test sanitize tools verify
 
 all: $(TARGET)
 
@@ -94,6 +95,17 @@ tools: $(TOOL_TARGET)
 $(TOOL_TARGET): $(TOOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TOOL_SRCS) $(PROTO_SRC) $(LDFLAGS)
 
+macos-universal: $(MACOS_UNIVERSAL_TARGET)
+
+$(MACOS_UNIVERSAL_TARGET): $(SRCS) $(HDRS) | $(DIST)
+ifeq ($(UNAME_S),Darwin)
+	$(CC) $(CFLAGS) -arch arm64 -arch x86_64 $(INCLUDES) -o $@ $(SRCS) $(LDFLAGS)
+	@echo "  ✓ Built $(MACOS_UNIVERSAL_TARGET)"
+else
+	@echo "  macos-universal requires macOS"
+	@exit 1
+endif
+
 verify:
 	$(MAKE) test
 	$(MAKE) tools
@@ -128,6 +140,6 @@ uninstall:
 	@echo "  ✓ Uninstalled from /usr/local/bin"
 
 clean:
-	rm -f $(TARGET) $(TARGET_WCON) $(TOOL_TARGET)
+	rm -f $(TARGET) $(TARGET_WCON) $(TOOL_TARGET) $(MACOS_UNIVERSAL_TARGET)
 	rm -rf $(DIST)/
 	@echo "  ✓ Cleaned"
