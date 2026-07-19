@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'error_guidance.dart';
 import 'status.dart';
 import 'theme.dart';
+import 'tund_config.dart';
 import 'tund_launcher.dart';
 import 'widgets/widgets.dart';
 
