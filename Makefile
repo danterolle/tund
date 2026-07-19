@@ -38,6 +38,7 @@ SRCS     := $(APP_SRC) src/net/network.c $(SERVER_SRC) $(CLIENT_SRC) $(UI_SRC) $
 HDRS     := src/app/tund.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server/server.h src/core/server/internal.h src/core/client/client.h src/core/client/internal.h src/ui/tui.h src/ui/tui_internal.h
 TEST_PROTOCOL_SRCS := tests/test_protocol.c
 TEST_SERVER_PEERS_SRCS := tests/test_server_peers.c src/core/server/peers.c $(PROTO_SRC)
+TEST_SERVER_DATA_SRCS := tests/test_server_data.c src/core/server/data.c src/core/server/peers.c $(PROTO_SRC)
 TEST_CLIENT_PEERS_SRCS := tests/test_client_peers.c src/core/client/peers.c
 TOOL_SRCS := tools/peerforge/main.c tools/peerforge/options.c tools/peerforge/net.c tools/peerforge/client.c
 MACOS_UNIVERSAL_TARGET = $(DIST)/tund-cli-darwin-universal
@@ -77,17 +78,20 @@ $(TARGET_WCON): $(WIN_SRCS) | $(DIST)
 
 TEST_TARGET := $(DIST)/test_protocol$(EXEEXT)
 TEST_SERVER_PEERS_TARGET := $(DIST)/test_server_peers$(EXEEXT)
+TEST_SERVER_DATA_TARGET := $(DIST)/test_server_data$(EXEEXT)
 TEST_CLIENT_PEERS_TARGET := $(DIST)/test_client_peers$(EXEEXT)
-TEST_TARGETS := $(TEST_TARGET) $(TEST_SERVER_PEERS_TARGET) $(TEST_CLIENT_PEERS_TARGET)
+TEST_TARGETS := $(TEST_TARGET) $(TEST_SERVER_PEERS_TARGET) $(TEST_SERVER_DATA_TARGET) $(TEST_CLIENT_PEERS_TARGET)
 SAN_TEST_TARGET := $(DIST)/test_protocol_sanitize$(EXEEXT)
 SAN_SERVER_PEERS_TARGET := $(DIST)/test_server_peers_sanitize$(EXEEXT)
+SAN_SERVER_DATA_TARGET := $(DIST)/test_server_data_sanitize$(EXEEXT)
 SAN_CLIENT_PEERS_TARGET := $(DIST)/test_client_peers_sanitize$(EXEEXT)
-SAN_TEST_TARGETS := $(SAN_TEST_TARGET) $(SAN_SERVER_PEERS_TARGET) $(SAN_CLIENT_PEERS_TARGET)
+SAN_TEST_TARGETS := $(SAN_TEST_TARGET) $(SAN_SERVER_PEERS_TARGET) $(SAN_SERVER_DATA_TARGET) $(SAN_CLIENT_PEERS_TARGET)
 TOOL_TARGET := $(DIST)/peerforge$(EXEEXT)
 
 test: $(TEST_TARGETS)
 	./$(TEST_TARGET)
 	./$(TEST_SERVER_PEERS_TARGET)
+	./$(TEST_SERVER_DATA_TARGET)
 	./$(TEST_CLIENT_PEERS_TARGET)
 
 $(TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
@@ -96,12 +100,16 @@ $(TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(D
 $(TEST_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(HDRS) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_PEERS_SRCS) $(LDFLAGS)
 
+$(TEST_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(HDRS) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_DATA_SRCS) $(LDFLAGS)
+
 $(TEST_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(HDRS) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(LDFLAGS)
 
 sanitize: $(SAN_TEST_TARGETS)
 	./$(SAN_TEST_TARGET)
 	./$(SAN_SERVER_PEERS_TARGET)
+	./$(SAN_SERVER_DATA_TARGET)
 	./$(SAN_CLIENT_PEERS_TARGET)
 
 $(SAN_TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
@@ -109,6 +117,9 @@ $(SAN_TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h |
 
 $(SAN_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(HDRS) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_PEERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
+
+$(SAN_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(HDRS) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_DATA_SRCS) $(LDFLAGS) $(SAN_FLAGS)
 
 $(SAN_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(HDRS) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
