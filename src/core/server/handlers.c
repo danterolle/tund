@@ -123,6 +123,10 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
 
 static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *from)
 {
+    server_peer_snapshot_t leave_peers[TUND_MAX_PEERS];
+    int leave_count;
+    uint32_t vip;
+
     pthread_mutex_lock(&srv->peers_lock);
     int idx = server_find_peer_by_addr(srv, from);
     if (idx < 0) {
@@ -135,14 +139,16 @@ static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *fr
     LOG_INFO("✦ Peer disconnected: %s (%s)",
              p->name, ip_to_str_buf(p->virt_ip, peer_ip, sizeof(peer_ip)));
 
-    uint32_t vip = p->virt_ip;
+    vip = p->virt_ip;
     p->active = false;
     srv->peer_count--;
+    leave_count = server_snapshot_broadcast_locked(srv, leave_peers,
+                                                   TUND_MAX_PEERS, -1);
+    pthread_mutex_unlock(&srv->peers_lock);
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_peer_leave(buf, vip);
-    server_broadcast(srv, buf, len, -1, 0);
-    pthread_mutex_unlock(&srv->peers_lock);
+    server_send_peer_snapshots(srv, leave_peers, leave_count, buf, len, 0);
 }
 
 void server_handle_packet(server_t *srv, uint8_t *buf, int len,

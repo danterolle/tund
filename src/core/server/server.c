@@ -97,15 +97,17 @@ void server_shutdown(server_t *srv)
     tund_stop_flag_store(&srv->timeout_quit, true);
     tund_stop_flag_store(&srv->tun_quit, true);
 
+    server_peer_snapshot_t peers[TUND_MAX_PEERS];
+    int peer_count;
+
     pthread_mutex_lock(&srv->peers_lock);
-    for (int i = 0; i < TUND_MAX_PEERS; i++) {
-        if (srv->peers[i].active) {
-            uint8_t buf[TUND_MAX_PKT];
-            int len = proto_build_disconnect(buf);
-            net_send(srv->sockfd, buf, len, &srv->peers[i].real_addr);
-        }
-    }
+    peer_count = server_snapshot_broadcast_locked(srv, peers, TUND_MAX_PEERS,
+                                                  -1);
     pthread_mutex_unlock(&srv->peers_lock);
+
+    uint8_t buf[TUND_MAX_PKT];
+    int len = proto_build_disconnect(buf);
+    server_send_peer_snapshots(srv, peers, peer_count, buf, len, 0);
 
     tun_close(&srv->tun);
 

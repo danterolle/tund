@@ -53,6 +53,7 @@ static void test_broadcast_updates_recipients(void)
     server_t srv = {0};
     uint8_t buf[TUND_MAX_PKT];
 
+    tund_test_init_server(&srv);
     tund_test_set_server_peer(&srv, 0, TUND_IP_START, 0xC0000201, 10001, "alpha");
     tund_test_set_server_peer(&srv, 1, TUND_IP_START + 1, 0xC0000202, 10002, "beta");
     tund_test_set_server_peer(&srv, 2, TUND_IP_START + 2, 0xC0000203, 10003, "gamma");
@@ -71,6 +72,7 @@ static void test_broadcast_updates_recipients(void)
     CHECK(srv.peers[0].bytes_out == 110);
     CHECK(srv.peers[1].bytes_out == 20);
     CHECK(srv.peers[2].bytes_out == 130);
+    tund_test_destroy_server(&srv);
 }
 
 static void test_peer_list_payload(void)
@@ -79,6 +81,7 @@ static void test_peer_list_payload(void)
     uint8_t type = 0;
     uint16_t payload_len = 0;
 
+    tund_test_init_server(&srv);
     tund_test_set_server_peer(&srv, 0, TUND_IP_START, 0xC0000201, 10001, "target");
     tund_test_set_server_peer(&srv, 1, TUND_IP_START + 1, 0xC0000202, 10002, "alpha");
     tund_test_set_server_peer(&srv, 2, TUND_IP_START + 2, 0xC0000203, 10003, "beta");
@@ -100,6 +103,7 @@ static void test_peer_list_payload(void)
     CHECK(entries[1].virt_ip == htonl(TUND_IP_START + 2));
     CHECK(strcmp(entries[1].name, "beta") == 0);
     CHECK(entries[1].status == 1);
+    tund_test_destroy_server(&srv);
 }
 
 int main(void)

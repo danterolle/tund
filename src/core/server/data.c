@@ -3,6 +3,13 @@
 void server_handle_data(server_t *srv, const uint8_t *payload,
                         uint16_t plen, const struct sockaddr_in *from)
 {
+    server_peer_snapshot_t broadcast_peers[TUND_MAX_PEERS];
+    server_peer_snapshot_t dst_peer;
+    int broadcast_count = 0;
+    bool send_broadcast = false;
+    bool send_unicast = false;
+    bool write_tun = false;
+
     if (plen < 20) {
         LOG_DEBUG("DATA packet too short (%u bytes)", plen);
         return;
@@ -42,28 +49,45 @@ void server_handle_data(server_t *srv, const uint8_t *payload,
 
     uint32_t broadcast_ip = htonl(TUND_SUBNET | ~TUND_NETMASK);
     if (dst_ip == broadcast_ip) {
-        uint8_t buf[TUND_MAX_PKT];
-        int len = proto_build_data(buf, payload, plen);
-        server_broadcast(srv, buf, len, sender_idx, plen);
+        broadcast_count = server_snapshot_broadcast_locked(srv,
+                                                           broadcast_peers,
+                                                           TUND_MAX_PEERS,
+                                                           sender_idx);
+        send_broadcast = true;
+        write_tun = true;
         pthread_mutex_unlock(&srv->peers_lock);
-        tun_write(&srv->tun, payload, plen);
-        return;
-    }
-
-    int dst_idx = server_find_peer_by_vip(srv, dst_ip);
-    if (dst_idx < 0) {
+    } else if (server_snapshot_peer_by_vip_locked(srv, dst_ip, &dst_peer) < 0) {
         char dst_ip_str[TUND_IP_STR_LEN];
         pthread_mutex_unlock(&srv->peers_lock);
         LOG_DEBUG("No peer for %s, dropping packet",
                   ip_to_str_buf(dst_ip, dst_ip_str, sizeof(dst_ip_str)));
         return;
+    } else {
+        send_unicast = true;
+        pthread_mutex_unlock(&srv->peers_lock);
     }
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_data(buf, payload, plen);
-    if (net_send(srv->sockfd, buf, len, &srv->peers[dst_idx].real_addr) < 0)
-        LOG_WARN("Failed to forward data to %s", srv->peers[dst_idx].name);
-    else
-        srv->peers[dst_idx].bytes_out += plen;
-    pthread_mutex_unlock(&srv->peers_lock);
+    if (send_broadcast) {
+        for (int i = 0; i < broadcast_count; i++) {
+            if (net_send(srv->sockfd, buf, len,
+                         &broadcast_peers[i].real_addr) < 0) {
+                char peer_ip[TUND_IP_STR_LEN];
+                LOG_WARN("Broadcast to %s (%s) failed",
+                         broadcast_peers[i].name,
+                         ip_to_str_buf(broadcast_peers[i].virt_ip,
+                                       peer_ip, sizeof(peer_ip)));
+            } else {
+                server_add_peer_bytes_out(srv, &broadcast_peers[i], plen);
+            }
+        }
+    } else if (send_unicast) {
+        if (net_send(srv->sockfd, buf, len, &dst_peer.real_addr) < 0)
+            LOG_WARN("Failed to forward data to %s", dst_peer.name);
+        else
+            server_add_peer_bytes_out(srv, &dst_peer, plen);
+    }
+    if (write_tun)
+        tun_write(&srv->tun, payload, plen);
 }
