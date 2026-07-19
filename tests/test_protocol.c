@@ -1,4 +1,4 @@
-#include "test_support.h"
+#include "sitest.h"
 
 #include <string.h>
 
@@ -161,5 +161,5 @@ int main(void)
     test_builders();
     test_dst_ip();
 
-    return test_finish("protocol tests");
+    return sitest_finish("protocol tests");
 }
