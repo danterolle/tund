@@ -16,6 +16,16 @@ Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge
 
 It behaves like Radmin VPN, but open source and cross-platform. The core is written in C — Linux and macOS use only system libraries; Windows bundles Wintun for TUN support.
 
+## Table of contents
+
+- [Project rationale](#project-rationale)
+- [How it works](#how-it-works)
+- [Quick start](#quick-start)
+- [Features](#features)
+- [Game compatibility](#game-compatibility)
+- [Documentation](#documentation)
+- [License](#license)
+
 ## Project rationale
 
 ### Why not just wrap WireGuard?
