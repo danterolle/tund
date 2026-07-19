@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme.dart';
-import '../tund_config.dart';
+import '../core/tund_config.dart';
 
 class TundModeSelector extends StatelessWidget {
   const TundModeSelector({

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../status.dart';
+import '../core/status.dart';
 import '../theme.dart';
 import 'status_widgets.dart';
 

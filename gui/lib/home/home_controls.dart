@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../error_guidance.dart';
-import '../share_command.dart';
-import '../status.dart';
+import '../core/error_guidance.dart';
+import '../core/share_command.dart';
+import '../core/status.dart';
 import '../theme.dart';
-import '../tund_config.dart';
+import '../core/tund_config.dart';
 import '../widgets/widgets.dart';
 
 class HomeControls extends StatelessWidget {

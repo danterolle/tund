@@ -3,14 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../error_guidance.dart';
-import '../key_helpers.dart';
-import '../privileges.dart';
-import '../share_command.dart';
-import '../status.dart';
+import '../core/error_guidance.dart';
+import '../core/key_helpers.dart';
+import '../core/privileges.dart';
+import '../core/share_command.dart';
+import '../core/status.dart';
 import '../theme.dart';
-import '../tund_config.dart';
-import '../tund_launcher.dart';
+import '../core/tund_config.dart';
+import '../core/tund_launcher.dart';
 import '../widgets/widgets.dart';
 import 'home_controls.dart';
 

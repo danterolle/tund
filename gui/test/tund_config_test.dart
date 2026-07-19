@@ -2,11 +2,11 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tund_gui/key_helpers.dart';
-import 'package:tund_gui/process_output.dart';
-import 'package:tund_gui/share_command.dart';
-import 'package:tund_gui/tund_config.dart';
-import 'package:tund_gui/tund_launcher.dart';
+import 'package:tund_gui/core/key_helpers.dart';
+import 'package:tund_gui/core/process_output.dart';
+import 'package:tund_gui/core/share_command.dart';
+import 'package:tund_gui/core/tund_config.dart';
+import 'package:tund_gui/core/tund_launcher.dart';
 
 void main() {
   group('network key generation', () {

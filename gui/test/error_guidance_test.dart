@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tund_gui/error_guidance.dart';
+import 'package:tund_gui/core/error_guidance.dart';
 
 void main() {
   test('explains missing Wintun', () {

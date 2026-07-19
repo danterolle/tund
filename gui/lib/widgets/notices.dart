@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../error_guidance.dart';
+import '../core/error_guidance.dart';
 import '../theme.dart';
 
 class TundHostNotice extends StatelessWidget {
