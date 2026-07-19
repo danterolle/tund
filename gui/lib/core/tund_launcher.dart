@@ -66,7 +66,20 @@ class TundLauncher {
 
     final exe = executable();
     if (!await exe.exists()) {
-      throw TundLaunchException(missingExecutableMessage);
+      throw TundLaunchException(
+        title: 'tund-cli was not found',
+        message: missingExecutableMessage,
+      );
+    }
+
+    if (Platform.isMacOS && !isRunningAsRoot()) {
+      throw TundLaunchException(
+        title: 'Administrator privileges required',
+        message: macPrivilegeMessage(
+          guiExecutablePath: Platform.resolvedExecutable,
+          cliExecutablePath: exe.path,
+        ),
+      );
     }
 
     final process = await Process.start(
@@ -107,9 +120,36 @@ class TundLauncher {
   }
 }
 
-class TundLaunchException implements Exception {
-  const TundLaunchException(this.message);
+bool isRunningAsRoot() {
+  if (!Platform.isMacOS && !Platform.isLinux) {
+    return false;
+  }
+  final result = Process.runSync('/usr/bin/id', ['-u'], runInShell: false);
+  return result.exitCode == 0 && result.stdout.toString().trim() == '0';
+}
 
+String shellQuote(String value) {
+  return "'${value.replaceAll("'", "'\"'\"'")}'";
+}
+
+String macPrivilegeMessage({
+  required String guiExecutablePath,
+  required String cliExecutablePath,
+}) {
+  return 'TunD needs administrator privileges to create the TUN interface.\n\n'
+      'On macOS, run the app executable with sudo instead of the .app bundle:\n'
+      'sudo ${shellQuote(guiExecutablePath)}\n\n'
+      'Or run the bundled CLI directly with sudo:\n'
+      'sudo ${shellQuote(cliExecutablePath)} ...';
+}
+
+class TundLaunchException implements Exception {
+  const TundLaunchException({
+    required this.title,
+    required this.message,
+  });
+
+  final String title;
   final String message;
 
   @override

@@ -6,6 +6,9 @@ String privilegeMessage() {
   if (Platform.isWindows) {
     return 'TunD needs Administrator privileges to create the virtual network adapter. Accept the Windows UAC prompt if it appears.';
   }
+  if (Platform.isMacOS) {
+    return 'TunD needs administrator privileges to create and configure the TUN interface. On macOS, start the app executable with sudo or run tund-cli directly with sudo if startup fails.';
+  }
   return 'TunD needs administrator/root privileges to create and configure the TUN interface. Launch the GUI with the required privileges, or run tund-cli directly with sudo if startup fails.';
 }
 

@@ -100,7 +100,7 @@ class _TundHomePageState extends State<TundHomePage> {
       setState(() {
         status = GuiStatus.failed;
         guidedError = GuidedError(
-          title: 'tund-cli was not found',
+          title: error.title,
           message: error.message,
         );
       });

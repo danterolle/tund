@@ -47,7 +47,8 @@ void main() {
     test('uses defaults for empty port and key placeholders', () {
       final command = buildClientCommand(port: '', key: '');
 
-      expect(command, 'tund-cli client -s SERVER_IP -p 9909 -k "<network-key>"');
+      expect(
+          command, 'tund-cli client -s SERVER_IP -p 9909 -k "<network-key>"');
     });
   });
 
@@ -169,6 +170,19 @@ void main() {
       expect(launcher.primaryExecutableName, cliName);
       expect(launcher.guiExecutableName, guiName);
       expect(launcher.missingExecutableMessage, message);
+    });
+
+    test('formats macOS privilege guidance', () {
+      final message = macPrivilegeMessage(
+        guiExecutablePath: "/tmp/TunD's.app/Contents/MacOS/tund-gui",
+        cliExecutablePath: "/tmp/TunD's.app/Contents/MacOS/tund-cli",
+      );
+
+      expect(message, contains('instead of the .app bundle'));
+      expect(message,
+          contains("sudo '/tmp/TunD'\"'\"'s.app/Contents/MacOS/tund-gui'"));
+      expect(message,
+          contains("sudo '/tmp/TunD'\"'\"'s.app/Contents/MacOS/tund-cli' ..."));
     });
   });
 
