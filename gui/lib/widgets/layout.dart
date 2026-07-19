@@ -34,32 +34,6 @@ class TundShell extends StatelessWidget {
   }
 }
 
-class TundPanel extends StatelessWidget {
-  const TundPanel({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: TundColors.card.withValues(alpha: 0.96),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: TundColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.28),
-            blurRadius: 36,
-            offset: const Offset(0, 18),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
 class TundCard extends StatelessWidget {
   const TundCard({super.key, required this.child});
 
