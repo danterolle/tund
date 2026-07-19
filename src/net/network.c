@@ -44,7 +44,7 @@ socket_t net_create_socket(uint16_t bind_port)
     addr.sin_port = htons(bind_port);
 
     if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        LOG_ERROR("Cannot bind UDP port %u: %s. If another Tund/server is running, stop it or choose a different port with -p.",
+        LOG_ERROR("Cannot bind UDP port %u: %s. If another TunD/server is running, stop it or choose a different port with -p.",
                   bind_port, sock_errstr(SOCK_Error()));
         sock_close(sockfd);
         return (socket_t)-1;

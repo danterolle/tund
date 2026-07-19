@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.svg" width="120" alt="Tund logo">
+  <img src="logo.svg" width="120" alt="TunD logo">
 </p>
 
 <p align="center">
@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/GUI-Flutter-378ADD.svg" alt="Flutter GUI">
 </p>
 
-# Tund
+# TunD
 
 Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge Simulator) LAN parties and direct-IP multiplayer with friends.
 
@@ -30,9 +30,9 @@ It behaves like Radmin VPN, but open source and cross-platform. The core is writ
 
 ### Why not just wrap WireGuard?
 
-WireGuard would be the right foundation for a production VPN: it is easier to trust, much more secure, and already reviewed. Tund is deliberately narrower. It is a small, self-hosted LAN-party tool with a fixed virtual IPv4 subnet, automatic peer assignment, and enough broadcast support for LAN-style games. A thin WireGuard wrapper would still need to own configuration, routing, platform setup, privileges and much more around a tool that was not designed specifically for this workflow.
+WireGuard would be the right foundation for a production VPN: it is easier to trust, much more secure, and already reviewed. TunD is deliberately narrower. It is a small, self-hosted LAN-party tool with a fixed virtual IPv4 subnet, automatic peer assignment, and enough broadcast support for LAN-style games. A thin WireGuard wrapper would still need to own configuration, routing, platform setup, privileges and much more around a tool that was not designed specifically for this workflow.
 
-Do not use Tund when you need a confidential VPN.
+Do not use TunD when you need a confidential VPN.
 
 ### Why C?
 
@@ -46,14 +46,14 @@ The C core was built with AI used as a pair-programming assistant: generated cod
 
 ```
 ┌──────────┐         ┌─────────────┐         ┌──────────┐
-│ Client A │ ──UDP──▶│  Tund Hub   │◀──UDP── │ Client B │
+│ Client A │ ──UDP──▶│  TunD Hub   │◀──UDP── │ Client B │
 │ 10.9.0.2 │         │  10.9.0.1   │         │ 10.9.0.3 │
 └──────────┘         └─────────────┘         └──────────┘
      ▲                                              ▲
      └──────────── Virtual LAN: 10.9.0.0/24 ────────┘
 ```
 
-1. One machine runs Tund in **server** mode. On the same physical LAN it only needs to be reachable by the other PCs; over the Internet it needs a reachable UDP port.
+1. One machine runs TunD in **server** mode. On the same physical LAN it only needs to be reachable by the other PCs; over the Internet it needs a reachable UDP port.
 2. Other machines connect as **clients**
 3. All clients automatically discover each other
 4. Traffic is tunneled over UDP through the server
@@ -89,9 +89,9 @@ Pre-built binaries are available on the [releases page](https://github.com/dante
 
 ## Game compatibility
 
-Tund transports IPv4 traffic (including the IPv4 subnet broadcast address). It is suitable for direct-IP games and games such as Artemis that use ordinary IPv4 networking. It is not an Ethernet bridge: games requiring Layer-2 discovery, IPv6, or multicast discovery may need direct IP entry or may not work.
+TunD transports IPv4 traffic (including the IPv4 subnet broadcast address). It is suitable for direct-IP games and games such as Artemis that use ordinary IPv4 networking. It is not an Ethernet bridge: games requiring Layer-2 discovery, IPv6, or multicast discovery may need direct IP entry or may not work.
 
-The shared key authenticates packets but does **not** encrypt traffic. Tund is not a production VPN — it is a weekend project for trusted networks, not a privacy tool. Do not use on untrusted networks or untrusted servers.
+The shared key authenticates packets but does **not** encrypt traffic. TunD is not a production VPN — it is a weekend project for trusted networks, not a privacy tool. Do not use on untrusted networks or untrusted servers.
 
 For Artemis, start the server first, connect every station with the same key, then use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
 

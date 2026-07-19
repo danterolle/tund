@@ -91,7 +91,7 @@ class _TundHomePageState extends State<TundHomePage> {
         status = exitCode == 0 ? GuiStatus.stopped : GuiStatus.failed;
         guidedError = exitCode == 0 ? null : guideTundFailure(log.toString());
       });
-      appendLog('\nTund exited with code $exitCode.\n');
+      appendLog('\nTunD exited with code $exitCode.\n');
     } on TundLaunchException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -118,7 +118,7 @@ class _TundHomePageState extends State<TundHomePage> {
 
   void stopTund() {
     setState(() => status = GuiStatus.stopping);
-    appendLog('\nStopping Tund...\n');
+    appendLog('\nStopping TunD...\n');
     launcher.stop();
   }
 

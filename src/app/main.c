@@ -60,6 +60,6 @@ int main(int argc, char *argv[])
         client_shutdown(&g_client);
     }
 
-    LOG_INFO("Tund terminated.");
+    LOG_INFO("TunD terminated.");
     return 0;
 }

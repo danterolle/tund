@@ -29,7 +29,7 @@ class TundModeSelector extends StatelessWidget {
     final join = TundModeCard(
       title: 'Join a LAN',
       description:
-          'Connect this computer to a Tund host that is already running.',
+          'Connect this computer to a TunD host that is already running.',
       icon: Icons.link_outlined,
       selected: mode == TundMode.client,
       enabled: enabled,

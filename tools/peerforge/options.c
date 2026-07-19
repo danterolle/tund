@@ -10,7 +10,7 @@ void peerforge_usage(const char *prog)
             "Usage: %s -s <server> -k <key> [-p port] [-n clients] [-t ms] [-K rounds] [-d pairs]\n"
             "\n"
             "Options:\n"
-            "  -s <server>   Tund server address (required)\n"
+            "  -s <server>   TunD server address (required)\n"
             "  -k <key>      Shared network key, 12+ characters (required)\n"
             "  -p <port>     UDP port (default: %u)\n"
             "  -n <clients>  Simulated clients, 1-%d (default: 32)\n"

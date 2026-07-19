@@ -1,8 +1,8 @@
-# Tund — Technical documentation
+# TunD — Technical documentation
 
 ## Purpose and scope
 
-Tund is a self-hosted, hub-and-spoke virtual IPv4 LAN. It creates a local Layer-3 TUN interface on every participant and relays IP packets through one UDP server. It is intended for small, trusted groups and games that work over IPv4, such as Artemis Space Ship Simulator.
+TunD is a self-hosted, hub-and-spoke virtual IPv4 LAN. It creates a local Layer-3 TUN interface on every participant and relays IP packets through one UDP server. It is intended for small, trusted groups and games that work over IPv4, such as Artemis Space Ship Simulator.
 
 It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement for a production VPN. It does not transport Ethernet frames, IPv6, or arbitrary multicast discovery.
 
@@ -45,7 +45,7 @@ Each endpoint sets the TUN MTU to 1400 bytes. The lower-than-Ethernet MTU reserv
 
 ## Datagram format
 
-Every Tund datagram uses the following 13-byte header followed by a payload:
+Every TunD datagram uses the following 13-byte header followed by a payload:
 
 | Bytes | Field | Description |
 |---:|---|---|
@@ -63,7 +63,7 @@ Message types are `REGISTER`, `ASSIGN`, `PEER_LIST`, `DATA`, `KEEPALIVE`, `KEEPA
 
 `KEEPALIVE` carries the sender's monotonic millisecond timestamp. The receiver replies with `KEEPALIVE_ACK` containing the same timestamp. The original sender compares it with its current monotonic time to estimate RTT.
 
-Clients periodically probe the server and display smoothed keepalive RTT in the TUI. The server also probes each active peer, updates `last_seen`, and records smoothed per-peer keepalive RTT for the peer table. Tund uses a simple EWMA (`7/8` previous value, `1/8` latest sample) to hide scheduler spikes while still following real changes. This is an application-level health metric, not an ICMP ping measurement.
+Clients periodically probe the server and display smoothed keepalive RTT in the TUI. The server also probes each active peer, updates `last_seen`, and records smoothed per-peer keepalive RTT for the peer table. TunD uses a simple EWMA (`7/8` previous value, `1/8` latest sample) to hide scheduler spikes while still following real changes. This is an application-level health metric, not an ICMP ping measurement.
 
 ## Packet forwarding
 
@@ -85,16 +85,16 @@ Clients accept traffic only when its UDP source address equals the configured se
 
 The server has a timeout thread and a TUN-reader thread. Each client has a keepalive thread and a TUN-reader thread. Peer-table access is protected by a mutex. UI state for the TUI is copied under the same peer lock.
 
-On shutdown, Tund sets stop flags, sends disconnect notifications where possible, and closes the TUN before joining its reader thread. Linux and macOS TUN reads are guarded by short `poll()` timeouts so Ctrl+C remains responsive even when closing the descriptor does not immediately unblock a read. Windows waits on Wintun's read event with a bounded timeout.
+On shutdown, TunD sets stop flags, sends disconnect notifications where possible, and closes the TUN before joining its reader thread. Linux and macOS TUN reads are guarded by short `poll()` timeouts so Ctrl+C remains responsive even when closing the descriptor does not immediately unblock a read. Windows waits on Wintun's read event with a bounded timeout.
 
 ## Security model
 
 The shared key authenticates datagrams and prevents unauthorised endpoints without the key from registering or injecting packets. It does **not** encrypt packet contents and it does not provide replay protection. Use a long random key and only trusted networks/servers.
 
-Do not describe Tund as a confidential VPN until it uses a reviewed authenticated-encryption transport and replay protection.
+Do not describe TunD as a confidential VPN until it uses a reviewed authenticated-encryption transport and replay protection.
 
 ## Platform notes
 
 - **Linux:** requires `/dev/net/tun` and root/CAP_NET_ADMIN.
 - **macOS:** uses an OS-managed `utun` interface configured via `ioctl(SIOCAIFADDR)` and `ioctl(SIOCSIFMTU)`; the subnet route is added through `fork`+`exec(/sbin/route)` — no shell processes are spawned. Run with administrator rights.
-- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. If started without elevation, Tund relaunches itself through UAC with the same arguments. Tund uses `netsh` for adapter IP/MTU configuration, creates the tunnel route with IP Helper APIs, then verifies IP address, route, and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.
+- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. If started without elevation, TunD relaunches itself through UAC with the same arguments. TunD uses `netsh` for adapter IP/MTU configuration, creates the tunnel route with IP Helper APIs, then verifies IP address, route, and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.

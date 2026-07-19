@@ -10,7 +10,7 @@ class TundApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Tund',
+      title: 'TunD',
       theme: TundTheme.data,
       home: const TundHomePage(),
     );

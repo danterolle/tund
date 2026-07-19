@@ -1,5 +1,5 @@
 enum GuiStatus {
-  ready('Ready', 'Choose a mode, enter the shared key, then start Tund.'),
+  ready('Ready', 'Choose a mode, enter the shared key, then start TunD.'),
   starting('Starting', 'Launching tund-cli and waiting for process output.'),
   running(
       'Running', 'tund-cli is running. Keep this window open while connected.'),

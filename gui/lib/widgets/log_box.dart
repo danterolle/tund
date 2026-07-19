@@ -57,7 +57,7 @@ class TundLogBox extends StatelessWidget {
                   controller: controller,
                   child: SelectableText(
                     text.isEmpty
-                        ? 'Logs will appear here after Tund starts.'
+                        ? 'Logs will appear here after TunD starts.'
                         : text,
                     style: const TextStyle(
                       color: TundColors.muted,

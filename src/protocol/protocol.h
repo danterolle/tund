@@ -1,5 +1,5 @@
 /*
- * Tund — Virtual LAN Tool
+ * TunD — Virtual LAN Tool
  * protocol.h — Wire protocol definitions
  *
  * Every UDP datagram exchanged between server and client starts with

@@ -61,7 +61,7 @@ class TundLauncher {
     void Function()? onStarted,
   }) async {
     if (_process != null) {
-      throw StateError('Tund is already running.');
+      throw StateError('TunD is already running.');
     }
 
     final exe = executable();

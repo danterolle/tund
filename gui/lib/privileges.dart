@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 String privilegeMessage() {
   if (Platform.isWindows) {
-    return 'Tund needs Administrator privileges to create the virtual network adapter. Accept the Windows UAC prompt if it appears.';
+    return 'TunD needs Administrator privileges to create the virtual network adapter. Accept the Windows UAC prompt if it appears.';
   }
-  return 'Tund needs administrator/root privileges to create and configure the TUN interface. Launch the GUI with the required privileges, or run tund-cli directly with sudo if startup fails.';
+  return 'TunD needs administrator/root privileges to create and configure the TUN interface. Launch the GUI with the required privileges, or run tund-cli directly with sudo if startup fails.';
 }
 
 Future<bool?> showPrivilegeDialog(

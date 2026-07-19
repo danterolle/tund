@@ -30,9 +30,9 @@ void main() {
   testWidgets('renders the launcher shell', (tester) async {
     await pumpAppAndAcceptPrivilegeNotice(tester);
 
-    expect(find.text('Tund'), findsOneWidget);
+    expect(find.text('TunD'), findsOneWidget);
     expect(find.text('Ready'), findsWidgets);
-    expect(find.text('Choose a mode, enter the shared key, then start Tund.'),
+    expect(find.text('Choose a mode, enter the shared key, then start TunD.'),
         findsOneWidget);
     expect(find.text('Host a LAN'), findsOneWidget);
     expect(find.text('Join a LAN'), findsOneWidget);

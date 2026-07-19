@@ -3,7 +3,7 @@
 void server_log_banner(const server_t *srv)
 {
     char version[64], port[64], ip[64], tun[64], server_ip[TUND_IP_STR_LEN];
-    snprintf(version, sizeof(version), "Tund Server v%s", TUND_VERSION);
+    snprintf(version, sizeof(version), "TunD Server v%s", TUND_VERSION);
     snprintf(port, sizeof(port), "Listening on UDP port %u", srv->port);
     snprintf(ip, sizeof(ip), "Virtual IP: %s",
              ip_to_str_buf(htonl(TUND_SERVER_IP), server_ip, sizeof(server_ip)));

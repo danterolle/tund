@@ -20,7 +20,7 @@ void tui_rule(void)
 
 void tui_render_header(const char *version, const char *mode)
 {
-    tui_printf(" %s◆ Tund%s %sv%s%s %s— %s%s\n",
+    tui_printf(" %s◆ TunD%s %sv%s%s %s— %s%s\n",
                TUI_BOLD TUI_CYAN, TUI_RESET,
                TUI_YELLOW, version, TUI_RESET,
                TUI_GRAY, mode, TUI_RESET);

@@ -5,7 +5,7 @@
 static void print_usage(const char *prog, bool show_desc)
 {
     if (show_desc) fprintf(stderr,
-        "Tund - Virtual LAN over UDP. Creates an authenticated\n"
+        "TunD - Virtual LAN over UDP. Creates an authenticated\n"
         "IPv4 tunnel for LAN gaming with friends.\n"
         "\n");
     fprintf(stderr,
@@ -72,7 +72,7 @@ static cli_result_t validate_config(const char *prog, config_t *cfg)
         print_usage(prog, false);
 #ifdef _WIN32
         MessageBoxA(NULL, "Client mode requires a server IP address.\nFill in the Server IP field.",
-                    "Tund - Error", MB_OK | MB_ICONERROR);
+                    "TunD - Error", MB_OK | MB_ICONERROR);
 #endif
         return CLI_EXIT_ERROR;
     }
@@ -85,7 +85,7 @@ static cli_result_t validate_config(const char *prog, config_t *cfg)
         fprintf(stderr, "Error: a shared access key of at least 12 characters is required (-k).\n");
 #ifdef _WIN32
         MessageBoxA(NULL, "A shared network key of at least 12 characters is required.\nEnter it in the Network key field.",
-                    "Tund - Error", MB_OK | MB_ICONERROR);
+                    "TunD - Error", MB_OK | MB_ICONERROR);
 #endif
         return CLI_EXIT_ERROR;
     }

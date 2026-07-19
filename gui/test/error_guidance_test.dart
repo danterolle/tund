@@ -35,6 +35,6 @@ void main() {
   test('falls back for unknown errors', () {
     final error = guideTundFailure('Unexpected process failure');
 
-    expect(error.title, 'Tund stopped with an error');
+    expect(error.title, 'TunD stopped with an error');
   });
 }

@@ -23,7 +23,7 @@ class ErrorRule {
 }
 
 const fallbackGuidance = GuidedError(
-  title: 'Tund stopped with an error',
+  title: 'TunD stopped with an error',
   message: 'Check the raw logs below for the exact tund-cli output.',
 );
 
@@ -48,7 +48,7 @@ const errorRules = [
     error: GuidedError(
       title: 'Missing privileges',
       message:
-          'Tund needs administrator/root privileges to create and configure the virtual network interface.',
+          'TunD needs administrator/root privileges to create and configure the virtual network interface.',
     ),
   ),
   ErrorRule(
@@ -60,7 +60,7 @@ const errorRules = [
     error: GuidedError(
       title: 'UDP port is already in use',
       message:
-          'Stop the other Tund/server process or choose a different UDP port.',
+          'Stop the other TunD/server process or choose a different UDP port.',
     ),
   ),
   ErrorRule(
@@ -72,7 +72,7 @@ const errorRules = [
     ],
     error: GuidedError(
       title: 'Network key mismatch',
-      message: 'Use the exact same shared network key on every Tund endpoint.',
+      message: 'Use the exact same shared network key on every TunD endpoint.',
     ),
   ),
   ErrorRule(
@@ -84,7 +84,7 @@ const errorRules = [
     error: GuidedError(
       title: 'Cannot reach the server',
       message:
-          'Check the server address, UDP port, firewall rules, and that the Tund server is running.',
+          'Check the server address, UDP port, firewall rules, and that the TunD server is running.',
     ),
   ),
   ErrorRule(
@@ -97,7 +97,7 @@ const errorRules = [
     error: GuidedError(
       title: 'Route or subnet conflict',
       message:
-          'Another VPN or LAN may already use 10.9.0.0/24. Disconnect it before starting Tund.',
+          'Another VPN or LAN may already use 10.9.0.0/24. Disconnect it before starting TunD.',
     ),
   ),
 ];

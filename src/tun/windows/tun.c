@@ -23,7 +23,7 @@ int tun_open(tun_device_t *dev)
 
     WINTUN_SESSION_HANDLE session = wintun_start_session(adapter, 0x400000);
     if (!session) {
-        LOG_ERROR("Cannot start Wintun session (error %lu). Close other Tund instances and try again.",
+        LOG_ERROR("Cannot start Wintun session (error %lu). Close other TunD instances and try again.",
                   GetLastError());
         wintun_close_adapter(adapter);
         return -1;

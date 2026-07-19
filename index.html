@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tund — lightweight virtual LAN tool</title>
+<title>TunD — lightweight virtual LAN tool</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
   :root {
@@ -427,7 +427,7 @@
             <circle cx="-40" cy="-13" r="8" fill="#85B7EB"/>
           </g>
         </svg>
-        <h1>Tund</h1>
+        <h1>TunD</h1>
       </div>
       <p class="tagline">A lightweight, self-hosted virtual LAN tool. C core, minimal dependencies, optional desktop GUI.</p>
 
@@ -488,7 +488,7 @@
         </li>
         <li>
           <span class="num"></span>
-          <span class="step-text">Run <code>tund-gui.exe</code> for the GUI or <code>tund-cli.exe</code> for the CLI. If Windows shows a UAC prompt, accept it so Tund can create the TUN interface.</span>
+          <span class="step-text">Run <code>tund-gui.exe</code> for the GUI or <code>tund-cli.exe</code> for the CLI. If Windows shows a UAC prompt, accept it so TunD can create the TUN interface.</span>
         </li>
         <li>
           <span class="num"></span>
@@ -499,7 +499,7 @@
               <button class="copy-btn" id="copyNetshBtn"><i class="ti ti-copy"></i>Copy</button>
             </div>
             <div class="quickstart-body" style="padding:.4rem 1rem">
-              <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;margin:0;white-space:pre-wrap;line-height:1.7"><span class="cmd">netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909</span></pre>
+              <pre style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;margin:0;white-space:pre-wrap;line-height:1.7"><span class="cmd">netsh advfirewall firewall add rule name="TunD" dir=in action=allow protocol=udp localport=9909</span></pre>
             </div>
           </div>
         </li>
@@ -568,7 +568,7 @@
     }
     setupCopy('copyBtn', 'sudo ./tund-cli server -k "a-long-random-key"\nsudo ./tund-cli client -s <server_ip> -k "a-long-random-key"');
     setupCopy('copyXattrBtn', 'xattr -d com.apple.quarantine ./tund-cli');
-    setupCopy('copyNetshBtn', 'netsh advfirewall firewall add rule name="Tund" dir=in action=allow protocol=udp localport=9909');
+    setupCopy('copyNetshBtn', 'netsh advfirewall firewall add rule name="TunD" dir=in action=allow protocol=udp localport=9909');
   </script>
 </body>
 </html>

@@ -130,18 +130,18 @@ void main() {
   group('process output sanitization', () {
     test('removes ANSI color sequences', () {
       final output = sanitizeProcessOutput(
-        '\u001B[33mWarning: Tund requires root privileges\u001B[0m\n',
+        '\u001B[33mWarning: TunD requires root privileges\u001B[0m\n',
       );
 
-      expect(output, 'Warning: Tund requires root privileges\n');
+      expect(output, 'Warning: TunD requires root privileges\n');
     });
 
     test('removes terminal control sequences', () {
       final output = sanitizeProcessOutput(
-        '\u001B[?25lStarting Tund\u001B[?25h\n',
+        '\u001B[?25lStarting TunD\u001B[?25h\n',
       );
 
-      expect(output, 'Starting Tund\n');
+      expect(output, 'Starting TunD\n');
     });
   });
 }

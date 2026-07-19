@@ -1,4 +1,4 @@
-# Tund — Usage
+# TunD — Usage
 
 ## Pre-built releases
 
@@ -106,7 +106,7 @@ Run the local UDP integration check without creating real TUN interfaces:
 make peerforge-check
 ```
 
-With a Tund server already running, simulate clients without creating real TUN interfaces:
+With a TunD server already running, simulate clients without creating real TUN interfaces:
 
 ```bash
 ./dist/peerforge -s 127.0.0.1 -k "a-long-random-key" -n 253 -K 1 -d 32

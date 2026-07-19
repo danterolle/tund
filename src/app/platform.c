@@ -16,7 +16,7 @@ bool app_stderr_is_tty(void)
 app_startup_result_t app_prepare_runtime(int argc, char *argv[], const config_t *cfg)
 {
     if (!win_runtime_is_admin()) {
-        fprintf(stderr, "Tund requires Administrator privileges for the TUN interface.\n");
+        fprintf(stderr, "TunD requires Administrator privileges for the TUN interface.\n");
         if (win_runtime_relaunch_as_admin(argc, argv))
             return APP_STARTUP_EXIT_OK;
         fprintf(stderr, "Run the same command from an Administrator terminal.\n\n");
@@ -50,12 +50,12 @@ app_startup_result_t app_prepare_runtime(int argc, char *argv[], const config_t 
     const char *mode = (argc > 1) ? argv[1] : "";
     if (app_stderr_is_tty()) {
         fprintf(stderr,
-            "\033[33mWarning: Tund requires root privileges for TUN interface.\n"
+            "\033[33mWarning: TunD requires root privileges for TUN interface.\n"
             "Run with: sudo %s %s ...\033[0m\n\n",
             argv[0], mode);
     } else {
         fprintf(stderr,
-            "Warning: Tund requires root privileges for TUN interface.\n"
+            "Warning: TunD requires root privileges for TUN interface.\n"
             "Run with: sudo %s %s ...\n\n",
             argv[0], mode);
     }

@@ -94,7 +94,7 @@ bool win_runtime_relaunch_as_admin(int argc, char *argv[])
                 (long)(INT_PTR)result);
         return false;
     }
-    fprintf(stderr, "Tund is relaunching with Administrator privileges...\n");
+    fprintf(stderr, "TunD is relaunching with Administrator privileges...\n");
     return true;
 }
 
@@ -121,9 +121,9 @@ static void log_to_exe_dir(const char *filename, const char *msg)
 static LONG WINAPI crash_handler(EXCEPTION_POINTERS *ep)
 {
     (void)ep;
-    log_to_exe_dir("tund_crash.log", "Tund - Fatal error (access violation)");
+    log_to_exe_dir("tund_crash.log", "TunD - Fatal error (access violation)");
     MessageBoxA(NULL,
-        "Tund encountered a fatal error.\n\n"
+        "TunD encountered a fatal error.\n\n"
         "Possible causes:\n"
         "  - wintun.dll missing, damaged, or incompatible\n"
         "  - Stack overflow in the network thread\n"
@@ -131,7 +131,7 @@ static LONG WINAPI crash_handler(EXCEPTION_POINTERS *ep)
         "Make sure you are running as Administrator and that wintun.dll\n"
         "is in the same directory as tund-cli.exe.\n\n"
         "Details saved to: tund_crash.log",
-        "Tund - Fatal Error", MB_OK | MB_ICONERROR);
+        "TunD - Fatal Error", MB_OK | MB_ICONERROR);
     return EXCEPTION_EXECUTE_HANDLER;
 }
 

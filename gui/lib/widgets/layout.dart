@@ -68,7 +68,7 @@ class TundHeader extends StatelessWidget {
             'assets/logo.png',
             width: 64,
             height: 64,
-            semanticLabel: 'Tund logo',
+            semanticLabel: 'TunD logo',
           ),
         ),
         const SizedBox(width: 18),
@@ -76,7 +76,7 @@ class TundHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Tund',
+              Text('TunD',
                   style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900)),
               Text('Virtual LAN launcher',
                   style: TextStyle(color: TundColors.muted, fontSize: 15)),
