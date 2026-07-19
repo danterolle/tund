@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'error_guidance.dart';
 import 'key_helpers.dart';
 import 'privileges.dart';
+import 'share_command.dart';
 import 'status.dart';
 import 'theme.dart';
 import 'tund_config.dart';
@@ -139,6 +140,19 @@ class _TundHomePageState extends State<TundHomePage> {
 
     await Clipboard.setData(ClipboardData(text: value));
     showInfo('Network key copied.');
+  }
+
+  Future<void> copyClientCommand() async {
+    final value = key.text.trim();
+    if (value.isEmpty) {
+      showError('Enter or generate a network key first.');
+      return;
+    }
+
+    await Clipboard.setData(ClipboardData(
+      text: buildClientCommand(port: port.text, key: value),
+    ));
+    showInfo('Client command copied.');
   }
 
   Future<void> showInitialPrivilegeNotice() async {
@@ -304,6 +318,10 @@ class _TundHomePageState extends State<TundHomePage> {
         ),
         const SizedBox(height: 10),
         keyHelpers(),
+        if (mode == TundMode.server) ...[
+          const SizedBox(height: 16),
+          hostSharePanel(),
+        ],
         const SizedBox(height: 10),
         Row(
           children: [
@@ -322,6 +340,29 @@ class _TundHomePageState extends State<TundHomePage> {
         const SizedBox(height: 16),
         TundActions(running: running, onStart: startTund, onStop: stopTund),
       ],
+    );
+  }
+
+  Widget hostSharePanel() {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: key,
+      builder: (context, keyValue, _) {
+        return ValueListenableBuilder<TextEditingValue>(
+          valueListenable: port,
+          builder: (context, portValue, _) {
+            final hasKey = keyValue.text.trim().isNotEmpty;
+            return TundHostSharePanel(
+              command: buildClientCommand(
+                port: portValue.text,
+                key: keyValue.text,
+                maskKey: hasKey,
+              ),
+              canCopy: !running && hasKey,
+              onCopy: copyClientCommand,
+            );
+          },
+        );
+      },
     );
   }
 

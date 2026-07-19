@@ -123,6 +123,42 @@ void main() {
     expect(find.text('Network key copied.'), findsOneWidget);
   });
 
+  testWidgets('shows and copies the host client command', (tester) async {
+    final messenger = TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger;
+    Object? clipboardPayload;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        clipboardPayload = call.arguments;
+      }
+      return null;
+    });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    await pumpAppAndAcceptPrivilegeNotice(tester);
+
+    await tester.enterText(fieldByLabel('UDP port'), '12345');
+    await tester.enterText(fieldByLabel('Network key'), 'a-long-random-key');
+    await tester.ensureVisible(find.text('Copy client command'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Share with clients'), findsOneWidget);
+    expect(
+      find.text('tund-cli client -s SERVER_IP -p 12345 -k "********"'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Copy client command'));
+    await tester.pumpAndSettle();
+
+    expect(clipboardPayload, {
+      'text': 'tund-cli client -s SERVER_IP -p 12345 -k "a-long-random-key"',
+    });
+    expect(find.text('Client command copied.'), findsOneWidget);
+  });
+
   testWidgets('does not repeat the privileges dialog after startup acceptance',
       (tester) async {
     await pumpAppAndAcceptPrivilegeNotice(tester);

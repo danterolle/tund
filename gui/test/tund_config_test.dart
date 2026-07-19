@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tund_gui/key_helpers.dart';
 import 'package:tund_gui/process_output.dart';
+import 'package:tund_gui/share_command.dart';
 import 'package:tund_gui/tund_config.dart';
 import 'package:tund_gui/tund_launcher.dart';
 
@@ -19,6 +20,34 @@ void main() {
     test('rejects keys shorter than the CLI minimum', () {
       expect(() => generateNetworkKey(length: 11, random: Random(1)),
           throwsArgumentError);
+    });
+  });
+
+  group('client share command', () {
+    test('builds a client command with a quoted key', () {
+      final command = buildClientCommand(
+        port: '12345',
+        key: 'key with spaces',
+      );
+
+      expect(command,
+          'tund-cli client -s SERVER_IP -p 12345 -k "key with spaces"');
+    });
+
+    test('masks the key for display', () {
+      final command = buildClientCommand(
+        port: '9909',
+        key: 'a-long-random-key',
+        maskKey: true,
+      );
+
+      expect(command, 'tund-cli client -s SERVER_IP -p 9909 -k "********"');
+    });
+
+    test('uses defaults for empty port and key placeholders', () {
+      final command = buildClientCommand(port: '', key: '');
+
+      expect(command, 'tund-cli client -s SERVER_IP -p 9909 -k "<network-key>"');
     });
   });
 
