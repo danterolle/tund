@@ -87,17 +87,12 @@ For Artemis, start the server first, connect every station with the same key, th
 
 ## Documentation
 
-- [Usage](docs/USAGE.md) — commands, build steps, examples, and verification.
-- [Troubleshooting](docs/TROUBLESHOOTING.md) — firewall, Windows/macOS notes, and common connectivity checks.
-- [Technical documentation](docs/TECHNICAL.md) — protocol, architecture, platform internals, and security boundaries.
-- [GUI README](gui/README.md) — Desktop Flutter launcher notes and build details.
-
-## Requirements
-
-- C11 compiler (gcc, clang)
-- Root/sudo (for TUN interface creation)
-- Windows 10/11 x64, macOS 10.10+, or Linux 2.6+
-- Release builds include `tund-cli` and optional GUI bundles for Windows, Linux, and universal macOS; Windows also ships `wintun.dll`
+- [Usage](docs/USAGE.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Technical documentation](docs/TECHNICAL.md)
+- [GUI README](gui/README.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
 ## License
 
