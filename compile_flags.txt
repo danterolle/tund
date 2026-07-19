@@ -11,3 +11,4 @@
 -Isrc/core/server
 -Isrc/tun
 -Isrc/ui
+-Itools/sitest
