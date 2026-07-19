@@ -90,7 +90,7 @@ Run `tund-cli.exe` from the generated `dist` directory.
 make verify
 ```
 
-This runs protocol tests, sanitizer tests, the native build, and the Windows cross-build.
+This runs unit tests, the Peerforge UDP integration check, sanitizer tests, the native build, and the Windows cross-build.
 
 ### Peerforge diagnostic tool
 
@@ -98,6 +98,12 @@ Build Peerforge, the UDP client simulator:
 
 ```bash
 make tools
+```
+
+Run the local UDP integration check without creating real TUN interfaces:
+
+```bash
+make peerforge-check
 ```
 
 With a Tund server already running, simulate clients without creating real TUN interfaces:

@@ -1,7 +1,8 @@
 CC       := cc
 AR       := ar
 CFLAGS   := -Wall -Wextra -O2 -std=c11
-INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/core/client -Isrc/core/server -Isrc/tun -Isrc/ui -Itools/sitest
+INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/core/client -Isrc/core/server -Isrc/tun -Isrc/ui
+TEST_INCLUDES := $(INCLUDES) -Itools/sitest
 LDFLAGS  := -pthread
 TARGET   := tund-cli
 EXEEXT   :=
@@ -50,9 +51,10 @@ TEST_SERVER_HANDLERS_SRCS := tests/test_server_handlers.c src/core/server/handle
 TEST_CLIENT_PEERS_SRCS := tests/test_client_peers.c src/core/client/peers.c
 TEST_CLIENT_HANDLERS_SRCS := tests/test_client_handlers.c src/core/client/handlers.c src/core/client/peers.c
 TOOL_SRCS := tools/peerforge/main.c tools/peerforge/options.c tools/peerforge/net.c tools/peerforge/client.c
+PEERFORGE_SERVER_SRCS := tools/peerforge/server.c src/net/network.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c $(PROTO_SRC)
 MACOS_UNIVERSAL_TARGET = $(DIST)/tund-cli-darwin-universal
 
-.PHONY: all clean install uninstall macos-universal windows test sanitize tools verify
+.PHONY: all clean install uninstall macos-universal windows test sanitize tools peerforge-check verify
 
 all: $(TARGET)
 
@@ -100,6 +102,9 @@ SAN_CLIENT_PEERS_TARGET := $(DIST)/test_client_peers_sanitize$(EXEEXT)
 SAN_CLIENT_HANDLERS_TARGET := $(DIST)/test_client_handlers_sanitize$(EXEEXT)
 SAN_TEST_TARGETS := $(SAN_TEST_TARGET) $(SAN_SERVER_PEERS_TARGET) $(SAN_SERVER_DATA_TARGET) $(SAN_SERVER_HANDLERS_TARGET) $(SAN_CLIENT_PEERS_TARGET) $(SAN_CLIENT_HANDLERS_TARGET)
 TOOL_TARGET := $(DIST)/peerforge$(EXEEXT)
+PEERFORGE_SERVER_TARGET := $(DIST)/peerforge-server$(EXEEXT)
+PEERFORGE_CHECK_KEY := peerforge-ci-key
+PEERFORGE_CHECK_PORT ?= 19909
 SITEST_LIB := $(DIST)/libsitest.a
 SITEST_OBJS := $(addprefix $(DIST)/test-obj/,$(SITEST_SRCS:.c=.o))
 TUND_TEST_SUPPORT_LIB := $(DIST)/libtund-test-support.a
@@ -119,7 +124,7 @@ test: $(TEST_TARGETS)
 
 $(DIST)/test-obj/%.o: %.c $(HDRS) $(SITEST_HDR) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) -c -o $@ $<
 
 $(SITEST_LIB): $(SITEST_OBJS) | $(DIST)
 	$(AR) rcs $@ $(SITEST_OBJS)
@@ -128,22 +133,22 @@ $(TUND_TEST_SUPPORT_LIB): $(TUND_TEST_SUPPORT_OBJS) | $(DIST)
 	$(AR) rcs $@ $(TUND_TEST_SUPPORT_OBJS)
 
 $(TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(SITEST_LIB) $(PROTO_SRC) src/protocol/protocol.h $(SITEST_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(SITEST_LIB) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(SITEST_LIB) $(LDFLAGS)
 
 $(TEST_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_SERVER_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
 
 $(TEST_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_DATA_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_SERVER_DATA_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
 
 $(TEST_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
 
 $(TEST_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
 
 $(TEST_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
 
 sanitize: $(SAN_TEST_TARGETS)
 	./$(SAN_TEST_TARGET)
@@ -155,7 +160,7 @@ sanitize: $(SAN_TEST_TARGETS)
 
 $(DIST)/test-obj-sanitize/%.o: %.c $(HDRS) $(SITEST_HDR) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -c -o $@ $<
 
 $(SAN_SITEST_LIB): $(SAN_SITEST_OBJS) | $(DIST)
 	$(AR) rcs $@ $(SAN_SITEST_OBJS)
@@ -164,28 +169,42 @@ $(SAN_TUND_TEST_SUPPORT_LIB): $(SAN_TUND_TEST_SUPPORT_OBJS) | $(DIST)
 	$(AR) rcs $@ $(SAN_TUND_TEST_SUPPORT_OBJS)
 
 $(SAN_TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(SAN_SITEST_LIB) $(PROTO_SRC) src/protocol/protocol.h $(SITEST_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(SAN_SITEST_LIB) $(LDFLAGS) $(SAN_FLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(SAN_SITEST_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
 $(SAN_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
 $(SAN_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_DATA_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_DATA_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
 $(SAN_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
 $(SAN_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
 $(SAN_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
-tools: $(TOOL_TARGET)
+tools: $(TOOL_TARGET) $(PEERFORGE_SERVER_TARGET)
 	@echo "  Run with: ./$(TOOL_TARGET) -s 127.0.0.1 -k <key> -n 253"
+	@echo "  Run integration check with: make peerforge-check"
 
 $(TOOL_TARGET): $(TOOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TOOL_SRCS) $(PROTO_SRC) $(LDFLAGS)
+
+$(PEERFORGE_SERVER_TARGET): $(PEERFORGE_SERVER_SRCS) $(HDRS) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(PEERFORGE_SERVER_SRCS) $(LDFLAGS)
+
+peerforge-check: $(TOOL_TARGET) $(PEERFORGE_SERVER_TARGET)
+	@set -e; \
+	log="$(DIST)/peerforge-server.log"; \
+	"./$(PEERFORGE_SERVER_TARGET)" -p $(PEERFORGE_CHECK_PORT) -k "$(PEERFORGE_CHECK_KEY)" -t 20 >"$$log" 2>&1 & \
+	server_pid=$$!; \
+	cleanup() { status=$$?; kill $$server_pid >/dev/null 2>&1 || true; wait $$server_pid >/dev/null 2>&1 || true; if [ $$status -ne 0 ]; then cat "$$log" >&2 || true; fi; exit $$status; }; \
+	trap cleanup EXIT INT TERM; \
+	sleep 1; \
+	"./$(TOOL_TARGET)" -s 127.0.0.1 -p $(PEERFORGE_CHECK_PORT) -k "$(PEERFORGE_CHECK_KEY)" -n 32 -t 3000 -K 2 -d 32
 
 macos-universal: $(MACOS_UNIVERSAL_TARGET)
 
@@ -201,6 +220,7 @@ endif
 verify:
 	$(MAKE) test
 	$(MAKE) tools
+	$(MAKE) peerforge-check
 	$(MAKE) sanitize
 	$(MAKE) all
 	$(MAKE) windows
