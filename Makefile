@@ -1,4 +1,5 @@
 CC       := cc
+AR       := ar
 CFLAGS   := -Wall -Wextra -O2 -std=c11
 INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/core/client -Isrc/core/server -Isrc/tun -Isrc/ui
 LDFLAGS  := -pthread
@@ -38,12 +39,13 @@ SRCS     := $(APP_SRC) src/net/network.c $(SERVER_SRC) $(CLIENT_SRC) $(UI_SRC) $
 HDRS     := src/app/tund.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server/server.h src/core/server/internal.h src/core/client/client.h src/core/client/internal.h src/ui/tui.h src/ui/tui_internal.h
 TEST_SUPPORT_SRC := tests/test_support.c
 TEST_SUPPORT_HDR := tests/test_support.h
-TEST_PROTOCOL_SRCS := tests/test_protocol.c $(TEST_SUPPORT_SRC)
-TEST_SERVER_PEERS_SRCS := tests/test_server_peers.c $(TEST_SUPPORT_SRC) src/core/server/peers.c $(PROTO_SRC)
-TEST_SERVER_DATA_SRCS := tests/test_server_data.c $(TEST_SUPPORT_SRC) src/core/server/data.c src/core/server/peers.c $(PROTO_SRC)
-TEST_SERVER_HANDLERS_SRCS := tests/test_server_handlers.c $(TEST_SUPPORT_SRC) src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c $(PROTO_SRC)
-TEST_CLIENT_PEERS_SRCS := tests/test_client_peers.c $(TEST_SUPPORT_SRC) src/core/client/peers.c $(PROTO_SRC)
-TEST_CLIENT_HANDLERS_SRCS := tests/test_client_handlers.c $(TEST_SUPPORT_SRC) src/core/client/handlers.c src/core/client/peers.c $(PROTO_SRC)
+TEST_LIB_SRCS := $(TEST_SUPPORT_SRC) $(PROTO_SRC)
+TEST_PROTOCOL_SRCS := tests/test_protocol.c
+TEST_SERVER_PEERS_SRCS := tests/test_server_peers.c src/core/server/peers.c
+TEST_SERVER_DATA_SRCS := tests/test_server_data.c src/core/server/data.c src/core/server/peers.c
+TEST_SERVER_HANDLERS_SRCS := tests/test_server_handlers.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c
+TEST_CLIENT_PEERS_SRCS := tests/test_client_peers.c src/core/client/peers.c
+TEST_CLIENT_HANDLERS_SRCS := tests/test_client_handlers.c src/core/client/handlers.c src/core/client/peers.c
 TOOL_SRCS := tools/peerforge/main.c tools/peerforge/options.c tools/peerforge/net.c tools/peerforge/client.c
 MACOS_UNIVERSAL_TARGET = $(DIST)/tund-cli-darwin-universal
 
@@ -95,6 +97,10 @@ SAN_CLIENT_PEERS_TARGET := $(DIST)/test_client_peers_sanitize$(EXEEXT)
 SAN_CLIENT_HANDLERS_TARGET := $(DIST)/test_client_handlers_sanitize$(EXEEXT)
 SAN_TEST_TARGETS := $(SAN_TEST_TARGET) $(SAN_SERVER_PEERS_TARGET) $(SAN_SERVER_DATA_TARGET) $(SAN_SERVER_HANDLERS_TARGET) $(SAN_CLIENT_PEERS_TARGET) $(SAN_CLIENT_HANDLERS_TARGET)
 TOOL_TARGET := $(DIST)/peerforge$(EXEEXT)
+TEST_LIB := $(DIST)/libtund-test-support.a
+TEST_LIB_OBJS := $(addprefix $(DIST)/test-obj/,$(TEST_LIB_SRCS:.c=.o))
+SAN_TEST_LIB := $(DIST)/libtund-test-support_sanitize.a
+SAN_TEST_LIB_OBJS := $(addprefix $(DIST)/test-obj-sanitize/,$(TEST_LIB_SRCS:.c=.o))
 
 test: $(TEST_TARGETS)
 	./$(TEST_TARGET)
@@ -104,23 +110,30 @@ test: $(TEST_TARGETS)
 	./$(TEST_CLIENT_PEERS_TARGET)
 	./$(TEST_CLIENT_HANDLERS_TARGET)
 
-$(TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(LDFLAGS)
+$(DIST)/test-obj/%.o: %.c $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
 
-$(TEST_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_PEERS_SRCS) $(LDFLAGS)
+$(TEST_LIB): $(TEST_LIB_OBJS) | $(DIST)
+	$(AR) rcs $@ $(TEST_LIB_OBJS)
 
-$(TEST_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_DATA_SRCS) $(LDFLAGS)
+$(TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(TEST_LIB) src/protocol/protocol.h $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_PROTOCOL_SRCS) $(TEST_LIB) $(LDFLAGS)
 
-$(TEST_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(LDFLAGS)
+$(TEST_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_PEERS_SRCS) $(TEST_LIB) $(LDFLAGS)
 
-$(TEST_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(LDFLAGS)
+$(TEST_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_DATA_SRCS) $(TEST_LIB) $(LDFLAGS)
 
-$(TEST_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(LDFLAGS)
+$(TEST_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(TEST_LIB) $(LDFLAGS)
+
+$(TEST_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(TEST_LIB) $(LDFLAGS)
+
+$(TEST_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(TEST_LIB) $(LDFLAGS)
 
 sanitize: $(SAN_TEST_TARGETS)
 	./$(SAN_TEST_TARGET)
@@ -130,23 +143,30 @@ sanitize: $(SAN_TEST_TARGETS)
 	./$(SAN_CLIENT_PEERS_TARGET)
 	./$(SAN_CLIENT_HANDLERS_TARGET)
 
-$(SAN_TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(LDFLAGS) $(SAN_FLAGS)
+$(DIST)/test-obj-sanitize/%.o: %.c $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -c -o $@ $<
 
-$(SAN_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_PEERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
+$(SAN_TEST_LIB): $(SAN_TEST_LIB_OBJS) | $(DIST)
+	$(AR) rcs $@ $(SAN_TEST_LIB_OBJS)
 
-$(SAN_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_DATA_SRCS) $(LDFLAGS) $(SAN_FLAGS)
+$(SAN_TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(SAN_TEST_LIB) src/protocol/protocol.h $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_PROTOCOL_SRCS) $(SAN_TEST_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
-$(SAN_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
+$(SAN_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(SAN_TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_PEERS_SRCS) $(SAN_TEST_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
-$(SAN_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
+$(SAN_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(SAN_TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_DATA_SRCS) $(SAN_TEST_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
-$(SAN_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
+$(SAN_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(SAN_TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(SAN_TEST_LIB) $(LDFLAGS) $(SAN_FLAGS)
+
+$(SAN_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(SAN_TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(SAN_TEST_LIB) $(LDFLAGS) $(SAN_FLAGS)
+
+$(SAN_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(SAN_TEST_LIB) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(SAN_TEST_LIB) $(LDFLAGS) $(SAN_FLAGS)
 
 tools: $(TOOL_TARGET)
 	@echo "  Run with: ./$(TOOL_TARGET) -s 127.0.0.1 -k <key> -n 253"
