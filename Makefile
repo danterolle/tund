@@ -1,7 +1,7 @@
 CC       := cc
 AR       := ar
 CFLAGS   := -Wall -Wextra -O2 -std=c11
-INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/core/client -Isrc/core/server -Isrc/tun -Isrc/ui
+INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/core/client -Isrc/core/server -Isrc/tun -Isrc/ui -Itools/sitest
 LDFLAGS  := -pthread
 TARGET   := tund-cli
 EXEEXT   :=
@@ -37,8 +37,8 @@ ifneq ($(filter MINGW%,$(UNAME_S)),)
 endif
 SRCS     := $(APP_SRC) src/net/network.c $(SERVER_SRC) $(CLIENT_SRC) $(UI_SRC) $(PROTO_SRC) $(TUN_SRC)
 HDRS     := src/app/tund.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server/server.h src/core/server/internal.h src/core/client/client.h src/core/client/internal.h src/ui/tui.h src/ui/tui_internal.h
-SITEST_SRC := tests/sitest.c
-SITEST_HDR := tests/sitest.h
+SITEST_SRC := tools/sitest/sitest.c
+SITEST_HDR := tools/sitest/sitest.h
 TUND_TEST_SUPPORT_SRC := tests/tund_test_support.c
 TUND_TEST_SUPPORT_HDR := tests/tund_test_support.h
 SITEST_SRCS := $(SITEST_SRC)
