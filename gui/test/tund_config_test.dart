@@ -1,11 +1,27 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tund_gui/key_helpers.dart';
 import 'package:tund_gui/process_output.dart';
 import 'package:tund_gui/tund_config.dart';
 import 'package:tund_gui/tund_launcher.dart';
 
 void main() {
+  group('network key generation', () {
+    test('generates valid keys with the requested length', () {
+      final key = generateNetworkKey(length: 32, random: Random(1));
+
+      expect(key, hasLength(32));
+      expect(key, matches(RegExp(r'^[A-Za-z2-9]+$')));
+    });
+
+    test('rejects keys shorter than the CLI minimum', () {
+      expect(() => generateNetworkKey(length: 11, random: Random(1)),
+          throwsArgumentError);
+    });
+  });
+
   group('TundConfig validation', () {
     test('accepts a valid server configuration', () {
       const config = TundConfig(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'error_guidance.dart';
+import 'key_helpers.dart';
 import 'privileges.dart';
 import 'status.dart';
 import 'theme.dart';
@@ -122,6 +123,24 @@ class _TundHomePageState extends State<TundHomePage> {
     launcher.stop();
   }
 
+  void generateKey() {
+    setState(() {
+      key.text = generateNetworkKey();
+      showKey = true;
+    });
+  }
+
+  Future<void> copyKey() async {
+    final value = key.text.trim();
+    if (value.isEmpty) {
+      showError('Enter or generate a network key first.');
+      return;
+    }
+
+    await Clipboard.setData(ClipboardData(text: value));
+    showInfo('Network key copied.');
+  }
+
   Future<void> showInitialPrivilegeNotice() async {
     if (privilegeNoticeAccepted || !mounted) return;
 
@@ -174,10 +193,18 @@ class _TundHomePageState extends State<TundHomePage> {
   }
 
   void showError(String message) {
+    showSnackBar(message, TundColors.red);
+  }
+
+  void showInfo(String message) {
+    showSnackBar(message, TundColors.blue);
+  }
+
+  void showSnackBar(String message, Color backgroundColor) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: TundColors.red,
+        backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -276,6 +303,8 @@ class _TundHomePageState extends State<TundHomePage> {
           ),
         ),
         const SizedBox(height: 10),
+        keyHelpers(),
+        const SizedBox(height: 10),
         Row(
           children: [
             Switch(
@@ -292,6 +321,51 @@ class _TundHomePageState extends State<TundHomePage> {
         ),
         const SizedBox(height: 16),
         TundActions(running: running, onStart: startTund, onStop: stopTund),
+      ],
+    );
+  }
+
+  Widget keyHelpers() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final generateButton = OutlinedButton.icon(
+              onPressed: running ? null : generateKey,
+              icon: const Icon(Icons.auto_fix_high_rounded),
+              label: const Text('Generate key'),
+            );
+            final copyButton = OutlinedButton.icon(
+              onPressed: running ? null : copyKey,
+              icon: const Icon(Icons.copy_rounded),
+              label: const Text('Copy key'),
+            );
+
+            if (constraints.maxWidth < 430) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  generateButton,
+                  const SizedBox(height: 10),
+                  copyButton,
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: generateButton),
+                const SizedBox(width: 12),
+                Expanded(child: copyButton),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Use the same key on every computer in this TunD LAN.',
+          style: TextStyle(color: TundColors.faint, fontSize: 12),
+        ),
       ],
     );
   }
