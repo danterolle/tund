@@ -81,4 +81,16 @@ void main() {
 
     expect(find.text('Enter the server IP or hostname.'), findsOneWidget);
   });
+
+  testWidgets('does not repeat the privileges dialog after startup acceptance',
+      (tester) async {
+    await pumpAppAndAcceptPrivilegeNotice(tester);
+
+    await tester.enterText(fieldByLabel('Network key'), 'a-long-random-key');
+    await tester.ensureVisible(find.text('Start'));
+    await tester.tap(find.text('Start'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Privileges required'), findsNothing);
+  });
 }
