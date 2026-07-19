@@ -3,6 +3,18 @@ import 'dart:io';
 
 enum TundMode { server, client }
 
+final _ansiEscapePattern = RegExp(
+  '\u001B(?:'
+  r'[@-Z\\-_]'
+  r'|\[[0-?]*[ -/]*[@-~]'
+  r'|\][^\u0007]*(?:\u0007|\u001B\\)'
+  r')',
+);
+
+String sanitizeProcessOutput(String text) {
+  return text.replaceAll(_ansiEscapePattern, '');
+}
+
 class TundConfig {
   const TundConfig({
     required this.mode,
@@ -138,8 +150,14 @@ class TundLauncher {
 
     _process = process;
     onStarted?.call();
-    _stdout = process.stdout.transform(systemEncoding.decoder).listen(onLog);
-    _stderr = process.stderr.transform(systemEncoding.decoder).listen(onLog);
+    _stdout = process.stdout
+        .transform(systemEncoding.decoder)
+        .map(sanitizeProcessOutput)
+        .listen(onLog);
+    _stderr = process.stderr
+        .transform(systemEncoding.decoder)
+        .map(sanitizeProcessOutput)
+        .listen(onLog);
 
     final exitCode = await process.exitCode;
     await _stdout?.cancel();

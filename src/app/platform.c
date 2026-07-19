@@ -48,10 +48,17 @@ app_startup_result_t app_prepare_runtime(int argc, char *argv[], const config_t 
         return APP_STARTUP_OK;
 
     const char *mode = (argc > 1) ? argv[1] : "";
-    fprintf(stderr,
-        "\033[33mWarning: Tund requires root privileges for TUN interface.\n"
-        "Run with: sudo %s %s ...\033[0m\n\n",
-        argv[0], mode);
+    if (app_stderr_is_tty()) {
+        fprintf(stderr,
+            "\033[33mWarning: Tund requires root privileges for TUN interface.\n"
+            "Run with: sudo %s %s ...\033[0m\n\n",
+            argv[0], mode);
+    } else {
+        fprintf(stderr,
+            "Warning: Tund requires root privileges for TUN interface.\n"
+            "Run with: sudo %s %s ...\n\n",
+            argv[0], mode);
+    }
     return APP_STARTUP_EXIT_ERROR;
 }
 
