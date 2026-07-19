@@ -1,22 +1,6 @@
-#include "protocol.h"
+#include "test_support.h"
 
-#include <stdio.h>
 #include <string.h>
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
-#include <arpa/inet.h>
-#endif
-
-static int failures = 0;
-
-#define CHECK(expr) do { \
-    if (!(expr)) { \
-        fprintf(stderr, "%s:%d: check failed: %s\n", __FILE__, __LINE__, #expr); \
-        failures++; \
-    } \
-} while (0)
 
 static void test_siphash_vector(void)
 {
@@ -177,11 +161,5 @@ int main(void)
     test_builders();
     test_dst_ip();
 
-    if (failures != 0) {
-        fprintf(stderr, "%d protocol test(s) failed\n", failures);
-        return 1;
-    }
-
-    puts("protocol tests passed");
-    return 0;
+    return test_finish("protocol tests");
 }

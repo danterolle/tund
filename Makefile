@@ -36,12 +36,14 @@ ifneq ($(filter MINGW%,$(UNAME_S)),)
 endif
 SRCS     := $(APP_SRC) src/net/network.c $(SERVER_SRC) $(CLIENT_SRC) $(UI_SRC) $(PROTO_SRC) $(TUN_SRC)
 HDRS     := src/app/tund.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server/server.h src/core/server/internal.h src/core/client/client.h src/core/client/internal.h src/ui/tui.h src/ui/tui_internal.h
-TEST_PROTOCOL_SRCS := tests/test_protocol.c
-TEST_SERVER_PEERS_SRCS := tests/test_server_peers.c src/core/server/peers.c $(PROTO_SRC)
-TEST_SERVER_DATA_SRCS := tests/test_server_data.c src/core/server/data.c src/core/server/peers.c $(PROTO_SRC)
-TEST_SERVER_HANDLERS_SRCS := tests/test_server_handlers.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c $(PROTO_SRC)
-TEST_CLIENT_PEERS_SRCS := tests/test_client_peers.c src/core/client/peers.c
-TEST_CLIENT_HANDLERS_SRCS := tests/test_client_handlers.c src/core/client/handlers.c src/core/client/peers.c $(PROTO_SRC)
+TEST_SUPPORT_SRC := tests/test_support.c
+TEST_SUPPORT_HDR := tests/test_support.h
+TEST_PROTOCOL_SRCS := tests/test_protocol.c $(TEST_SUPPORT_SRC)
+TEST_SERVER_PEERS_SRCS := tests/test_server_peers.c $(TEST_SUPPORT_SRC) src/core/server/peers.c $(PROTO_SRC)
+TEST_SERVER_DATA_SRCS := tests/test_server_data.c $(TEST_SUPPORT_SRC) src/core/server/data.c src/core/server/peers.c $(PROTO_SRC)
+TEST_SERVER_HANDLERS_SRCS := tests/test_server_handlers.c $(TEST_SUPPORT_SRC) src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c $(PROTO_SRC)
+TEST_CLIENT_PEERS_SRCS := tests/test_client_peers.c $(TEST_SUPPORT_SRC) src/core/client/peers.c $(PROTO_SRC)
+TEST_CLIENT_HANDLERS_SRCS := tests/test_client_handlers.c $(TEST_SUPPORT_SRC) src/core/client/handlers.c src/core/client/peers.c $(PROTO_SRC)
 TOOL_SRCS := tools/peerforge/main.c tools/peerforge/options.c tools/peerforge/net.c tools/peerforge/client.c
 MACOS_UNIVERSAL_TARGET = $(DIST)/tund-cli-darwin-universal
 
@@ -102,22 +104,22 @@ test: $(TEST_TARGETS)
 	./$(TEST_CLIENT_PEERS_TARGET)
 	./$(TEST_CLIENT_HANDLERS_TARGET)
 
-$(TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
+$(TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(LDFLAGS)
 
-$(TEST_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(HDRS) | $(DIST)
+$(TEST_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_PEERS_SRCS) $(LDFLAGS)
 
-$(TEST_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(HDRS) | $(DIST)
+$(TEST_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_DATA_SRCS) $(LDFLAGS)
 
-$(TEST_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(HDRS) | $(DIST)
+$(TEST_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(LDFLAGS)
 
-$(TEST_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(HDRS) | $(DIST)
+$(TEST_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(LDFLAGS)
 
-$(TEST_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(HDRS) | $(DIST)
+$(TEST_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(LDFLAGS)
 
 sanitize: $(SAN_TEST_TARGETS)
@@ -128,22 +130,22 @@ sanitize: $(SAN_TEST_TARGETS)
 	./$(SAN_CLIENT_PEERS_TARGET)
 	./$(SAN_CLIENT_HANDLERS_TARGET)
 
-$(SAN_TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h | $(DIST)
+$(SAN_TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) src/protocol/protocol.h $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(LDFLAGS) $(SAN_FLAGS)
 
-$(SAN_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(HDRS) | $(DIST)
+$(SAN_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_PEERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
 
-$(SAN_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(HDRS) | $(DIST)
+$(SAN_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_DATA_SRCS) $(LDFLAGS) $(SAN_FLAGS)
 
-$(SAN_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(HDRS) | $(DIST)
+$(SAN_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
 
-$(SAN_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(HDRS) | $(DIST)
+$(SAN_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
 
-$(SAN_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(HDRS) | $(DIST)
+$(SAN_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(HDRS) $(TEST_SUPPORT_HDR) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(LDFLAGS) $(SAN_FLAGS)
 
 tools: $(TOOL_TARGET)
