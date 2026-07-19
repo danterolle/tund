@@ -11,9 +11,24 @@ Finder fieldByLabel(String label) {
   return find.descendant(of: textField, matching: find.byType(EditableText));
 }
 
+Future<void> pumpAppAndAcceptPrivilegeNotice(WidgetTester tester) async {
+  await tester.pumpWidget(const TundApp());
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('I understand'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
-  testWidgets('renders the launcher shell', (tester) async {
+  testWidgets('shows the privileges notice on startup', (tester) async {
     await tester.pumpWidget(const TundApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Privileges required'), findsOneWidget);
+    expect(find.text('I understand'), findsOneWidget);
+  });
+
+  testWidgets('renders the launcher shell', (tester) async {
+    await pumpAppAndAcceptPrivilegeNotice(tester);
 
     expect(find.text('Tund'), findsOneWidget);
     expect(find.text('Ready'), findsWidgets);
@@ -24,7 +39,7 @@ void main() {
   });
 
   testWidgets('switches between host and join forms', (tester) async {
-    await tester.pumpWidget(const TundApp());
+    await pumpAppAndAcceptPrivilegeNotice(tester);
 
     expect(
         find.text(
@@ -43,7 +58,7 @@ void main() {
   });
 
   testWidgets('shows validation errors before launching', (tester) async {
-    await tester.pumpWidget(const TundApp());
+    await pumpAppAndAcceptPrivilegeNotice(tester);
 
     await tester.enterText(fieldByLabel('UDP port'), '0');
     await tester.enterText(fieldByLabel('Network key'), 'a-long-random-key');
@@ -55,7 +70,7 @@ void main() {
   });
 
   testWidgets('requires a server address in join mode', (tester) async {
-    await tester.pumpWidget(const TundApp());
+    await pumpAppAndAcceptPrivilegeNotice(tester);
 
     await tester.tap(find.text('Join a LAN'));
     await tester.pumpAndSettle();

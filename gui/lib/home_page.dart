@@ -35,6 +35,14 @@ class _TundHomePageState extends State<TundHomePage> {
   bool get running => status == GuiStatus.starting || launcher.running;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showInitialPrivilegeNotice();
+    });
+  }
+
+  @override
   void dispose() {
     launcher.dispose();
     server.dispose();
@@ -112,33 +120,60 @@ class _TundHomePageState extends State<TundHomePage> {
     launcher.stop();
   }
 
+  Future<void> showInitialPrivilegeNotice() async {
+    if (privilegeNoticeAccepted || !mounted) return;
+
+    final accepted = await showPrivilegeDialog(
+      primaryLabel: 'I understand',
+      showCancel: false,
+      barrierDismissible: false,
+    );
+    if (accepted == true && mounted) {
+      setState(() => privilegeNoticeAccepted = true);
+    }
+  }
+
   Future<bool> confirmPrivileges() async {
     if (privilegeNoticeAccepted) return true;
 
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Privileges required'),
-          content: Text(privilegeMessage()),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Continue'),
-            ),
-          ],
-        );
-      },
+    final accepted = await showPrivilegeDialog(
+      primaryLabel: 'Continue',
+      showCancel: true,
+      barrierDismissible: true,
     );
     if (accepted == true && mounted) {
       setState(() => privilegeNoticeAccepted = true);
       return true;
     }
     return false;
+  }
+
+  Future<bool?> showPrivilegeDialog({
+    required String primaryLabel,
+    required bool showCancel,
+    required bool barrierDismissible,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: barrierDismissible,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Privileges required'),
+          content: Text(privilegeMessage()),
+          actions: [
+            if (showCancel)
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(primaryLabel),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   String privilegeMessage() {
