@@ -8,8 +8,9 @@ void server_handle_data(server_t *srv, const uint8_t *payload,
         return;
     }
 
+    uint32_t src_ip = proto_get_src_ip(payload, plen);
     uint32_t dst_ip = proto_get_dst_ip(payload, plen);
-    if (dst_ip == 0)
+    if (src_ip == 0 || dst_ip == 0)
         return;
 
     pthread_mutex_lock(&srv->peers_lock);
@@ -17,6 +18,17 @@ void server_handle_data(server_t *srv, const uint8_t *payload,
     if (sender_idx < 0) {
         pthread_mutex_unlock(&srv->peers_lock);
         LOG_WARN("Dropped DATA from an unregistered endpoint");
+        return;
+    }
+    if (src_ip != srv->peers[sender_idx].virt_ip) {
+        char src_ip_str[TUND_IP_STR_LEN];
+        char assigned_ip_str[TUND_IP_STR_LEN];
+        LOG_WARN("Dropped DATA with spoofed source %s from peer %s (%s)",
+                 ip_to_str_buf(src_ip, src_ip_str, sizeof(src_ip_str)),
+                 srv->peers[sender_idx].name,
+                 ip_to_str_buf(srv->peers[sender_idx].virt_ip,
+                               assigned_ip_str, sizeof(assigned_ip_str)));
+        pthread_mutex_unlock(&srv->peers_lock);
         return;
     }
     srv->peers[sender_idx].bytes_in += plen;

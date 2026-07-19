@@ -110,6 +110,26 @@ static void test_unknown_destination_drops_after_accounting(void)
     tund_test_destroy_server(&srv);
 }
 
+static void test_spoofed_source_drops_without_accounting(void)
+{
+    server_t srv = {0};
+    uint8_t pkt[20];
+
+    tund_test_init_server(&srv);
+    setup_server(&srv);
+    tund_test_build_ipv4_packet(pkt, srv.peers[1].virt_ip, srv.peers[2].virt_ip);
+    tund_test_reset_io();
+
+    server_handle_data(&srv, pkt, sizeof(pkt), &srv.peers[0].real_addr);
+
+    CHECK(tund_test_send_count == 0);
+    CHECK(tund_test_tun_write_count == 0);
+    CHECK(srv.peers[0].bytes_in == 0);
+    CHECK(srv.peers[1].bytes_out == 0);
+    CHECK(srv.peers[2].bytes_out == 0);
+    tund_test_destroy_server(&srv);
+}
+
 static void test_unregistered_and_short_packets_drop(void)
 {
     server_t srv = {0};
@@ -139,6 +159,7 @@ int main(void)
     test_server_destination_writes_tun();
     test_broadcast_forwarding();
     test_unknown_destination_drops_after_accounting();
+    test_spoofed_source_drops_without_accounting();
     test_unregistered_and_short_packets_drop();
 
     return sitest_finish("server data tests");
