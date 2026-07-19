@@ -1,5 +1,5 @@
 #include "../src/core/client/internal.h"
-#include "sitest.h"
+#include "tund_test_support.h"
 
 #include <string.h>
 
@@ -23,7 +23,7 @@ static void test_peer_list_updates_table(void)
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
 
-    sitest_init_client(&cli);
+    tund_test_init_client(&cli);
     build_peer_list(buf);
     client_handle_server_packet(&cli, buf,
                                 TUND_HDR_SIZE + 2 * (int)sizeof(msg_peer_entry_t));
@@ -35,7 +35,7 @@ static void test_peer_list_updates_table(void)
     CHECK(cli.peers[1].active);
     CHECK(cli.peers[1].virt_ip == htonl(TUND_IP_START + 2));
     CHECK(strcmp(cli.peers[1].name, "beta") == 0);
-    sitest_destroy_client(&cli);
+    tund_test_destroy_client(&cli);
 }
 
 static void test_peer_join_and_leave(void)
@@ -44,7 +44,7 @@ static void test_peer_join_and_leave(void)
     uint8_t buf[TUND_MAX_PKT];
     uint32_t peer_ip = htonl(TUND_IP_START + 1);
 
-    sitest_init_client(&cli);
+    tund_test_init_client(&cli);
     int len = proto_build_peer_join(buf, peer_ip, "alpha");
     client_handle_server_packet(&cli, buf, len);
     CHECK(cli.peer_count == 1);
@@ -55,7 +55,7 @@ static void test_peer_join_and_leave(void)
     client_handle_server_packet(&cli, buf, len);
     CHECK(cli.peer_count == 0);
     CHECK(!cli.peers[0].active);
-    sitest_destroy_client(&cli);
+    tund_test_destroy_client(&cli);
 }
 
 static void test_data_writes_tun_and_accounts_peer(void)
@@ -65,20 +65,20 @@ static void test_data_writes_tun_and_accounts_peer(void)
     uint8_t buf[TUND_MAX_PKT];
     uint32_t peer_ip = htonl(TUND_IP_START + 1);
 
-    sitest_init_client(&cli);
+    tund_test_init_client(&cli);
     client_update_peer(&cli, peer_ip, "alpha", true);
-    sitest_build_ipv4_packet(ip_pkt, peer_ip, cli.virt_ip);
+    tund_test_build_ipv4_packet(ip_pkt, peer_ip, cli.virt_ip);
     int len = proto_build_data(buf, ip_pkt, sizeof(ip_pkt));
-    sitest_reset_io();
+    tund_test_reset_io();
 
     client_handle_server_packet(&cli, buf, len);
 
-    CHECK(sitest_tun_write_count == 1);
-    CHECK(sitest_tun_writes[0].len == (int)sizeof(ip_pkt));
-    CHECK(memcmp(sitest_tun_writes[0].buf, ip_pkt, sizeof(ip_pkt)) == 0);
+    CHECK(tund_test_tun_write_count == 1);
+    CHECK(tund_test_tun_writes[0].len == (int)sizeof(ip_pkt));
+    CHECK(memcmp(tund_test_tun_writes[0].buf, ip_pkt, sizeof(ip_pkt)) == 0);
     CHECK(cli.peers[0].bytes_in == sizeof(ip_pkt));
     CHECK(cli.peers[0].bytes_out == 0);
-    sitest_destroy_client(&cli);
+    tund_test_destroy_client(&cli);
 }
 
 static void test_keepalive_replies_with_ack(void)
@@ -89,23 +89,23 @@ static void test_keepalive_replies_with_ack(void)
     uint16_t payload_len = 0;
     uint64_t timestamp = 0;
 
-    sitest_init_client(&cli);
+    tund_test_init_client(&cli);
     int len = proto_build_keepalive(buf, 0x0102030405060708ULL);
-    sitest_reset_io();
+    tund_test_reset_io();
 
     client_handle_server_packet(&cli, buf, len);
 
-    CHECK(sitest_send_count == 1);
-    CHECK(sitest_sends[0].dest.sin_addr.s_addr == cli.server_addr.sin_addr.s_addr);
-    CHECK(sitest_sends[0].dest.sin_port == cli.server_addr.sin_port);
-    CHECK(proto_read_hdr(sitest_sends[0].buf, &type, &payload_len) == 0);
+    CHECK(tund_test_send_count == 1);
+    CHECK(tund_test_sends[0].dest.sin_addr.s_addr == cli.server_addr.sin_addr.s_addr);
+    CHECK(tund_test_sends[0].dest.sin_port == cli.server_addr.sin_port);
+    CHECK(proto_read_hdr(tund_test_sends[0].buf, &type, &payload_len) == 0);
     CHECK(type == MSG_KEEPALIVE_ACK);
     CHECK(payload_len == 8);
-    CHECK(proto_read_keepalive_timestamp(sitest_sends[0].buf + TUND_HDR_SIZE,
+    CHECK(proto_read_keepalive_timestamp(tund_test_sends[0].buf + TUND_HDR_SIZE,
                                          payload_len, &timestamp));
     CHECK(timestamp == 0x0102030405060708ULL);
-    CHECK(sitest_sends[0].len == TUND_HDR_SIZE + 8);
-    sitest_destroy_client(&cli);
+    CHECK(tund_test_sends[0].len == TUND_HDR_SIZE + 8);
+    tund_test_destroy_client(&cli);
 }
 
 static void test_keepalive_ack_updates_rtt(void)
@@ -114,13 +114,13 @@ static void test_keepalive_ack_updates_rtt(void)
     uint8_t buf[TUND_MAX_PKT];
     uint64_t sent_at = now_ms() - 10;
 
-    sitest_init_client(&cli);
+    tund_test_init_client(&cli);
     int len = proto_build_keepalive_ack(buf, sent_at);
     client_handle_server_packet(&cli, buf, len);
 
     CHECK(cli.has_server_rtt);
     CHECK(cli.server_rtt_ms <= 1000);
-    sitest_destroy_client(&cli);
+    tund_test_destroy_client(&cli);
 }
 
 static void test_disconnect_requests_stop(void)
@@ -128,14 +128,14 @@ static void test_disconnect_requests_stop(void)
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
 
-    sitest_init_client(&cli);
+    tund_test_init_client(&cli);
     tund_stop_flag_store(&g_running, true);
     int len = proto_build_disconnect(buf);
 
     client_handle_server_packet(&cli, buf, len);
 
     CHECK(!tund_is_running());
-    sitest_destroy_client(&cli);
+    tund_test_destroy_client(&cli);
 }
 
 static void test_truncated_packet_is_ignored(void)
@@ -143,15 +143,15 @@ static void test_truncated_packet_is_ignored(void)
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
 
-    sitest_init_client(&cli);
+    tund_test_init_client(&cli);
     build_peer_list(buf);
-    sitest_reset_io();
+    tund_test_reset_io();
     client_handle_server_packet(&cli, buf, TUND_HDR_SIZE + 1);
 
     CHECK(cli.peer_count == 0);
-    CHECK(sitest_tun_write_count == 0);
-    CHECK(sitest_send_count == 0);
-    sitest_destroy_client(&cli);
+    CHECK(tund_test_tun_write_count == 0);
+    CHECK(tund_test_send_count == 0);
+    tund_test_destroy_client(&cli);
 }
 
 int main(void)

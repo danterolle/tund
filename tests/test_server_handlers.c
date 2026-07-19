@@ -1,5 +1,5 @@
 #include "../src/core/server/internal.h"
-#include "sitest.h"
+#include "tund_test_support.h"
 
 #include <string.h>
 
@@ -14,35 +14,35 @@ static void register_peer(server_t *srv, const struct sockaddr_in *addr,
 static void test_register_assigns_new_peer(void)
 {
     server_t srv = {0};
-    struct sockaddr_in addr = sitest_addr(0xC0000201, 10001);
+    struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
 
-    sitest_init_server(&srv);
-    sitest_reset_io();
+    tund_test_init_server(&srv);
+    tund_test_reset_io();
     register_peer(&srv, &addr, "alpha");
 
     CHECK(srv.peer_count == 1);
     CHECK(srv.peers[0].active);
     CHECK(srv.peers[0].virt_ip == htonl(TUND_IP_START));
     CHECK(strcmp(srv.peers[0].name, "alpha") == 0);
-    CHECK(sitest_send_count == 2);
-    CHECK(sitest_sends[0].type == MSG_ASSIGN);
-    CHECK(sitest_sends[0].payload_len == 10);
-    CHECK(sitest_sends[1].type == MSG_PEER_LIST);
-    CHECK(sitest_sends[1].payload_len == 0);
-    sitest_destroy_server(&srv);
+    CHECK(tund_test_send_count == 2);
+    CHECK(tund_test_sends[0].type == MSG_ASSIGN);
+    CHECK(tund_test_sends[0].payload_len == 10);
+    CHECK(tund_test_sends[1].type == MSG_PEER_LIST);
+    CHECK(tund_test_sends[1].payload_len == 0);
+    tund_test_destroy_server(&srv);
 }
 
 static void test_register_reconnect_refreshes_existing_peer(void)
 {
     server_t srv = {0};
-    struct sockaddr_in addr = sitest_addr(0xC0000201, 10001);
+    struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
     time_t first_seen;
 
-    sitest_init_server(&srv);
+    tund_test_init_server(&srv);
     register_peer(&srv, &addr, "alpha");
     first_seen = srv.peers[0].last_seen;
 
-    sitest_reset_io();
+    tund_test_reset_io();
     register_peer(&srv, &addr, "ignored");
 
     CHECK(srv.peer_count == 1);
@@ -50,113 +50,113 @@ static void test_register_reconnect_refreshes_existing_peer(void)
     CHECK(srv.peers[0].virt_ip == htonl(TUND_IP_START));
     CHECK(strcmp(srv.peers[0].name, "alpha") == 0);
     CHECK(srv.peers[0].last_seen >= first_seen);
-    CHECK(sitest_send_count == 1);
-    CHECK(sitest_sends[0].type == MSG_ASSIGN);
-    sitest_destroy_server(&srv);
+    CHECK(tund_test_send_count == 1);
+    CHECK(tund_test_sends[0].type == MSG_ASSIGN);
+    tund_test_destroy_server(&srv);
 }
 
 static void test_second_register_sends_peer_list_and_join(void)
 {
     server_t srv = {0};
-    struct sockaddr_in first = sitest_addr(0xC0000201, 10001);
-    struct sockaddr_in second = sitest_addr(0xC0000202, 10002);
+    struct sockaddr_in first = tund_test_addr(0xC0000201, 10001);
+    struct sockaddr_in second = tund_test_addr(0xC0000202, 10002);
 
-    sitest_init_server(&srv);
+    tund_test_init_server(&srv);
     register_peer(&srv, &first, "alpha");
 
-    sitest_reset_io();
+    tund_test_reset_io();
     register_peer(&srv, &second, "beta");
 
     CHECK(srv.peer_count == 2);
     CHECK(srv.peers[1].active);
     CHECK(srv.peers[1].virt_ip == htonl(TUND_IP_START + 1));
     CHECK(strcmp(srv.peers[1].name, "beta") == 0);
-    CHECK(sitest_send_count == 3);
-    CHECK(sitest_sends[0].type == MSG_ASSIGN);
-    CHECK(sitest_sends[1].type == MSG_PEER_LIST);
-    CHECK(sitest_sends[1].payload_len == sizeof(msg_peer_entry_t));
+    CHECK(tund_test_send_count == 3);
+    CHECK(tund_test_sends[0].type == MSG_ASSIGN);
+    CHECK(tund_test_sends[1].type == MSG_PEER_LIST);
+    CHECK(tund_test_sends[1].payload_len == sizeof(msg_peer_entry_t));
     const msg_peer_entry_t *entry =
-        (const msg_peer_entry_t *)(sitest_sends[1].buf + TUND_HDR_SIZE);
+        (const msg_peer_entry_t *)(tund_test_sends[1].buf + TUND_HDR_SIZE);
     CHECK(entry->virt_ip == htonl(TUND_IP_START));
     CHECK(strcmp(entry->name, "alpha") == 0);
-    CHECK(sitest_sends[2].type == MSG_PEER_JOIN);
-    CHECK(sitest_sends[2].dest.sin_addr.s_addr == first.sin_addr.s_addr);
-    CHECK(sitest_sends[2].dest.sin_port == first.sin_port);
-    sitest_destroy_server(&srv);
+    CHECK(tund_test_sends[2].type == MSG_PEER_JOIN);
+    CHECK(tund_test_sends[2].dest.sin_addr.s_addr == first.sin_addr.s_addr);
+    CHECK(tund_test_sends[2].dest.sin_port == first.sin_port);
+    tund_test_destroy_server(&srv);
 }
 
 static void test_disconnect_marks_peer_inactive_and_broadcasts_leave(void)
 {
     server_t srv = {0};
-    struct sockaddr_in first = sitest_addr(0xC0000201, 10001);
-    struct sockaddr_in second = sitest_addr(0xC0000202, 10002);
+    struct sockaddr_in first = tund_test_addr(0xC0000201, 10001);
+    struct sockaddr_in second = tund_test_addr(0xC0000202, 10002);
     uint8_t buf[TUND_MAX_PKT];
 
-    sitest_init_server(&srv);
+    tund_test_init_server(&srv);
     register_peer(&srv, &first, "alpha");
     register_peer(&srv, &second, "beta");
 
-    sitest_reset_io();
+    tund_test_reset_io();
     int len = proto_build_disconnect(buf);
     server_handle_packet(&srv, buf, len, &first);
 
     CHECK(srv.peer_count == 1);
     CHECK(!srv.peers[0].active);
     CHECK(srv.peers[1].active);
-    CHECK(sitest_send_count == 1);
-    CHECK(sitest_sends[0].type == MSG_PEER_LEAVE);
-    CHECK(sitest_sends[0].dest.sin_addr.s_addr == second.sin_addr.s_addr);
-    CHECK(sitest_sends[0].dest.sin_port == second.sin_port);
-    sitest_destroy_server(&srv);
+    CHECK(tund_test_send_count == 1);
+    CHECK(tund_test_sends[0].type == MSG_PEER_LEAVE);
+    CHECK(tund_test_sends[0].dest.sin_addr.s_addr == second.sin_addr.s_addr);
+    CHECK(tund_test_sends[0].dest.sin_port == second.sin_port);
+    tund_test_destroy_server(&srv);
 }
 
 static void test_keepalive_replies_with_ack(void)
 {
     server_t srv = {0};
-    struct sockaddr_in addr = sitest_addr(0xC0000201, 10001);
+    struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
     uint8_t buf[TUND_MAX_PKT];
     uint64_t timestamp = 0;
 
-    sitest_init_server(&srv);
+    tund_test_init_server(&srv);
     register_peer(&srv, &addr, "alpha");
 
-    sitest_reset_io();
+    tund_test_reset_io();
     int len = proto_build_keepalive(buf, 0x0102030405060708ULL);
     server_handle_packet(&srv, buf, len, &addr);
 
-    CHECK(sitest_send_count == 1);
-    CHECK(sitest_sends[0].type == MSG_KEEPALIVE_ACK);
-    CHECK(proto_read_keepalive_timestamp(sitest_sends[0].buf + TUND_HDR_SIZE,
-                                         sitest_sends[0].payload_len, &timestamp));
+    CHECK(tund_test_send_count == 1);
+    CHECK(tund_test_sends[0].type == MSG_KEEPALIVE_ACK);
+    CHECK(proto_read_keepalive_timestamp(tund_test_sends[0].buf + TUND_HDR_SIZE,
+                                         tund_test_sends[0].payload_len, &timestamp));
     CHECK(timestamp == 0x0102030405060708ULL);
-    CHECK(sitest_sends[0].dest.sin_addr.s_addr == addr.sin_addr.s_addr);
-    CHECK(sitest_sends[0].dest.sin_port == addr.sin_port);
-    sitest_destroy_server(&srv);
+    CHECK(tund_test_sends[0].dest.sin_addr.s_addr == addr.sin_addr.s_addr);
+    CHECK(tund_test_sends[0].dest.sin_port == addr.sin_port);
+    tund_test_destroy_server(&srv);
 }
 
 static void test_keepalive_ack_updates_rtt(void)
 {
     server_t srv = {0};
-    struct sockaddr_in addr = sitest_addr(0xC0000201, 10001);
+    struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
     uint8_t buf[TUND_MAX_PKT];
 
-    sitest_init_server(&srv);
+    tund_test_init_server(&srv);
     register_peer(&srv, &addr, "alpha");
     int len = proto_build_keepalive_ack(buf, now_ms() - 10);
     server_handle_packet(&srv, buf, len, &addr);
 
     CHECK(srv.peers[0].has_rtt);
     CHECK(srv.peers[0].rtt_ms <= 1000);
-    sitest_destroy_server(&srv);
+    tund_test_destroy_server(&srv);
 }
 
 static void test_invalid_packets_do_not_register_peer(void)
 {
     server_t srv = {0};
-    struct sockaddr_in addr = sitest_addr(0xC0000201, 10001);
+    struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
     uint8_t buf[TUND_MAX_PKT];
 
-    sitest_init_server(&srv);
+    tund_test_init_server(&srv);
     int len = proto_build_register(buf, "alpha");
     buf[0] = 0;
     server_handle_packet(&srv, buf, len, &addr);
@@ -165,7 +165,7 @@ static void test_invalid_packets_do_not_register_peer(void)
     len = proto_build_register(buf, "alpha");
     server_handle_packet(&srv, buf, TUND_HDR_SIZE - 1, &addr);
     CHECK(srv.peer_count == 0);
-    sitest_destroy_server(&srv);
+    tund_test_destroy_server(&srv);
 }
 
 int main(void)
