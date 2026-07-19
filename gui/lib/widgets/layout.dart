@@ -178,7 +178,7 @@ IconData statusIcon(GuiStatus status) {
     case GuiStatus.failed:
       return Icons.error_outline;
     case GuiStatus.ready:
-      return Icons.radio_button_unchecked;
+      return Icons.tune_rounded;
   }
 }
 
