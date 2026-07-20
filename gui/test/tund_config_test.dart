@@ -176,13 +176,22 @@ void main() {
       final message = macPrivilegeMessage(
         guiExecutablePath: "/tmp/TunD's.app/Contents/MacOS/tund-gui",
         cliExecutablePath: "/tmp/TunD's.app/Contents/MacOS/tund-cli",
+        commandPath: "/tmp/TunD's.command",
       );
 
-      expect(message, contains('instead of the .app bundle'));
-      expect(message,
-          contains("sudo '/tmp/TunD'\"'\"'s.app/Contents/MacOS/tund-gui'"));
-      expect(message,
-          contains("sudo '/tmp/TunD'\"'\"'s.app/Contents/MacOS/tund-cli' ..."));
+      expect(message, contains('launcher next to tund-gui.app'));
+      expect(message, contains("'/tmp/TunD'\"'\"'s.command'"));
+      expect(message, contains('Do not run sudo tund-gui.app'));
+    });
+
+    test('finds the macOS launcher next to the app bundle', () {
+      expect(
+        macGuiCommandPath(
+          "/tmp/TunD's/tund-gui.app/Contents/MacOS/tund-gui",
+        ),
+        "/tmp/TunD's/tund-gui.command",
+      );
+      expect(macGuiCommandPath('/tmp/tund-gui'), '');
     });
   });
 
