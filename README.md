@@ -3,11 +3,11 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
+  <a href="https://github.com/danterolle/tund/actions/workflows/build.yml"><img src="https://github.com/danterolle/tund/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/danterolle/tund/releases"><img src="https://img.shields.io/github/v/release/danterolle/tund" alt="Release"></a>
-  <img src="https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-378ADD" alt="Platform">
-  <img src="https://img.shields.io/badge/language-C-555555.svg" alt="Language">
-  <img src="https://img.shields.io/badge/GUI-Flutter-378ADD.svg" alt="Flutter GUI">
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform">
+  <img src="https://img.shields.io/badge/C-C11-informational" alt="C11">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 </p>
 
 # TunD
