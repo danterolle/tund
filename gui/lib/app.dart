@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'home/home_page.dart';
+import 'home/page.dart';
 import 'theme.dart';
 
 class TundApp extends StatelessWidget {

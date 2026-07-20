@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tund_gui/app.dart';
 import 'package:tund_gui/core/status.dart';
 import 'package:tund_gui/core/tund_config.dart';
-import 'package:tund_gui/home/home_controls.dart';
-import 'package:tund_gui/home/home_page.dart';
+import 'package:tund_gui/home/controller.dart';
+import 'package:tund_gui/home/controls.dart';
 import 'package:tund_gui/widgets/log_box.dart';
 
 Finder fieldByLabel(String label) {
