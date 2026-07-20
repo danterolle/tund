@@ -30,21 +30,9 @@ It is self-hosted and cross-platform. The C core stays dependency-light: Linux a
 
 ### Why not just wrap WireGuard?
 
-WireGuard would be the right foundation for a production VPN. It is easier to trust, much more secure and already reviewed.
+WireGuard would be the right foundation for a production VPN. It is easier to trust because it is much more secure and already reviewed.
 
-TunD is deliberately narrower. It is a small LAN-party tool with:
-
-- a self-hosted hub
-- a fixed virtual IPv4 subnet
-- automatic peer assignment
-- enough broadcast support for LAN-style games
-
-A thin WireGuard wrapper would still need to own the product workflow around WireGuard:
-
-- configuration
-- routing
-- platform setup
-- privilege handling
+TunD is deliberately narrower. It is a small self-hosted LAN-party tool. It owns a fixed virtual IPv4 subnet; it assigns peers automatically; it carries enough broadcast traffic for LAN-style games. A thin WireGuard wrapper would not remove the hard parts for this workflow. The project would still need to own configuration. It would still need routing. It would still need platform setup and privilege handling around a tool designed for a different purpose.
 
 Do not use TunD when you need a confidential VPN.
 
