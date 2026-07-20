@@ -1,5 +1,8 @@
 #include "internal.h"
 #include "log.h"
+#include "network.h"
+#include "tui.h"
+#include "tun.h"
 
 static void *client_keepalive_thread(void *arg) {
     client_t *cli = (client_t *)arg;

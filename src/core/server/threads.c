@@ -1,5 +1,7 @@
 #include "internal.h"
 #include "log.h"
+#include "network.h"
+#include "tun.h"
 
 void *server_timeout_thread(void *arg) {
     server_t *srv = (server_t *)arg;

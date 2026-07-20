@@ -2,9 +2,6 @@
 #define TUND_SERVER_INTERNAL_H
 
 #include "server.h"
-#include "network.h"
-#include "tun.h"
-#include "tui.h"
 
 typedef struct {
     int idx;

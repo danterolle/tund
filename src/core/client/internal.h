@@ -2,9 +2,6 @@
 #define TUND_CLIENT_INTERNAL_H
 
 #include "client.h"
-#include "network.h"
-#include "tun.h"
-#include "tui.h"
 
 void client_update_peer(client_t *cli, uint32_t vip, const char *name, bool online);
 void client_add_peer_traffic(client_t *cli, uint32_t vip, uint64_t bytes_in, uint64_t bytes_out);

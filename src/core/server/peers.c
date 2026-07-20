@@ -1,5 +1,6 @@
 #include "internal.h"
 #include "log.h"
+#include "network.h"
 
 uint32_t server_alloc_ip(const server_t *srv) {
     for (uint32_t ip_h = TUND_IP_START; ip_h <= TUND_IP_END; ip_h++) {

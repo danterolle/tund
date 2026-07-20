@@ -1,9 +1,9 @@
 #ifndef TUND_TUN_H
 #define TUND_TUN_H
 
-#include <stdbool.h>
 #include <stdint.h>
 #ifdef _WIN32
+#include <stdbool.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>

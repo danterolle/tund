@@ -1,5 +1,8 @@
 #include "internal.h"
 #include "log.h"
+#include "network.h"
+#include "tui.h"
+#include "tun.h"
 
 int server_init(server_t *srv, const config_t *cfg) {
     srv->sockfd = SOCK_INVALID;

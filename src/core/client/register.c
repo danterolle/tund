@@ -1,5 +1,6 @@
 #include "internal.h"
 #include "log.h"
+#include "network.h"
 
 static int handle_assign(client_t *cli, const uint8_t *payload, uint16_t len) {
     if (len < 10) return 0;

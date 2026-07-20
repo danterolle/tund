@@ -1,5 +1,6 @@
 #include "internal.h"
 #include "log.h"
+#include "network.h"
 
 void server_handle_keepalive(server_t *srv, const uint8_t *payload, uint16_t plen,
                              const struct sockaddr_in *from) {

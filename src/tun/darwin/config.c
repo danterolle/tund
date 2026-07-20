@@ -2,6 +2,12 @@
 
 #include "internal.h"
 #include "log.h"
+#include "tun.h"
+#include "tund.h"
+
+#include <net/if.h>
+#include <sys/sockio.h>
+#include <sys/wait.h>
 
 int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask) {
     struct in_addr ip_addr = {.s_addr = ip};

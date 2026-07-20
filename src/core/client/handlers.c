@@ -1,5 +1,7 @@
 #include "internal.h"
 #include "log.h"
+#include "network.h"
+#include "tun.h"
 
 static void client_handle_keepalive(client_t *cli, const uint8_t *payload, uint16_t plen) {
     uint64_t sent_at = 0;
