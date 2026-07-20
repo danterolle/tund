@@ -27,13 +27,21 @@ fi
 
 status=0
 syntax_checked=0
+analyzer_checked=0
 include_checked=0
 
 for file in "$@"; do
-    if ! clang -fsyntax-only $flags "$file"; then
+    if ! clang -fsyntax-only -Wpedantic -Werror $flags "$file"; then
         status=1
     fi
     syntax_checked=$((syntax_checked + 1))
+done
+
+for file in "$@"; do
+    if ! clang --analyze -o /dev/null -Wpedantic -Werror $flags "$file"; then
+        status=1
+    fi
+    analyzer_checked=$((analyzer_checked + 1))
 done
 
 for file in $(find src tests tools -type f \( -name '*.c' -o -name '*.h' \) ! -path '*/windows/wintun.h' | sort); do
@@ -48,7 +56,8 @@ for file in $(find src tests tools -type f \( -name '*.c' -o -name '*.h' \) ! -p
 done
 
 if [ "$status" -eq 0 ]; then
-    echo "C syntax lint passed: $syntax_checked source files"
+    echo "C warning lint passed: $syntax_checked source files"
+    echo "C analyzer lint passed: $analyzer_checked source files"
     echo "C include lint passed: $include_checked C/header files"
 fi
 
