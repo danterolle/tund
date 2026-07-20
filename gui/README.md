@@ -17,4 +17,4 @@ flutter build macos --release
 flutter build linux --release
 ```
 
-The GUI starts `tund-cli` from its bundle/folder and warns before launch that TUN setup requires Administrator/root privileges. On Windows the runner asks for UAC elevation. On macOS, start the app executable with `sudo` instead of the `.app` bundle, or run `tund-cli` directly with `sudo` if startup fails. On Linux, launch the GUI with the required privileges or run `tund-cli` directly with `sudo`.
+The GUI starts `tund-cli` from its bundle/folder and warns before launch that TUN setup requires Administrator/root privileges. On Windows the runner asks for UAC elevation. On macOS release builds, run `tund-gui.command` next to `tund-gui.app`; do not run `sudo tund-gui.app`. On Linux, launch the GUI with the required privileges or run `tund-cli` directly with `sudo`.

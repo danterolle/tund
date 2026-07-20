@@ -40,12 +40,12 @@ netsh advfirewall set allprofiles state on
 
 ```bash
 xattr -d com.apple.quarantine ./tund-cli
-xattr -dr com.apple.quarantine ./tund-gui.app
+xattr -dr com.apple.quarantine ./tund-gui-darwin-universal
 ```
 
 Run the relevant command once before launching the CLI or GUI. If the warning persists, open **System Settings → Privacy & Security** and click **Open Anyway** next to the blocked TunD entry.
 
-- **TUN interface**: macOS creates a `utun` device automatically when TunD starts. You may see a prompt asking for network configuration permission; enter your password to allow it.
+- **TUN interface**: macOS creates a `utun` device automatically when TunD starts. For the GUI release, run `tund-gui.command` next to `tund-gui.app`; running `sudo tund-gui.app` targets the bundle directory and will not start the app with the required privileges.
 - **ICMP (ping)**: like Windows, macOS may block ICMP on the virtual interface. Ping is not required for game traffic.
 
 ## Common symptoms

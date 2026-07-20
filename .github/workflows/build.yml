@@ -66,7 +66,12 @@ jobs:
           flutter test
           flutter build macos --release
           cp ../dist/tund-cli-darwin-universal build/macos/Build/Products/Release/tund-gui.app/Contents/MacOS/tund-cli
-          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/tund-gui.app ../tund-gui-darwin-universal.zip
+          rm -rf ../tund-gui-darwin-universal
+          mkdir ../tund-gui-darwin-universal
+          cp -R build/macos/Build/Products/Release/tund-gui.app ../tund-gui-darwin-universal/
+          cp ../tools/macos/tund-gui.command ../tund-gui-darwin-universal/
+          chmod +x ../tund-gui-darwin-universal/tund-gui.command
+          ditto -c -k --sequesterRsrc --keepParent ../tund-gui-darwin-universal ../tund-gui-darwin-universal.zip
       - uses: actions/upload-artifact@v4
         with:
           name: tund-cli-darwin-universal
