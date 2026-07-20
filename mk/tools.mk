@@ -19,11 +19,4 @@ $(PEERFORGE_SERVER_TARGET): $(PEERFORGE_SERVER_SRCS) $(HDRS) | $(DIST)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(PEERFORGE_SERVER_SRCS) $(LDFLAGS)
 
 peerforge-check: $(TOOL_TARGET) $(PEERFORGE_SERVER_TARGET)
-	@set -e; \
-	log="$(DIST)/peerforge-server.log"; \
-	"./$(PEERFORGE_SERVER_TARGET)" -p $(PEERFORGE_CHECK_PORT) -k "$(PEERFORGE_CHECK_KEY)" -t 20 >"$$log" 2>&1 & \
-	server_pid=$$!; \
-	cleanup() { status=$$?; kill $$server_pid >/dev/null 2>&1 || true; wait $$server_pid >/dev/null 2>&1 || true; if [ $$status -ne 0 ]; then cat "$$log" >&2 || true; fi; exit $$status; }; \
-	trap cleanup EXIT INT TERM; \
-	sleep 1; \
-	"./$(TOOL_TARGET)" -s 127.0.0.1 -p $(PEERFORGE_CHECK_PORT) -k "$(PEERFORGE_CHECK_KEY)" -n 32 -t 3000 -K 2 -d 32
+	tools/check-peerforge.sh "./$(TOOL_TARGET)" "./$(PEERFORGE_SERVER_TARGET)" "$(PEERFORGE_CHECK_PORT)" "$(PEERFORGE_CHECK_KEY)" "$(DIST)/peerforge-server.log"
