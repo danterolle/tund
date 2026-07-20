@@ -3,14 +3,12 @@
 #include "internal.h"
 #include "log.h"
 
-int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
-{
+int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask) {
     struct in_addr ip_addr = {.s_addr = ip};
     struct in_addr mask_addr = {.s_addr = netmask};
     uint32_t net = ntohl(ip) & ntohl(netmask);
     struct in_addr dst_addr = {.s_addr = htonl(net | 1)};
-    if (ip == dst_addr.s_addr)
-        dst_addr.s_addr = htonl(net | 2);
+    if (ip == dst_addr.s_addr) dst_addr.s_addr = htonl(net | 2);
 
     char ip_str[INET_ADDRSTRLEN], dst_str[INET_ADDRSTRLEN], mask_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &ip_addr, ip_str, sizeof(ip_str));
@@ -55,8 +53,8 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 
     pid_t pid = fork();
     if (pid == 0) {
-        execl("/sbin/route", "route", "add", "-net", net_str,
-              "-netmask", mask_str, "-interface", dev->ifname, (char *)NULL);
+        execl("/sbin/route", "route", "add", "-net", net_str, "-netmask", mask_str, "-interface",
+              dev->ifname, (char *)NULL);
         _exit(127);
     } else if (pid > 0) {
         waitpid(pid, NULL, 0);
@@ -64,13 +62,11 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
         LOG_WARN("fork() for route add failed: %s", strerror(errno));
     }
 
-    LOG_INFO("Configured %s: %s (peer %s) netmask %s",
-             dev->ifname, ip_str, dst_str, mask_str);
+    LOG_INFO("Configured %s: %s (peer %s) netmask %s", dev->ifname, ip_str, dst_str, mask_str);
     return 0;
 }
 
-int tun_set_mtu(tun_device_t *dev, int mtu)
-{
+int tun_set_mtu(tun_device_t *dev, int mtu) {
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
         LOG_ERROR("Cannot open socket for macOS MTU configuration: %s.", strerror(errno));
@@ -83,8 +79,7 @@ int tun_set_mtu(tun_device_t *dev, int mtu)
     ifr.ifr_mtu = mtu;
 
     if (ioctl(sock, SIOCSIFMTU, &ifr) < 0) {
-        LOG_ERROR("Cannot set macOS TUN MTU to %d on %s: %s.",
-                  mtu, dev->ifname, strerror(errno));
+        LOG_ERROR("Cannot set macOS TUN MTU to %d on %s: %s.", mtu, dev->ifname, strerror(errno));
         close(sock);
         return -1;
     }

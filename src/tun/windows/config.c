@@ -3,8 +3,7 @@
 #include "internal.h"
 #include "log.h"
 
-static uint8_t prefix_len_from_netmask(uint32_t netmask_nbo)
-{
+static uint8_t prefix_len_from_netmask(uint32_t netmask_nbo) {
     uint32_t mask = ntohl(netmask_nbo);
     uint8_t prefix = 0;
     while (mask & 0x80000000U) {
@@ -14,13 +13,11 @@ static uint8_t prefix_len_from_netmask(uint32_t netmask_nbo)
     return prefix;
 }
 
-static bool same_luid(const NET_LUID *a, const NET_LUID *b)
-{
+static bool same_luid(const NET_LUID *a, const NET_LUID *b) {
     return a->Value == b->Value;
 }
 
-static bool windows_ip_config_applied(const tun_device_t *dev, uint32_t ip, uint32_t netmask)
-{
+static bool windows_ip_config_applied(const tun_device_t *dev, uint32_t ip, uint32_t netmask) {
     if (!dev->has_luid) return false;
     PMIB_UNICASTIPADDRESS_TABLE table = NULL;
     NETIO_STATUS status = GetUnicastIpAddressTable(AF_INET, &table);
@@ -33,18 +30,15 @@ static bool windows_ip_config_applied(const tun_device_t *dev, uint32_t ip, uint
     bool found = false;
     for (ULONG i = 0; i < table->NumEntries; i++) {
         MIB_UNICASTIPADDRESS_ROW *row = &table->Table[i];
-        found = same_luid(&row->InterfaceLuid, &dev->luid) &&
-                row->Address.si_family == AF_INET &&
-                row->Address.Ipv4.sin_addr.s_addr == ip &&
-                row->OnLinkPrefixLength == prefix;
+        found = same_luid(&row->InterfaceLuid, &dev->luid) && row->Address.si_family == AF_INET &&
+                row->Address.Ipv4.sin_addr.s_addr == ip && row->OnLinkPrefixLength == prefix;
         if (found) break;
     }
     FreeMibTable(table);
     return found;
 }
 
-static bool windows_route_applied(const tun_device_t *dev, uint32_t network, uint32_t netmask)
-{
+static bool windows_route_applied(const tun_device_t *dev, uint32_t network, uint32_t netmask) {
     if (!dev->has_luid) return false;
     PMIB_IPFORWARD_TABLE2 table = NULL;
     NETIO_STATUS status = GetIpForwardTable2(AF_INET, &table);
@@ -67,8 +61,7 @@ static bool windows_route_applied(const tun_device_t *dev, uint32_t network, uin
     return found;
 }
 
-static bool windows_add_onlink_route(const tun_device_t *dev, uint32_t network, uint32_t netmask)
-{
+static bool windows_add_onlink_route(const tun_device_t *dev, uint32_t network, uint32_t netmask) {
     if (!dev->has_luid) return false;
     MIB_IPFORWARD_ROW2 row;
     InitializeIpForwardEntry(&row);
@@ -87,8 +80,7 @@ static bool windows_add_onlink_route(const tun_device_t *dev, uint32_t network, 
     return false;
 }
 
-static bool windows_mtu_applied(const tun_device_t *dev, int mtu)
-{
+static bool windows_mtu_applied(const tun_device_t *dev, int mtu) {
     if (!dev->has_luid) return false;
     MIB_IPINTERFACE_ROW row;
     InitializeIpInterfaceEntry(&row);
@@ -102,8 +94,7 @@ static bool windows_mtu_applied(const tun_device_t *dev, int mtu)
     return row.NlMtu == (ULONG)mtu;
 }
 
-static bool wait_for_ip(const tun_device_t *dev, uint32_t ip, uint32_t mask)
-{
+static bool wait_for_ip(const tun_device_t *dev, uint32_t ip, uint32_t mask) {
     for (int i = 0; i < 20; i++) {
         if (windows_ip_config_applied(dev, ip, mask)) return true;
         Sleep(100);
@@ -111,8 +102,7 @@ static bool wait_for_ip(const tun_device_t *dev, uint32_t ip, uint32_t mask)
     return false;
 }
 
-static bool wait_for_route(const tun_device_t *dev, uint32_t network, uint32_t mask)
-{
+static bool wait_for_route(const tun_device_t *dev, uint32_t network, uint32_t mask) {
     for (int i = 0; i < 20; i++) {
         if (windows_route_applied(dev, network, mask)) return true;
         Sleep(100);
@@ -120,8 +110,7 @@ static bool wait_for_route(const tun_device_t *dev, uint32_t network, uint32_t m
     return false;
 }
 
-static bool wait_for_mtu(const tun_device_t *dev, int mtu)
-{
+static bool wait_for_mtu(const tun_device_t *dev, int mtu) {
     for (int i = 0; i < 20; i++) {
         if (windows_mtu_applied(dev, mtu)) return true;
         Sleep(100);
@@ -129,16 +118,15 @@ static bool wait_for_mtu(const tun_device_t *dev, int mtu)
     return false;
 }
 
-int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
-{
+int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask) {
     char buf[2048], ip_s[32], mask_s[32], net_s[32];
     struct in_addr ip_a = {.s_addr = ip};
     struct in_addr mask_a = {.s_addr = netmask};
     inet_ntop(AF_INET, &ip_a, ip_s, sizeof(ip_s));
     inet_ntop(AF_INET, &mask_a, mask_s, sizeof(mask_s));
 
-    snprintf(buf, sizeof(buf), "interface ip set address name=\"%s\" static %s %s",
-             dev->ifname, ip_s, mask_s);
+    snprintf(buf, sizeof(buf), "interface ip set address name=\"%s\" static %s %s", dev->ifname,
+             ip_s, mask_s);
     if (run_cmd("netsh", buf) < 0 || !wait_for_ip(dev, ip, netmask)) {
         LOG_ERROR("Failed to configure the Wintun IP address on %s.", dev->ifname);
         return -1;
@@ -149,11 +137,13 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
     inet_ntop(AF_INET, &net_a, net_s, sizeof(net_s));
     if (!windows_route_applied(dev, net_a.s_addr, netmask) &&
         !windows_add_onlink_route(dev, net_a.s_addr, netmask)) {
-        LOG_ERROR("Failed to add the Windows route for %s/%u.", net_s, prefix_len_from_netmask(netmask));
+        LOG_ERROR("Failed to add the Windows route for %s/%u.", net_s,
+                  prefix_len_from_netmask(netmask));
         return -1;
     }
     if (!wait_for_route(dev, net_a.s_addr, netmask)) {
-        LOG_ERROR("Windows did not report route %s/%u on %s.", net_s, prefix_len_from_netmask(netmask), dev->ifname);
+        LOG_ERROR("Windows did not report route %s/%u on %s.", net_s,
+                  prefix_len_from_netmask(netmask), dev->ifname);
         return -1;
     }
 
@@ -161,8 +151,7 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
     return 0;
 }
 
-int tun_set_mtu(tun_device_t *dev, int mtu)
-{
+int tun_set_mtu(tun_device_t *dev, int mtu) {
     char buf[512];
     snprintf(buf, sizeof(buf), "interface ipv4 set subinterface \"%s\" mtu=%d store=active",
              dev->ifname, mtu);

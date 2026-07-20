@@ -1,18 +1,14 @@
 #include "internal.h"
 #include "log.h"
 
-static int build_peer_list_from_snapshot(uint8_t *buf,
-                                         const msg_peer_entry_t *entries,
-                                         int entry_count,
-                                         int *sent_count)
-{
+static int build_peer_list_from_snapshot(uint8_t *buf, const msg_peer_entry_t *entries,
+                                         int entry_count, int *sent_count) {
     uint8_t *payload = buf + TUND_HDR_SIZE;
     int offset = 0;
     int count = 0;
 
     for (int i = 0; i < entry_count; i++) {
-        if (offset + (int)sizeof(msg_peer_entry_t) > TUND_MAX_PAYLOAD)
-            break;
+        if (offset + (int)sizeof(msg_peer_entry_t) > TUND_MAX_PAYLOAD) break;
         memcpy(payload + offset, &entries[i], sizeof(entries[i]));
         offset += (int)sizeof(msg_peer_entry_t);
         count++;
@@ -23,10 +19,8 @@ static int build_peer_list_from_snapshot(uint8_t *buf,
     return TUND_HDR_SIZE + offset;
 }
 
-static void server_handle_register(server_t *srv, const uint8_t *payload,
-                                   uint16_t plen, const struct sockaddr_in *from,
-                                   uint64_t sequence)
-{
+static void server_handle_register(server_t *srv, const uint8_t *payload, uint16_t plen,
+                                   const struct sockaddr_in *from, uint64_t sequence) {
     uint32_t vip = 0;
     char peer_name[TUND_NAME_LEN] = "";
     struct sockaddr_in peer_addr;
@@ -59,7 +53,8 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
         vip = (idx >= 0) ? server_alloc_ip(srv) : 0;
         if (idx < 0 || vip == 0) {
             pthread_mutex_unlock(&srv->peers_lock);
-            LOG_WARN(idx < 0 ? "Peer table full, rejecting connection" : "IP pool exhausted, rejecting connection");
+            LOG_WARN(idx < 0 ? "Peer table full, rejecting connection"
+                             : "IP pool exhausted, rejecting connection");
             return;
         }
 
@@ -72,7 +67,8 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
         proto_replay_accept(&p->replay, sequence);
         memset(p->name, 0, TUND_NAME_LEN);
         if (plen > 0)
-            memcpy(p->name, payload, (size_t)((plen < TUND_NAME_LEN - 1) ? plen : TUND_NAME_LEN - 1));
+            memcpy(p->name, payload,
+                   (size_t)((plen < TUND_NAME_LEN - 1) ? plen : TUND_NAME_LEN - 1));
         else
             snprintf(p->name, TUND_NAME_LEN, "peer-%d", idx);
         memcpy(&p->real_addr, from, sizeof(*from));
@@ -83,8 +79,7 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
         memcpy(&peer_addr, &p->real_addr, sizeof(peer_addr));
 
         for (int i = 0; i < TUND_MAX_PEERS; i++) {
-            if (!srv->peers[i].active || i == idx)
-                continue;
+            if (!srv->peers[i].active || i == idx) continue;
 
             msg_peer_entry_t *entry = &peer_entries[peer_entry_count++];
             entry->virt_ip = srv->peers[i].virt_ip;
@@ -92,9 +87,7 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
             strncpy(entry->name, srv->peers[i].name, TUND_NAME_LEN - 1);
             entry->status = 1;
 
-            memcpy(&join_dests[join_dest_count++],
-                   &srv->peers[i].real_addr,
-                   sizeof(join_dests[0]));
+            memcpy(&join_dests[join_dest_count++], &srv->peers[i].real_addr, sizeof(join_dests[0]));
         }
     }
     pthread_mutex_unlock(&srv->peers_lock);
@@ -102,8 +95,8 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_assign(buf, vip, htonl(TUND_NETMASK), TUND_TUN_MTU);
     if (net_send(srv->sockfd, buf, len, &peer_addr) < 0)
-        LOG_WARN("Failed to send ASSIGN to %s peer %s",
-                 reconnect ? "reconnecting" : "new", peer_name);
+        LOG_WARN("Failed to send ASSIGN to %s peer %s", reconnect ? "reconnecting" : "new",
+                 peer_name);
 
     if (reconnect) {
         LOG_INFO("Peer %s reconnected (refreshed)", peer_name);
@@ -111,14 +104,11 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
     }
 
     char vip_str[TUND_IP_STR_LEN], from_ip[TUND_IP_STR_LEN];
-    LOG_INFO("★ New peer: %s → %s [%s:%u]",
-             peer_name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)),
-             ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)),
-             ntohs(from->sin_port));
+    LOG_INFO("★ New peer: %s → %s [%s:%u]", peer_name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)),
+             ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)), ntohs(from->sin_port));
 
     int sent_peer_count = 0;
-    len = build_peer_list_from_snapshot(buf, peer_entries, peer_entry_count,
-                                        &sent_peer_count);
+    len = build_peer_list_from_snapshot(buf, peer_entries, peer_entry_count, &sent_peer_count);
     if (net_send(srv->sockfd, buf, len, &peer_addr) < 0)
         LOG_WARN("Failed to send peer list to %s", peer_name);
     else
@@ -131,10 +121,8 @@ static void server_handle_register(server_t *srv, const uint8_t *payload,
     }
 }
 
-static bool server_accept_registered_sequence(server_t *srv,
-                                              const struct sockaddr_in *from,
-                                              uint64_t sequence)
-{
+static bool server_accept_registered_sequence(server_t *srv, const struct sockaddr_in *from,
+                                              uint64_t sequence) {
     char peer_name[TUND_NAME_LEN] = "";
     bool known = false;
     bool accepted = true;
@@ -148,13 +136,11 @@ static bool server_accept_registered_sequence(server_t *srv,
     }
     pthread_mutex_unlock(&srv->peers_lock);
 
-    if (known && !accepted)
-        LOG_DEBUG("Dropped replayed packet from %s", peer_name);
+    if (known && !accepted) LOG_DEBUG("Dropped replayed packet from %s", peer_name);
     return accepted;
 }
 
-static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *from)
-{
+static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *from) {
     server_peer_snapshot_t leave_peers[TUND_MAX_PEERS];
     int leave_count;
     uint32_t vip;
@@ -168,14 +154,13 @@ static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *fr
 
     peer_t *p = &srv->peers[idx];
     char peer_ip[TUND_IP_STR_LEN];
-    LOG_INFO("✦ Peer disconnected: %s (%s)",
-             p->name, ip_to_str_buf(p->virt_ip, peer_ip, sizeof(peer_ip)));
+    LOG_INFO("✦ Peer disconnected: %s (%s)", p->name,
+             ip_to_str_buf(p->virt_ip, peer_ip, sizeof(peer_ip)));
 
     vip = p->virt_ip;
     p->active = false;
     srv->peer_count--;
-    leave_count = server_snapshot_broadcast_locked(srv, leave_peers,
-                                                   TUND_MAX_PEERS, -1);
+    leave_count = server_snapshot_broadcast_locked(srv, leave_peers, TUND_MAX_PEERS, -1);
     pthread_mutex_unlock(&srv->peers_lock);
 
     uint8_t buf[TUND_MAX_PKT];
@@ -183,15 +168,12 @@ static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *fr
     server_send_peer_snapshots(srv, leave_peers, leave_count, buf, len, 0);
 }
 
-void server_handle_packet(server_t *srv, uint8_t *buf, int len,
-                          const struct sockaddr_in *from)
-{
+void server_handle_packet(server_t *srv, uint8_t *buf, int len, const struct sockaddr_in *from) {
     uint8_t type;
     uint16_t payload_len;
     int hdr = proto_read_hdr(buf, &type, &payload_len);
     uint64_t sequence = 0;
-    if (hdr < 0 || TUND_HDR_SIZE + payload_len > len ||
-        !proto_read_sequence(buf, &sequence)) {
+    if (hdr < 0 || TUND_HDR_SIZE + payload_len > len || !proto_read_sequence(buf, &sequence)) {
         char from_ip[TUND_IP_STR_LEN];
         LOG_DEBUG("Invalid packet from %s:%u",
                   ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)),
@@ -199,17 +181,27 @@ void server_handle_packet(server_t *srv, uint8_t *buf, int len,
         return;
     }
 
-    if (type != MSG_REGISTER &&
-        !server_accept_registered_sequence(srv, from, sequence))
-        return;
+    if (type != MSG_REGISTER && !server_accept_registered_sequence(srv, from, sequence)) return;
 
     uint8_t *payload = buf + TUND_HDR_SIZE;
     switch (type) {
-    case MSG_REGISTER:      server_handle_register(srv, payload, payload_len, from, sequence); break;
-    case MSG_DATA:          server_handle_data(srv, payload, payload_len, from); break;
-    case MSG_KEEPALIVE:     server_handle_keepalive(srv, payload, payload_len, from); break;
-    case MSG_KEEPALIVE_ACK: server_handle_keepalive_ack(srv, payload, payload_len, from); break;
-    case MSG_DISCONNECT:    server_handle_disconnect(srv, from); break;
-    default:                LOG_DEBUG("Unknown message type 0x%02X", type); break;
+    case MSG_REGISTER:
+        server_handle_register(srv, payload, payload_len, from, sequence);
+        break;
+    case MSG_DATA:
+        server_handle_data(srv, payload, payload_len, from);
+        break;
+    case MSG_KEEPALIVE:
+        server_handle_keepalive(srv, payload, payload_len, from);
+        break;
+    case MSG_KEEPALIVE_ACK:
+        server_handle_keepalive_ack(srv, payload, payload_len, from);
+        break;
+    case MSG_DISCONNECT:
+        server_handle_disconnect(srv, from);
+        break;
+    default:
+        LOG_DEBUG("Unknown message type 0x%02X", type);
+        break;
     }
 }

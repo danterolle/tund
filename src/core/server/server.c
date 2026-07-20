@@ -1,8 +1,7 @@
 #include "internal.h"
 #include "log.h"
 
-int server_init(server_t *srv, const config_t *cfg)
-{
+int server_init(server_t *srv, const config_t *cfg) {
     srv->sockfd = SOCK_INVALID;
     memset(&srv->tun, 0, sizeof(srv->tun));
     memset(srv->peers, 0, sizeof(srv->peers));
@@ -16,8 +15,7 @@ int server_init(server_t *srv, const config_t *cfg)
     pthread_mutex_init(&srv->peers_lock, NULL);
 
     srv->sockfd = net_create_socket(cfg->port);
-    if (!sock_valid(srv->sockfd))
-        return -1;
+    if (!sock_valid(srv->sockfd)) return -1;
 
     if (tun_open(&srv->tun) < 0) {
         sock_close(srv->sockfd);
@@ -40,8 +38,7 @@ int server_init(server_t *srv, const config_t *cfg)
     return 0;
 }
 
-void server_run(server_t *srv)
-{
+void server_run(server_t *srv) {
     server_log_banner(srv);
     tund_stop_flag_store(&srv->timeout_quit, false);
     tund_stop_flag_store(&srv->tun_quit, false);
@@ -63,8 +60,7 @@ void server_run(server_t *srv)
     }
     srv->tun_started = true;
 
-    if (g_tui_active)
-        tui_init();
+    if (g_tui_active) tui_init();
 
     server_log_startup_checklist(srv);
 
@@ -74,26 +70,22 @@ void server_run(server_t *srv)
     int npeers;
 
     while (tund_is_running()) {
-        int ret = net_poll_peers(srv->sockfd, srv->peers, TUND_MAX_PEERS,
-                                 &srv->peers_lock, tui_peers, &npeers);
-        if (ret < 0)
-            break;
+        int ret = net_poll_peers(srv->sockfd, srv->peers, TUND_MAX_PEERS, &srv->peers_lock,
+                                 tui_peers, &npeers);
+        if (ret < 0) break;
         if (ret == 0) {
             if (g_tui_active)
-                tui_render_server(srv->port, srv->tun.ifname,
-                                  htonl(TUND_SERVER_IP), htonl(TUND_NETMASK),
-                                  g_start_time, npeers, tui_peers, npeers);
+                tui_render_server(srv->port, srv->tun.ifname, htonl(TUND_SERVER_IP),
+                                  htonl(TUND_NETMASK), g_start_time, npeers, tui_peers, npeers);
             continue;
         }
 
         int n = net_recv(srv->sockfd, buf, sizeof(buf), &from);
-        if (n > 0)
-            server_handle_packet(srv, buf, n, &from);
+        if (n > 0) server_handle_packet(srv, buf, n, &from);
     }
 }
 
-void server_shutdown(server_t *srv)
-{
+void server_shutdown(server_t *srv) {
     LOG_INFO("Shutting down server...");
     tund_stop_flag_store(&srv->timeout_quit, true);
     tund_stop_flag_store(&srv->tun_quit, true);
@@ -102,8 +94,7 @@ void server_shutdown(server_t *srv)
     int peer_count;
 
     pthread_mutex_lock(&srv->peers_lock);
-    peer_count = server_snapshot_broadcast_locked(srv, peers, TUND_MAX_PEERS,
-                                                  -1);
+    peer_count = server_snapshot_broadcast_locked(srv, peers, TUND_MAX_PEERS, -1);
     pthread_mutex_unlock(&srv->peers_lock);
 
     uint8_t buf[TUND_MAX_PKT];
@@ -115,8 +106,7 @@ void server_shutdown(server_t *srv)
     if (srv->timeout_started) pthread_join(srv->timeout_tid, NULL);
     if (srv->tun_started) pthread_join(srv->tun_tid, NULL);
 
-    if (g_tui_active)
-        tui_shutdown();
+    if (g_tui_active) tui_shutdown();
     if (sock_valid(srv->sockfd)) {
         sock_close(srv->sockfd);
         srv->sockfd = SOCK_INVALID;

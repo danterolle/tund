@@ -17,16 +17,12 @@
 
 extern bool g_tui_active;
 
-static const char *log_level_str[LOG_LEVEL_COUNT] = {
-    "DEBUG", "INFO ", "WARN ", "ERROR"
-};
+static const char *log_level_str[LOG_LEVEL_COUNT] = {"DEBUG", "INFO ", "WARN ", "ERROR"};
 
-static const char *log_level_color[LOG_LEVEL_COUNT] = {
-    "\033[36m", "\033[32m", "\033[33m", "\033[31m"
-};
+static const char *log_level_color[LOG_LEVEL_COUNT] = {"\033[36m", "\033[32m", "\033[33m",
+                                                       "\033[31m"};
 
-static bool log_stderr_supports_color(void)
-{
+static bool log_stderr_supports_color(void) {
 #ifdef _WIN32
     DWORD mode = 0;
     HANDLE herr = GetStdHandle(STD_ERROR_HANDLE);
@@ -36,10 +32,8 @@ static bool log_stderr_supports_color(void)
 #endif
 }
 
-void log_msg(enum log_level level, const char *fmt, ...)
-{
-    if ((int)level < g_log_level)
-        return;
+void log_msg(enum log_level level, const char *fmt, ...) {
+    if ((int)level < g_log_level) return;
 
     int idx = (level >= 0 && level < LOG_LEVEL_COUNT) ? (int)level : LOG_LEVEL_ERROR;
     char msg[8192];
@@ -58,10 +52,6 @@ void log_msg(enum log_level level, const char *fmt, ...)
     struct tm tm;
     localtime_r(&t, &tm);
     bool color = log_stderr_supports_color();
-    fprintf(stderr, "%s[%02d:%02d:%02d] [%s] %s%s\n",
-            color ? log_level_color[idx] : "",
-            tm.tm_hour, tm.tm_min, tm.tm_sec,
-            log_level_str[idx],
-            msg,
-            color ? LOG_RESET : "");
+    fprintf(stderr, "%s[%02d:%02d:%02d] [%s] %s%s\n", color ? log_level_color[idx] : "", tm.tm_hour,
+            tm.tm_min, tm.tm_sec, log_level_str[idx], msg, color ? LOG_RESET : "");
 }

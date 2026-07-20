@@ -3,8 +3,7 @@
 
 #include <string.h>
 
-static void build_peer_list(uint8_t *buf)
-{
+static void build_peer_list(uint8_t *buf) {
     msg_peer_entry_t entries[2];
     memset(entries, 0, sizeof(entries));
     entries[0].virt_ip = htonl(TUND_IP_START + 1);
@@ -18,15 +17,13 @@ static void build_peer_list(uint8_t *buf)
     memcpy(buf + TUND_HDR_SIZE, entries, sizeof(entries));
 }
 
-static void test_peer_list_updates_table(void)
-{
+static void test_peer_list_updates_table(void) {
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
 
     tund_test_init_client(&cli);
     build_peer_list(buf);
-    client_handle_server_packet(&cli, buf,
-                                TUND_HDR_SIZE + 2 * (int)sizeof(msg_peer_entry_t));
+    client_handle_server_packet(&cli, buf, TUND_HDR_SIZE + 2 * (int)sizeof(msg_peer_entry_t));
 
     CHECK(cli.peer_count == 2);
     CHECK(cli.peers[0].active);
@@ -38,8 +35,7 @@ static void test_peer_list_updates_table(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_peer_join_and_leave(void)
-{
+static void test_peer_join_and_leave(void) {
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
     uint32_t peer_ip = htonl(TUND_IP_START + 1);
@@ -58,8 +54,7 @@ static void test_peer_join_and_leave(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_data_writes_tun_and_accounts_peer(void)
-{
+static void test_data_writes_tun_and_accounts_peer(void) {
     client_t cli = {0};
     uint8_t ip_pkt[20];
     uint8_t buf[TUND_MAX_PKT];
@@ -81,8 +76,7 @@ static void test_data_writes_tun_and_accounts_peer(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_replayed_data_is_ignored(void)
-{
+static void test_replayed_data_is_ignored(void) {
     client_t cli = {0};
     uint8_t ip_pkt[20];
     uint8_t buf[TUND_MAX_PKT];
@@ -102,8 +96,7 @@ static void test_replayed_data_is_ignored(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_keepalive_replies_with_ack(void)
-{
+static void test_keepalive_replies_with_ack(void) {
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
     uint8_t type = 0;
@@ -122,15 +115,14 @@ static void test_keepalive_replies_with_ack(void)
     CHECK(proto_read_hdr(tund_test_sends[0].buf, &type, &payload_len) == 0);
     CHECK(type == MSG_KEEPALIVE_ACK);
     CHECK(payload_len == 8);
-    CHECK(proto_read_keepalive_timestamp(tund_test_sends[0].buf + TUND_HDR_SIZE,
-                                         payload_len, &timestamp));
+    CHECK(proto_read_keepalive_timestamp(tund_test_sends[0].buf + TUND_HDR_SIZE, payload_len,
+                                         &timestamp));
     CHECK(timestamp == 0x0102030405060708ULL);
     CHECK(tund_test_sends[0].len == TUND_HDR_SIZE + 8);
     tund_test_destroy_client(&cli);
 }
 
-static void test_keepalive_ack_updates_rtt(void)
-{
+static void test_keepalive_ack_updates_rtt(void) {
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
     uint64_t sent_at = now_ms() - 10;
@@ -144,15 +136,13 @@ static void test_keepalive_ack_updates_rtt(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_server_packet_refreshes_timeout(void)
-{
+static void test_server_packet_refreshes_timeout(void) {
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
     time_t now = time(NULL);
 
     tund_test_init_client(&cli);
-    atomic_store_explicit(&cli.last_server_seen,
-                          (uint_fast64_t)(now - TUND_SERVER_TIMEOUT - 1),
+    atomic_store_explicit(&cli.last_server_seen, (uint_fast64_t)(now - TUND_SERVER_TIMEOUT - 1),
                           memory_order_relaxed);
     CHECK(client_server_timed_out(&cli, now));
 
@@ -163,8 +153,7 @@ static void test_server_packet_refreshes_timeout(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_disconnect_requests_stop(void)
-{
+static void test_disconnect_requests_stop(void) {
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
 
@@ -178,8 +167,7 @@ static void test_disconnect_requests_stop(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_truncated_packet_is_ignored(void)
-{
+static void test_truncated_packet_is_ignored(void) {
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
 
@@ -194,8 +182,7 @@ static void test_truncated_packet_is_ignored(void)
     tund_test_destroy_client(&cli);
 }
 
-int main(void)
-{
+int main(void) {
     test_peer_list_updates_table();
     test_peer_join_and_leave();
     test_data_writes_tun_and_accounts_peer();

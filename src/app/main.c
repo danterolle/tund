@@ -15,16 +15,13 @@ uint64_t g_auth_key1 = 0;
 static server_t g_server;
 static client_t g_client;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     config_t cfg;
     app_init_early();
 
     cli_result_t cli_result = cli_parse(argc, argv, &cfg);
-    if (cli_result == CLI_EXIT_OK)
-        return 0;
-    if (cli_result == CLI_EXIT_ERROR)
-        return 1;
+    if (cli_result == CLI_EXIT_OK) return 0;
+    if (cli_result == CLI_EXIT_ERROR) return 1;
 
     g_log_level = cfg.log_level;
     g_tui_active = cfg.tui_mode;
@@ -38,10 +35,8 @@ int main(int argc, char *argv[])
     }
 
     app_startup_result_t platform_result = app_prepare_runtime(argc, argv, &cfg);
-    if (platform_result == APP_STARTUP_EXIT_OK)
-        return 0;
-    if (platform_result == APP_STARTUP_EXIT_ERROR)
-        return 1;
+    if (platform_result == APP_STARTUP_EXIT_OK) return 0;
+    if (platform_result == APP_STARTUP_EXIT_ERROR) return 1;
 
     app_setup_signals();
 

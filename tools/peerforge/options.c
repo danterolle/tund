@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void peerforge_usage(const char *prog)
-{
+void peerforge_usage(const char *prog) {
     fprintf(stderr,
             "Usage: %s -s <server> -k <key> [-p port] [-n clients] [-t ms] [-K rounds] [-d pairs]\n"
             "\n"
@@ -20,18 +19,15 @@ void peerforge_usage(const char *prog)
             prog, TUND_PORT, PEERFORGE_MAX_CLIENTS);
 }
 
-static bool parse_long(const char *value, long min, long max, long *out)
-{
+static bool parse_long(const char *value, long min, long max, long *out) {
     char *end = NULL;
     long parsed = strtol(value, &end, 10);
-    if (end == value || *end != '\0' || parsed < min || parsed > max)
-        return false;
+    if (end == value || *end != '\0' || parsed < min || parsed > max) return false;
     *out = parsed;
     return true;
 }
 
-static void set_defaults(peerforge_options_t *opts)
-{
+static void set_defaults(peerforge_options_t *opts) {
     opts->server = NULL;
     opts->key = NULL;
     opts->port = TUND_PORT;
@@ -41,8 +37,7 @@ static void set_defaults(peerforge_options_t *opts)
     opts->data_pairs = 0;
 }
 
-bool peerforge_parse_options(int argc, char **argv, peerforge_options_t *opts)
-{
+bool peerforge_parse_options(int argc, char **argv, peerforge_options_t *opts) {
     set_defaults(opts);
 
     for (int i = 1; i < argc; i++) {

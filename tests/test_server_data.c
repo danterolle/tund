@@ -3,8 +3,7 @@
 
 #include <string.h>
 
-static void setup_server(server_t *srv)
-{
+static void setup_server(server_t *srv) {
     memset(srv->peers, 0, sizeof(srv->peers));
     srv->peer_count = 0;
     tund_test_set_server_peer(srv, 0, TUND_IP_START, 0xC0000201, 10001, "sender");
@@ -12,8 +11,7 @@ static void setup_server(server_t *srv)
     tund_test_set_server_peer(srv, 2, TUND_IP_START + 2, 0xC0000203, 10003, "other");
 }
 
-static void check_forwarded_data_message(int send_idx, const uint8_t *ip_pkt)
-{
+static void check_forwarded_data_message(int send_idx, const uint8_t *ip_pkt) {
     uint8_t type = 0;
     uint16_t payload_len = 0;
 
@@ -24,8 +22,7 @@ static void check_forwarded_data_message(int send_idx, const uint8_t *ip_pkt)
     CHECK(memcmp(tund_test_sends[send_idx].buf + TUND_HDR_SIZE, ip_pkt, 20) == 0);
 }
 
-static void test_unicast_forwarding(void)
-{
+static void test_unicast_forwarding(void) {
     server_t srv = {0};
     uint8_t pkt[20];
 
@@ -47,8 +44,7 @@ static void test_unicast_forwarding(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_server_destination_writes_tun(void)
-{
+static void test_server_destination_writes_tun(void) {
     server_t srv = {0};
     uint8_t pkt[20];
 
@@ -67,8 +63,7 @@ static void test_server_destination_writes_tun(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_broadcast_forwarding(void)
-{
+static void test_broadcast_forwarding(void) {
     server_t srv = {0};
     uint8_t pkt[20];
     uint32_t broadcast_ip = htonl(TUND_SUBNET | ~TUND_NETMASK);
@@ -91,8 +86,7 @@ static void test_broadcast_forwarding(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_unknown_destination_drops_after_accounting(void)
-{
+static void test_unknown_destination_drops_after_accounting(void) {
     server_t srv = {0};
     uint8_t pkt[20];
 
@@ -110,8 +104,7 @@ static void test_unknown_destination_drops_after_accounting(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_spoofed_source_drops_without_accounting(void)
-{
+static void test_spoofed_source_drops_without_accounting(void) {
     server_t srv = {0};
     uint8_t pkt[20];
 
@@ -130,8 +123,7 @@ static void test_spoofed_source_drops_without_accounting(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_unregistered_and_short_packets_drop(void)
-{
+static void test_unregistered_and_short_packets_drop(void) {
     server_t srv = {0};
     uint8_t pkt[20];
     struct sockaddr_in stranger = tund_test_addr(0xC00002FE, 20000);
@@ -153,8 +145,7 @@ static void test_unregistered_and_short_packets_drop(void)
     tund_test_destroy_server(&srv);
 }
 
-int main(void)
-{
+int main(void) {
     test_unicast_forwarding();
     test_server_destination_writes_tun();
     test_broadcast_forwarding();

@@ -23,13 +23,13 @@
 #define TUI_ALT_BUF     "\033[?1049h"
 #define TUI_MAIN_BUF    "\033[?1049l"
 
-#define TUI_BOLD    "\033[1m"
-#define TUI_CYAN    "\033[36m"
-#define TUI_YELLOW  "\033[33m"
-#define TUI_GREEN   "\033[32m"
-#define TUI_RED     "\033[31m"
-#define TUI_GRAY    "\033[90m"
-#define TUI_RESET   "\033[0m"
+#define TUI_BOLD   "\033[1m"
+#define TUI_CYAN   "\033[36m"
+#define TUI_YELLOW "\033[33m"
+#define TUI_GREEN  "\033[32m"
+#define TUI_RED    "\033[31m"
+#define TUI_GRAY   "\033[90m"
+#define TUI_RESET  "\033[0m"
 
 #define TUI_WIDTH 76
 

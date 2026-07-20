@@ -3,16 +3,13 @@
 
 #include <string.h>
 
-static void register_peer(server_t *srv, const struct sockaddr_in *addr,
-                          const char *name)
-{
+static void register_peer(server_t *srv, const struct sockaddr_in *addr, const char *name) {
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_register(buf, name);
     server_handle_packet(srv, buf, len, addr);
 }
 
-static void test_register_assigns_new_peer(void)
-{
+static void test_register_assigns_new_peer(void) {
     server_t srv = {0};
     struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
 
@@ -32,8 +29,7 @@ static void test_register_assigns_new_peer(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_register_reconnect_refreshes_existing_peer(void)
-{
+static void test_register_reconnect_refreshes_existing_peer(void) {
     server_t srv = {0};
     struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
     time_t first_seen;
@@ -55,8 +51,7 @@ static void test_register_reconnect_refreshes_existing_peer(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_second_register_sends_peer_list_and_join(void)
-{
+static void test_second_register_sends_peer_list_and_join(void) {
     server_t srv = {0};
     struct sockaddr_in first = tund_test_addr(0xC0000201, 10001);
     struct sockaddr_in second = tund_test_addr(0xC0000202, 10002);
@@ -85,8 +80,7 @@ static void test_second_register_sends_peer_list_and_join(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_disconnect_marks_peer_inactive_and_broadcasts_leave(void)
-{
+static void test_disconnect_marks_peer_inactive_and_broadcasts_leave(void) {
     server_t srv = {0};
     struct sockaddr_in first = tund_test_addr(0xC0000201, 10001);
     struct sockaddr_in second = tund_test_addr(0xC0000202, 10002);
@@ -110,8 +104,7 @@ static void test_disconnect_marks_peer_inactive_and_broadcasts_leave(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_keepalive_replies_with_ack(void)
-{
+static void test_keepalive_replies_with_ack(void) {
     server_t srv = {0};
     struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
     uint8_t buf[TUND_MAX_PKT];
@@ -134,8 +127,7 @@ static void test_keepalive_replies_with_ack(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_keepalive_ack_updates_rtt(void)
-{
+static void test_keepalive_ack_updates_rtt(void) {
     server_t srv = {0};
     struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
     uint8_t buf[TUND_MAX_PKT];
@@ -150,8 +142,7 @@ static void test_keepalive_ack_updates_rtt(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_replayed_data_is_ignored(void)
-{
+static void test_replayed_data_is_ignored(void) {
     server_t srv = {0};
     struct sockaddr_in first = tund_test_addr(0xC0000201, 10001);
     struct sockaddr_in second = tund_test_addr(0xC0000202, 10002);
@@ -174,8 +165,7 @@ static void test_replayed_data_is_ignored(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_invalid_packets_do_not_register_peer(void)
-{
+static void test_invalid_packets_do_not_register_peer(void) {
     server_t srv = {0};
     struct sockaddr_in addr = tund_test_addr(0xC0000201, 10001);
     uint8_t buf[TUND_MAX_PKT];
@@ -192,8 +182,7 @@ static void test_invalid_packets_do_not_register_peer(void)
     tund_test_destroy_server(&srv);
 }
 
-int main(void)
-{
+int main(void) {
     test_register_assigns_new_peer();
     test_register_reconnect_refreshes_existing_peer();
     test_second_register_sends_peer_list_and_join();

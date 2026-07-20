@@ -1,26 +1,21 @@
 #include "tui_internal.h"
 #include "tund.h"
 
-void tui_init(void)
-{
+void tui_init(void) {
     tui_events_start();
     tui_write(TUI_ALT_BUF);
     tui_write(TUI_CLEAR);
     tui_write(TUI_HIDE_CURSOR);
 }
 
-void tui_shutdown(void)
-{
+void tui_shutdown(void) {
     tui_events_stop();
     tui_write(TUI_SHOW_CURSOR);
     tui_write(TUI_MAIN_BUF);
 }
 
-void tui_render_server(uint16_t port, const char *tun_name,
-                       uint32_t virt_ip, uint32_t netmask,
-                       time_t start_time,
-                       int peer_count, const tui_peer_t *peers, int npeers)
-{
+void tui_render_server(uint16_t port, const char *tun_name, uint32_t virt_ip, uint32_t netmask,
+                       time_t start_time, int peer_count, const tui_peer_t *peers, int npeers) {
     tui_write(TUI_HOME);
     tui_render_header(TUND_VERSION, "Server");
 
@@ -42,17 +37,15 @@ void tui_render_server(uint16_t port, const char *tun_name,
     tui_rule();
     tui_render_events();
     snprintf(value, sizeof(value),
-             "Ctrl+C quit · UDP %u · subnet 10.9.0.0/24 · authenticated, not encrypted",
-             port);
+             "Ctrl+C quit · UDP %u · subnet 10.9.0.0/24 · authenticated, not encrypted", port);
     tui_render_footer(value);
     tui_finish_frame();
 }
 
-void tui_render_client(const char *server_addr, uint16_t port,
-                       const char *tun_name, uint32_t virt_ip, uint32_t netmask,
-                       bool has_server_rtt, uint64_t server_rtt_ms, time_t start_time,
-                       int peer_count, const tui_peer_t *peers, int npeers)
-{
+void tui_render_client(const char *server_addr, uint16_t port, const char *tun_name,
+                       uint32_t virt_ip, uint32_t netmask, bool has_server_rtt,
+                       uint64_t server_rtt_ms, time_t start_time, int peer_count,
+                       const tui_peer_t *peers, int npeers) {
     tui_write(TUI_HOME);
     tui_render_header(TUND_VERSION, "Client");
 
@@ -75,8 +68,7 @@ void tui_render_client(const char *server_addr, uint16_t port,
     tui_render_peer_table(peer_count, peers, npeers);
     tui_rule();
     tui_render_events();
-    snprintf(value, sizeof(value),
-             "Ctrl+C quit · server %s:%u · authenticated, not encrypted",
+    snprintf(value, sizeof(value), "Ctrl+C quit · server %s:%u · authenticated, not encrypted",
              server_addr, port);
     tui_render_footer(value);
     tui_finish_frame();

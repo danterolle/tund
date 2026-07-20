@@ -5,42 +5,40 @@
 #include <getopt.h>
 #include <stdlib.h>
 
-static void print_usage(const char *prog, bool show_desc)
-{
-    if (show_desc) fprintf(stderr,
-        "TunD - Virtual LAN over UDP. Creates an authenticated\n"
-        "IPv4 tunnel for LAN gaming with friends.\n"
-        "\n");
+static void print_usage(const char *prog, bool show_desc) {
+    if (show_desc)
+        fprintf(stderr, "TunD - Virtual LAN over UDP. Creates an authenticated\n"
+                        "IPv4 tunnel for LAN gaming with friends.\n"
+                        "\n");
     fprintf(stderr,
-        "Usage:\n"
-        "  %s server [-p port] [-v]\n"
-        "  %s client -s <server_ip> [-p port] [-n name] [-v]\n"
-        "\n"
-        "Modes:\n"
-        "  server   Run as hub server (requires public IP)\n"
-        "  client   Connect to a server\n"
-        "\n"
-        "Options:\n"
-        "  -s, --server <ip>    Server IP/hostname (client mode, required)\n"
-        "  -p, --port <port>    UDP port (default: %u)\n"
-        "  -n, --name <name>    Client display name (default: hostname)\n"
-        "  -k, --key <key>      Shared network passphrase (required)\n"
-        "  -t, --no-tui        Disable terminal UI (live peer dashboard)\n"
-        "  -v, --verbose        Enable debug logging\n"
-        "  -h, --help           Show this help\n"
-        "\n"
-        "Examples:\n"
-        "  sudo %s server                        # Start server on port %u\n"
-        "  sudo %s client -s 1.2.3.4 -n MyPC     # Connect to server\n"
-        "  sudo %s server -p 12345               # Custom port\n"
-        "\n"
-        "Note: Requires root/sudo for TUN interface creation.\n"
-        "\n",
-        prog, prog, TUND_PORT, prog, TUND_PORT, prog, prog);
+            "Usage:\n"
+            "  %s server [-p port] [-v]\n"
+            "  %s client -s <server_ip> [-p port] [-n name] [-v]\n"
+            "\n"
+            "Modes:\n"
+            "  server   Run as hub server (requires public IP)\n"
+            "  client   Connect to a server\n"
+            "\n"
+            "Options:\n"
+            "  -s, --server <ip>    Server IP/hostname (client mode, required)\n"
+            "  -p, --port <port>    UDP port (default: %u)\n"
+            "  -n, --name <name>    Client display name (default: hostname)\n"
+            "  -k, --key <key>      Shared network passphrase (required)\n"
+            "  -t, --no-tui        Disable terminal UI (live peer dashboard)\n"
+            "  -v, --verbose        Enable debug logging\n"
+            "  -h, --help           Show this help\n"
+            "\n"
+            "Examples:\n"
+            "  sudo %s server                        # Start server on port %u\n"
+            "  sudo %s client -s 1.2.3.4 -n MyPC     # Connect to server\n"
+            "  sudo %s server -p 12345               # Custom port\n"
+            "\n"
+            "Note: Requires root/sudo for TUN interface creation.\n"
+            "\n",
+            prog, prog, TUND_PORT, prog, TUND_PORT, prog, prog);
 }
 
-static cli_result_t parse_mode(const char *prog, const char *mode, config_t *cfg)
-{
+static cli_result_t parse_mode(const char *prog, const char *mode, config_t *cfg) {
     if (strcmp(mode, "server") == 0) {
         cfg->mode = MODE_SERVER;
     } else if (strcmp(mode, "client") == 0) {
@@ -56,8 +54,7 @@ static cli_result_t parse_mode(const char *prog, const char *mode, config_t *cfg
     return CLI_OK;
 }
 
-static cli_result_t parse_port(const char *value, config_t *cfg)
-{
+static cli_result_t parse_port(const char *value, config_t *cfg) {
     char *end = NULL;
     long port = strtol(value, &end, 10);
     if (end == value || *end != '\0' || port < 1 || port > 65535) {
@@ -68,8 +65,7 @@ static cli_result_t parse_port(const char *value, config_t *cfg)
     return CLI_OK;
 }
 
-static cli_result_t validate_config(const char *prog, config_t *cfg)
-{
+static cli_result_t validate_config(const char *prog, config_t *cfg) {
     if (cfg->mode == MODE_CLIENT && cfg->server_ip[0] == '\0') {
         fprintf(stderr, "Error: Client mode requires -s <server_ip>\n\n");
         print_usage(prog, false);
@@ -87,7 +83,9 @@ static cli_result_t validate_config(const char *prog, config_t *cfg)
     if (strlen(cfg->access_key) < 12) {
         fprintf(stderr, "Error: a shared access key of at least 12 characters is required (-k).\n");
 #ifdef _WIN32
-        MessageBoxA(NULL, "A shared network key of at least 12 characters is required.\nEnter it in the Network key field.",
+        MessageBoxA(NULL,
+                    "A shared network key of at least 12 characters is required.\nEnter it in the "
+                    "Network key field.",
                     "TunD - Error", MB_OK | MB_ICONERROR);
 #endif
         return CLI_EXIT_ERROR;
@@ -95,8 +93,7 @@ static cli_result_t validate_config(const char *prog, config_t *cfg)
     return CLI_OK;
 }
 
-cli_result_t cli_parse(int argc, char *argv[], config_t *cfg)
-{
+cli_result_t cli_parse(int argc, char *argv[], config_t *cfg) {
     memset(cfg, 0, sizeof(*cfg));
     cfg->port = TUND_PORT;
     cfg->log_level = LOG_LEVEL_INFO;
@@ -108,19 +105,13 @@ cli_result_t cli_parse(int argc, char *argv[], config_t *cfg)
     }
 
     cli_result_t result = parse_mode(argv[0], argv[1], cfg);
-    if (result != CLI_OK)
-        return result;
+    if (result != CLI_OK) return result;
 
     static struct option long_opts[] = {
-        {"server",  required_argument, 0, 's'},
-        {"port",    required_argument, 0, 'p'},
-        {"name",    required_argument, 0, 'n'},
-        {"key",     required_argument, 0, 'k'},
-        {"no-tui",  no_argument,       0, 't'},
-        {"verbose", no_argument,       0, 'v'},
-        {"help",    no_argument,       0, 'h'},
-        {0, 0, 0, 0}
-    };
+        {"server", required_argument, 0, 's'}, {"port", required_argument, 0, 'p'},
+        {"name", required_argument, 0, 'n'},   {"key", required_argument, 0, 'k'},
+        {"no-tui", no_argument, 0, 't'},       {"verbose", no_argument, 0, 'v'},
+        {"help", no_argument, 0, 'h'},         {0, 0, 0, 0}};
 
     optind = 2;
     int opt;

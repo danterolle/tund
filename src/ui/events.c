@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <stdatomic.h>
 
-#define TUI_MAX_EVENTS 7
+#define TUI_MAX_EVENTS        7
 #define TUI_EVENT_MESSAGE_LEN 128
 #define TUI_EVENT_DISPLAY_LEN 57
 
@@ -20,13 +20,11 @@ static int tui_event_start = 0;
 static int tui_event_count = 0;
 static atomic_bool tui_active = ATOMIC_VAR_INIT(false);
 
-bool tui_events_active(void)
-{
+bool tui_events_active(void) {
     return atomic_load_explicit(&tui_active, memory_order_relaxed);
 }
 
-void tui_events_start(void)
-{
+void tui_events_start(void) {
     pthread_mutex_lock(&tui_events_lock);
     tui_event_start = 0;
     tui_event_count = 0;
@@ -34,15 +32,13 @@ void tui_events_start(void)
     pthread_mutex_unlock(&tui_events_lock);
 }
 
-void tui_events_stop(void)
-{
+void tui_events_stop(void) {
     pthread_mutex_lock(&tui_events_lock);
     atomic_store_explicit(&tui_active, false, memory_order_relaxed);
     pthread_mutex_unlock(&tui_events_lock);
 }
 
-void tui_add_event(int level, const char *message)
-{
+void tui_add_event(int level, const char *message) {
     pthread_mutex_lock(&tui_events_lock);
     int idx = (tui_event_start + tui_event_count) % TUI_MAX_EVENTS;
     if (tui_event_count == TUI_MAX_EVENTS) {
@@ -57,30 +53,37 @@ void tui_add_event(int level, const char *message)
     pthread_mutex_unlock(&tui_events_lock);
 }
 
-static const char *tui_event_level_color(int level)
-{
+static const char *tui_event_level_color(int level) {
     switch (level) {
-    case LOG_LEVEL_DEBUG: return TUI_CYAN;
-    case LOG_LEVEL_INFO:  return TUI_GREEN;
-    case LOG_LEVEL_WARN:  return TUI_YELLOW;
-    case LOG_LEVEL_ERROR: return TUI_RED;
-    default:              return TUI_GRAY;
+    case LOG_LEVEL_DEBUG:
+        return TUI_CYAN;
+    case LOG_LEVEL_INFO:
+        return TUI_GREEN;
+    case LOG_LEVEL_WARN:
+        return TUI_YELLOW;
+    case LOG_LEVEL_ERROR:
+        return TUI_RED;
+    default:
+        return TUI_GRAY;
     }
 }
 
-static const char *tui_event_level_label(int level)
-{
+static const char *tui_event_level_label(int level) {
     switch (level) {
-    case LOG_LEVEL_DEBUG: return "DEBUG";
-    case LOG_LEVEL_INFO:  return "INFO ";
-    case LOG_LEVEL_WARN:  return "WARN ";
-    case LOG_LEVEL_ERROR: return "ERROR";
-    default:              return "LOG  ";
+    case LOG_LEVEL_DEBUG:
+        return "DEBUG";
+    case LOG_LEVEL_INFO:
+        return "INFO ";
+    case LOG_LEVEL_WARN:
+        return "WARN ";
+    case LOG_LEVEL_ERROR:
+        return "ERROR";
+    default:
+        return "LOG  ";
     }
 }
 
-static void tui_truncate_event(const char *message, char *buf, size_t len)
-{
+static void tui_truncate_event(const char *message, char *buf, size_t len) {
     if (strlen(message) < len) {
         snprintf(buf, len, "%s", message);
         return;
@@ -93,15 +96,13 @@ static void tui_truncate_event(const char *message, char *buf, size_t len)
     memcpy(buf + len - 4, "...", 4);
 }
 
-void tui_render_events(void)
-{
+void tui_render_events(void) {
     tui_event_t events[TUI_MAX_EVENTS];
     int count;
 
     pthread_mutex_lock(&tui_events_lock);
     count = tui_event_count;
-    for (int i = 0; i < count; i++)
-        events[i] = tui_events[(tui_event_start + i) % TUI_MAX_EVENTS];
+    for (int i = 0; i < count; i++) events[i] = tui_events[(tui_event_start + i) % TUI_MAX_EVENTS];
     pthread_mutex_unlock(&tui_events_lock);
 
     tui_section("Events");
@@ -117,7 +118,7 @@ void tui_render_events(void)
         snprintf(ts, sizeof(ts), "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
         tui_truncate_event(events[i].message, message, sizeof(message));
         const char *color = tui_event_level_color(events[i].level);
-        tui_printf(" %s %s%s%s %s\n", ts, color,
-                   tui_event_level_label(events[i].level), TUI_RESET, message);
+        tui_printf(" %s %s%s%s %s\n", ts, color, tui_event_level_label(events[i].level), TUI_RESET,
+                   message);
     }
 }

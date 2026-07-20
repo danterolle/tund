@@ -9,14 +9,14 @@
 #include <net/if.h>
 #include <linux/if_tun.h>
 
-int tun_open(tun_device_t *dev)
-{
+int tun_open(tun_device_t *dev) {
     struct ifreq ifr;
     int fd;
 
     fd = open("/dev/net/tun", O_RDWR);
     if (fd < 0) {
-        LOG_ERROR("Cannot open /dev/net/tun: %s. Run with sudo/CAP_NET_ADMIN and ensure the tun kernel module is available.",
+        LOG_ERROR("Cannot open /dev/net/tun: %s. Run with sudo/CAP_NET_ADMIN and ensure the tun "
+                  "kernel module is available.",
                   strerror(errno));
         return -1;
     }
@@ -26,7 +26,8 @@ int tun_open(tun_device_t *dev)
     strncpy(ifr.ifr_name, "tund%d", IFNAMSIZ);
 
     if (ioctl(fd, TUNSETIFF, (void *)&ifr) < 0) {
-        LOG_ERROR("Cannot create Linux TUN interface: %s. Run with sudo/CAP_NET_ADMIN and check /dev/net/tun.",
+        LOG_ERROR("Cannot create Linux TUN interface: %s. Run with sudo/CAP_NET_ADMIN and check "
+                  "/dev/net/tun.",
                   strerror(errno));
         close(fd);
         return -1;
@@ -41,8 +42,7 @@ int tun_open(tun_device_t *dev)
     return 0;
 }
 
-void tun_close(tun_device_t *dev)
-{
+void tun_close(tun_device_t *dev) {
     if (dev->fd >= 0) {
         LOG_INFO("Closing TUN interface: %s", dev->ifname);
         close(dev->fd);
@@ -50,8 +50,7 @@ void tun_close(tun_device_t *dev)
     }
 }
 
-int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
-{
+int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask) {
     struct ifreq ifr;
     int sock;
 
@@ -68,7 +67,8 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
     addr->sin_family = AF_INET;
     addr->sin_addr.s_addr = ip;
     if (ioctl(sock, SIOCSIFADDR, &ifr) < 0) {
-        LOG_ERROR("Cannot set Linux TUN IP address: %s. Check privileges and whether 10.9.0.0/24 conflicts with another interface.",
+        LOG_ERROR("Cannot set Linux TUN IP address: %s. Check privileges and whether 10.9.0.0/24 "
+                  "conflicts with another interface.",
                   strerror(errno));
         close(sock);
         return -1;
@@ -99,20 +99,17 @@ int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 
     char ip_str[TUND_IP_STR_LEN];
     char mask_str[TUND_IP_STR_LEN];
-    LOG_INFO("Configured %s: %s/%s", dev->ifname,
-             ip_to_str_buf(ip, ip_str, sizeof(ip_str)),
+    LOG_INFO("Configured %s: %s/%s", dev->ifname, ip_to_str_buf(ip, ip_str, sizeof(ip_str)),
              ip_to_str_buf(netmask, mask_str, sizeof(mask_str)));
     return 0;
 }
 
-int tun_set_mtu(tun_device_t *dev, int mtu)
-{
+int tun_set_mtu(tun_device_t *dev, int mtu) {
     struct ifreq ifr;
     int sock;
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0)
-        return -1;
+    if (sock < 0) return -1;
 
     memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, dev->ifname, IFNAMSIZ);
@@ -130,21 +127,18 @@ int tun_set_mtu(tun_device_t *dev, int mtu)
     return 0;
 }
 
-int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize)
-{
+int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize) {
     struct pollfd pfd;
     pfd.fd = dev->fd;
     pfd.events = POLLIN;
 
     int ready = poll(&pfd, 1, 250);
-    if (ready <= 0)
-        return 0;
+    if (ready <= 0) return 0;
 
     return (int)read(dev->fd, buf, (size_t)bufsize);
 }
 
-int tun_write(tun_device_t *dev, const uint8_t *buf, int len)
-{
+int tun_write(tun_device_t *dev, const uint8_t *buf, int len) {
     return (int)write(dev->fd, buf, (size_t)len);
 }
 

@@ -8,8 +8,7 @@
 #include <unistd.h>
 #endif
 
-int peerforge_net_init(void)
-{
+int peerforge_net_init(void) {
 #ifdef _WIN32
     WSADATA wsa;
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
@@ -20,17 +19,14 @@ int peerforge_net_init(void)
     return 0;
 }
 
-void peerforge_net_cleanup(void)
-{
+void peerforge_net_cleanup(void) {
 #ifdef _WIN32
     WSACleanup();
 #endif
 }
 
-void peerforge_socket_close(peerforge_socket_t sock)
-{
-    if (sock == PEERFORGE_INVALID_SOCKET)
-        return;
+void peerforge_socket_close(peerforge_socket_t sock) {
+    if (sock == PEERFORGE_INVALID_SOCKET) return;
 #ifdef _WIN32
     closesocket(sock);
 #else
@@ -38,13 +34,11 @@ void peerforge_socket_close(peerforge_socket_t sock)
 #endif
 }
 
-peerforge_socket_t peerforge_socket_open(void)
-{
+peerforge_socket_t peerforge_socket_open(void) {
     return socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 }
 
-int peerforge_resolve_server(const char *host, uint16_t port, struct sockaddr_in *out)
-{
+int peerforge_resolve_server(const char *host, uint16_t port, struct sockaddr_in *out) {
     char port_buf[16];
     struct addrinfo hints;
     struct addrinfo *res = NULL;
@@ -65,8 +59,7 @@ int peerforge_resolve_server(const char *host, uint16_t port, struct sockaddr_in
     return 0;
 }
 
-int peerforge_wait_readable(peerforge_socket_t sock, int timeout_ms)
-{
+int peerforge_wait_readable(peerforge_socket_t sock, int timeout_ms) {
     fd_set rfds;
     struct timeval tv;
 
@@ -82,8 +75,7 @@ int peerforge_wait_readable(peerforge_socket_t sock, int timeout_ms)
 #endif
 }
 
-uint64_t peerforge_now_ms(void)
-{
+uint64_t peerforge_now_ms(void) {
 #ifdef _WIN32
     LARGE_INTEGER freq, count;
     QueryPerformanceFrequency(&freq);

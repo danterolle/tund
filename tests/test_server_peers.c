@@ -3,8 +3,7 @@
 
 #include <string.h>
 
-static void test_alloc_ip(void)
-{
+static void test_alloc_ip(void) {
     server_t srv = {0};
 
     CHECK(server_alloc_ip(&srv) == htonl(TUND_IP_START));
@@ -22,8 +21,7 @@ static void test_alloc_ip(void)
     CHECK(server_alloc_ip(&srv) == 0);
 }
 
-static void test_find_helpers(void)
-{
+static void test_find_helpers(void) {
     server_t srv = {0};
     struct sockaddr_in addr;
 
@@ -43,13 +41,11 @@ static void test_find_helpers(void)
     CHECK(server_find_peer_by_addr(&srv, &addr) == -1);
 
     CHECK(server_find_free_slot(&srv) == 0);
-    for (int i = 0; i < TUND_MAX_PEERS; i++)
-        srv.peers[i].active = true;
+    for (int i = 0; i < TUND_MAX_PEERS; i++) srv.peers[i].active = true;
     CHECK(server_find_free_slot(&srv) == -1);
 }
 
-static void test_broadcast_updates_recipients(void)
-{
+static void test_broadcast_updates_recipients(void) {
     server_t srv = {0};
     uint8_t buf[TUND_MAX_PKT];
 
@@ -75,8 +71,7 @@ static void test_broadcast_updates_recipients(void)
     tund_test_destroy_server(&srv);
 }
 
-static void test_peer_list_payload(void)
-{
+static void test_peer_list_payload(void) {
     server_t srv = {0};
     uint8_t type = 0;
     uint16_t payload_len = 0;
@@ -106,8 +101,7 @@ static void test_peer_list_payload(void)
     tund_test_destroy_server(&srv);
 }
 
-int main(void)
-{
+int main(void) {
     test_alloc_ip();
     test_find_helpers();
     test_broadcast_updates_recipients();

@@ -3,29 +3,28 @@
 #include "internal.h"
 #include "log.h"
 
-int tun_open(tun_device_t *dev)
-{
+int tun_open(tun_device_t *dev) {
     dev->adapter = NULL;
     dev->session = NULL;
     dev->read_event = NULL;
     dev->has_luid = false;
 
-    if (wintun_load() < 0)
-        return -1;
+    if (wintun_load() < 0) return -1;
 
     WINTUN_ADAPTER_HANDLE adapter = wintun_open_adapter(L"Tund");
-    if (!adapter)
-        adapter = wintun_create_adapter(L"Tund", L"Tund VPN");
+    if (!adapter) adapter = wintun_create_adapter(L"Tund", L"Tund VPN");
     if (!adapter) {
-        LOG_ERROR("Cannot create/open Wintun adapter (error %lu). Accept the UAC prompt and try again.",
-                  GetLastError());
+        LOG_ERROR(
+            "Cannot create/open Wintun adapter (error %lu). Accept the UAC prompt and try again.",
+            GetLastError());
         return -1;
     }
 
     WINTUN_SESSION_HANDLE session = wintun_start_session(adapter, 0x400000);
     if (!session) {
-        LOG_ERROR("Cannot start Wintun session (error %lu). Close other TunD instances and try again.",
-                  GetLastError());
+        LOG_ERROR(
+            "Cannot start Wintun session (error %lu). Close other TunD instances and try again.",
+            GetLastError());
         wintun_close_adapter(adapter);
         return -1;
     }
@@ -48,8 +47,7 @@ int tun_open(tun_device_t *dev)
             WideCharToMultiByte(CP_UTF8, 0, ifname_w, -1, ifname_a, sizeof(ifname_a), NULL, NULL);
         }
     }
-    if (ifname_a[0] == '\0')
-        strncpy(ifname_a, "tund", sizeof(ifname_a) - 1);
+    if (ifname_a[0] == '\0') strncpy(ifname_a, "tund", sizeof(ifname_a) - 1);
 
     dev->adapter = adapter;
     dev->session = session;
@@ -60,15 +58,13 @@ int tun_open(tun_device_t *dev)
     return 0;
 }
 
-void tun_close(tun_device_t *dev)
-{
+void tun_close(tun_device_t *dev) {
     if (dev->session) wintun_end_session((WINTUN_SESSION_HANDLE)dev->session);
     if (dev->adapter) wintun_close_adapter((WINTUN_ADAPTER_HANDLE)dev->adapter);
     LOG_INFO("TUN interface closed: %s", dev->ifname);
 }
 
-int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize)
-{
+int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize) {
     DWORD size;
     WINTUN_SESSION_HANDLE session = (WINTUN_SESSION_HANDLE)dev->session;
     if (!session) return -1;
@@ -92,8 +88,7 @@ int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize)
     }
 }
 
-int tun_write(tun_device_t *dev, const uint8_t *buf, int len)
-{
+int tun_write(tun_device_t *dev, const uint8_t *buf, int len) {
     WINTUN_SESSION_HANDLE session = (WINTUN_SESSION_HANDLE)dev->session;
     if (!session) return -1;
 

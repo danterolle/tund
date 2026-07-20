@@ -1,9 +1,8 @@
 #include "internal.h"
 #include "log.h"
 
-void server_handle_keepalive(server_t *srv, const uint8_t *payload,
-                             uint16_t plen, const struct sockaddr_in *from)
-{
+void server_handle_keepalive(server_t *srv, const uint8_t *payload, uint16_t plen,
+                             const struct sockaddr_in *from) {
     uint64_t sent_at = 0;
     if (!proto_read_keepalive_timestamp(payload, plen, &sent_at)) {
         LOG_DEBUG("Ignoring malformed keepalive");
@@ -26,24 +25,20 @@ void server_handle_keepalive(server_t *srv, const uint8_t *payload,
         LOG_WARN("Keepalive reply to %s failed", peer_name);
 }
 
-void server_handle_keepalive_ack(server_t *srv, const uint8_t *payload,
-                                 uint16_t plen, const struct sockaddr_in *from)
-{
+void server_handle_keepalive_ack(server_t *srv, const uint8_t *payload, uint16_t plen,
+                                 const struct sockaddr_in *from) {
     uint64_t sent_at = 0;
-    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at))
-        return;
+    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at)) return;
     uint64_t now = now_ms();
-    if (now < sent_at)
-        return;
+    if (now < sent_at) return;
 
     pthread_mutex_lock(&srv->peers_lock);
     int idx = server_find_peer_by_addr(srv, from);
     if (idx >= 0) {
         uint64_t sample = now - sent_at;
         srv->peers[idx].last_seen = time(NULL);
-        srv->peers[idx].rtt_ms = smooth_rtt_ms(srv->peers[idx].rtt_ms,
-                                               sample,
-                                               srv->peers[idx].has_rtt);
+        srv->peers[idx].rtt_ms =
+            smooth_rtt_ms(srv->peers[idx].rtt_ms, sample, srv->peers[idx].has_rtt);
         srv->peers[idx].has_rtt = true;
     }
     pthread_mutex_unlock(&srv->peers_lock);

@@ -7,7 +7,7 @@
 #include "network.h"
 #include "tun.h"
 
-#define TUND_TEST_MAX_SENDS 8
+#define TUND_TEST_MAX_SENDS      8
 #define TUND_TEST_MAX_TUN_WRITES 8
 
 typedef struct {
@@ -36,8 +36,7 @@ void tund_test_init_client(client_t *cli);
 void tund_test_destroy_client(client_t *cli);
 void tund_test_init_server(server_t *srv);
 void tund_test_destroy_server(server_t *srv);
-void tund_test_set_server_peer(server_t *srv, int idx, uint32_t vip_host,
-                               uint32_t real_host, uint16_t port,
-                               const char *name);
+void tund_test_set_server_peer(server_t *srv, int idx, uint32_t vip_host, uint32_t real_host,
+                               uint16_t port, const char *name);
 
 #endif /* TUND_TEST_SUPPORT_H */

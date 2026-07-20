@@ -1,11 +1,12 @@
 #include "internal.h"
 #include "log.h"
 
-void client_log_banner(const client_t *cli)
-{
-    char version[64], ip[64], server[64], tun[64], name[64], virt_ip[TUND_IP_STR_LEN], server_ip[TUND_IP_STR_LEN];
+void client_log_banner(const client_t *cli) {
+    char version[64], ip[64], server[64], tun[64], name[64], virt_ip[TUND_IP_STR_LEN],
+        server_ip[TUND_IP_STR_LEN];
     snprintf(version, sizeof(version), "TunD Client v%s", TUND_VERSION);
-    snprintf(ip, sizeof(ip), "Virtual IP: %s", ip_to_str_buf(cli->virt_ip, virt_ip, sizeof(virt_ip)));
+    snprintf(ip, sizeof(ip), "Virtual IP: %s",
+             ip_to_str_buf(cli->virt_ip, virt_ip, sizeof(virt_ip)));
     snprintf(server, sizeof(server), "Server: %s:%u",
              ip_to_str_buf(cli->server_addr.sin_addr.s_addr, server_ip, sizeof(server_ip)),
              ntohs(cli->server_addr.sin_port));
@@ -33,8 +34,7 @@ void client_log_banner(const client_t *cli)
     LOG_INFO("Press Ctrl+C to disconnect.");
 }
 
-void client_log_startup_checklist(const client_t *cli)
-{
+void client_log_startup_checklist(const client_t *cli) {
     char virt_ip[TUND_IP_STR_LEN], server_ip[TUND_IP_STR_LEN];
     LOG_INFO("Startup checklist:");
     LOG_INFO("Connected to server %s:%u.",

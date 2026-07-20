@@ -1,4 +1,4 @@
-.PHONY: lint-c
+.PHONY: lint lint-c
 
 LINT_C_SRCS := $(sort \
 	$(SRCS) \
@@ -13,5 +13,7 @@ LINT_C_SRCS := $(sort \
 	$(TOOL_SRCS) \
 	$(PEERFORGE_SERVER_SRCS))
 
-lint-c:
-	tools/lint-c.sh $(CFLAGS) $(TEST_INCLUDES) -- $(LINT_C_SRCS)
+lint:
+	tools/lint.sh $(CFLAGS) $(TEST_INCLUDES) -- $(LINT_C_SRCS)
+
+lint-c: lint

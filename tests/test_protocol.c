@@ -9,18 +9,14 @@
 #include <arpa/inet.h>
 #endif
 
-static void test_siphash_vector(void)
-{
+static void test_siphash_vector(void) {
     uint8_t empty[1] = {0};
-    uint64_t tag = proto_siphash24(empty, 0,
-                                   0x0706050403020100ULL,
-                                   0x0f0e0d0c0b0a0908ULL);
+    uint64_t tag = proto_siphash24(empty, 0, 0x0706050403020100ULL, 0x0f0e0d0c0b0a0908ULL);
 
     CHECK(tag == 0x726fdb47dd0e0e31ULL);
 }
 
-static void test_header_roundtrip(void)
-{
+static void test_header_roundtrip(void) {
     uint8_t buf[TUND_MAX_PKT];
     uint8_t type = 0;
     uint16_t payload_len = 0;
@@ -36,8 +32,7 @@ static void test_header_roundtrip(void)
     CHECK(proto_read_sequence(buf, &sequence));
     CHECK(sequence > 0);
 
-    for (int i = 0; i < TUND_AUTH_TAG_SIZE; i++)
-        CHECK(buf[TUND_AUTH_TAG_OFFSET + i] == 0);
+    for (int i = 0; i < TUND_AUTH_TAG_SIZE; i++) CHECK(buf[TUND_AUTH_TAG_OFFSET + i] == 0);
 
     CHECK(proto_read_hdr(buf, &type, &payload_len) == 0);
     CHECK(type == MSG_DATA);
@@ -51,14 +46,12 @@ static void test_header_roundtrip(void)
     CHECK(proto_read_hdr(buf, &type, &payload_len) == TUND_HDR_BAD_VERSION);
 }
 
-static void test_authentication(void)
-{
+static void test_authentication(void) {
     uint8_t ip_pkt[20];
     uint8_t buf[TUND_MAX_PKT];
     uint64_t k0, k1, other_k0, other_k1;
 
-    for (size_t i = 0; i < sizeof(ip_pkt); i++)
-        ip_pkt[i] = (uint8_t)i;
+    for (size_t i = 0; i < sizeof(ip_pkt); i++) ip_pkt[i] = (uint8_t)i;
     ip_pkt[0] = 0x45;
 
     proto_key_from_passphrase("a-long-random-key", &k0, &k1);
@@ -85,8 +78,7 @@ static void test_authentication(void)
     CHECK(!proto_verify(buf, len, k0, k1));
 }
 
-static void test_builders(void)
-{
+static void test_builders(void) {
     uint8_t buf[TUND_MAX_PKT];
     uint8_t type = 0;
     uint16_t payload_len = 0;
@@ -100,8 +92,7 @@ static void test_builders(void)
     CHECK(proto_read_hdr(buf, &type, &payload_len) == 0);
     CHECK(type == MSG_REGISTER);
     CHECK(payload_len == TUND_NAME_LEN);
-    for (int i = 0; i < TUND_NAME_LEN; i++)
-        CHECK(buf[TUND_HDR_SIZE + i] == 'A');
+    for (int i = 0; i < TUND_NAME_LEN; i++) CHECK(buf[TUND_HDR_SIZE + i] == 'A');
 
     uint8_t ip_pkt[20];
     memset(ip_pkt, 0xAB, sizeof(ip_pkt));
@@ -152,8 +143,7 @@ static void test_builders(void)
     CHECK(got_ts == 0x1112131415161718ULL);
 }
 
-static void test_dst_ip(void)
-{
+static void test_dst_ip(void) {
     uint8_t ip_pkt[20];
     uint32_t src = htonl(0x0A090002);
     uint32_t dst = htonl(0x0A090003);
@@ -168,8 +158,7 @@ static void test_dst_ip(void)
     CHECK(proto_get_dst_ip(ip_pkt, 19) == 0);
 }
 
-static void test_replay_window(void)
-{
+static void test_replay_window(void) {
     proto_replay_window_t replay;
     proto_replay_reset(&replay);
 
@@ -182,8 +171,7 @@ static void test_replay_window(void)
     CHECK(!proto_replay_accept(&replay, 0));
 }
 
-int main(void)
-{
+int main(void) {
     test_siphash_vector();
     test_header_roundtrip();
     test_authentication();

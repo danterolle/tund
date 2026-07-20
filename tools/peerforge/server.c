@@ -16,10 +16,8 @@ tund_stop_flag_t g_running = ATOMIC_VAR_INIT(true);
 bool g_tui_active = false;
 time_t g_start_time = 0;
 
-void log_msg(enum log_level level, const char *fmt, ...)
-{
-    if (level < LOG_LEVEL_WARN)
-        return;
+void log_msg(enum log_level level, const char *fmt, ...) {
+    if (level < LOG_LEVEL_WARN) return;
 
     va_list ap;
     va_start(ap, fmt);
@@ -28,8 +26,7 @@ void log_msg(enum log_level level, const char *fmt, ...)
     fputc('\n', stderr);
 }
 
-int tun_write(tun_device_t *dev, const uint8_t *buf, int len)
-{
+int tun_write(tun_device_t *dev, const uint8_t *buf, int len) {
     (void)dev;
     (void)buf;
     return len;
@@ -41,8 +38,7 @@ typedef struct {
     int duration_sec;
 } peerforge_server_options_t;
 
-static void usage(const char *prog)
-{
+static void usage(const char *prog) {
     fprintf(stderr,
             "Usage: %s -k <key> [-p port] [-t seconds]\n"
             "\n"
@@ -53,18 +49,15 @@ static void usage(const char *prog)
             prog, TUND_PORT);
 }
 
-static bool parse_long(const char *value, long min, long max, long *out)
-{
+static bool parse_long(const char *value, long min, long max, long *out) {
     char *end = NULL;
     long parsed = strtol(value, &end, 10);
-    if (end == value || *end != '\0' || parsed < min || parsed > max)
-        return false;
+    if (end == value || *end != '\0' || parsed < min || parsed > max) return false;
     *out = parsed;
     return true;
 }
 
-static bool parse_options(int argc, char **argv, peerforge_server_options_t *opts)
-{
+static bool parse_options(int argc, char **argv, peerforge_server_options_t *opts) {
     opts->port = TUND_PORT;
     opts->key = NULL;
     opts->duration_sec = 20;
@@ -83,12 +76,10 @@ static bool parse_options(int argc, char **argv, peerforge_server_options_t *opt
         if (strcmp(argv[i], "-k") == 0) {
             opts->key = argv[++i];
         } else if (strcmp(argv[i], "-p") == 0) {
-            if (!parse_long(argv[++i], 1, 65535, &value))
-                return false;
+            if (!parse_long(argv[++i], 1, 65535, &value)) return false;
             opts->port = (uint16_t)value;
         } else if (strcmp(argv[i], "-t") == 0) {
-            if (!parse_long(argv[++i], 1, 3600, &value))
-                return false;
+            if (!parse_long(argv[++i], 1, 3600, &value)) return false;
             opts->duration_sec = (int)value;
         } else {
             usage(argv[0]);
@@ -103,8 +94,7 @@ static bool parse_options(int argc, char **argv, peerforge_server_options_t *opt
     return true;
 }
 
-static int run_server(const peerforge_server_options_t *opts)
-{
+static int run_server(const peerforge_server_options_t *opts) {
     server_t srv = {0};
     srv.sockfd = SOCK_INVALID;
     srv.tun.fd = -1;
@@ -130,18 +120,15 @@ static int run_server(const peerforge_server_options_t *opts)
         int ready = platform_poll_one(srv.sockfd, 100);
         if (ready < 0) {
             int err = SOCK_Error();
-            if (err == SOCK_EINTR)
-                continue;
+            if (err == SOCK_EINTR) continue;
             fprintf(stderr, "poll failed: %s\n", sock_errstr(err));
             result = 1;
             break;
         }
-        if (ready == 0)
-            continue;
+        if (ready == 0) continue;
 
         int n = net_recv(srv.sockfd, buf, sizeof(buf), &from);
-        if (n > 0)
-            server_handle_packet(&srv, buf, n, &from);
+        if (n > 0) server_handle_packet(&srv, buf, n, &from);
     }
 
     sock_close(srv.sockfd);
@@ -149,11 +136,9 @@ static int run_server(const peerforge_server_options_t *opts)
     return result;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     peerforge_server_options_t opts;
-    if (!parse_options(argc, argv, &opts))
-        return 2;
+    if (!parse_options(argc, argv, &opts)) return 2;
 
     proto_key_from_passphrase(opts.key, &g_auth_key0, &g_auth_key1);
     return run_server(&opts);

@@ -17,19 +17,23 @@ static void (*pWintunReleaseReceivePacket)(WINTUN_SESSION_HANDLE, const BYTE *);
 static BYTE *(*pWintunAllocateSendPacket)(WINTUN_SESSION_HANDLE, DWORD);
 static void (*pWintunSendPacket)(WINTUN_SESSION_HANDLE, const BYTE *);
 
-#define WINTUN_LOAD(name) do { \
-    FARPROC proc = GetProcAddress(g_wintun_dll, #name); \
-    if (!proc) { LOG_ERROR("Missing symbol: %s", #name); return -1; } \
-    memcpy(&p##name, &proc, sizeof(p##name)); \
-} while (0)
+#define WINTUN_LOAD(name)                                                                          \
+    do {                                                                                           \
+        FARPROC proc = GetProcAddress(g_wintun_dll, #name);                                        \
+        if (!proc) {                                                                               \
+            LOG_ERROR("Missing symbol: %s", #name);                                                \
+            return -1;                                                                             \
+        }                                                                                          \
+        memcpy(&p##name, &proc, sizeof(p##name));                                                  \
+    } while (0)
 
-int wintun_load(void)
-{
+int wintun_load(void) {
     if (g_wintun_dll) return 0;
 
     g_wintun_dll = LoadLibraryW(L"wintun.dll");
     if (!g_wintun_dll) {
-        LOG_ERROR("Failed to load wintun.dll (error %lu); keep wintun.dll next to tund-cli.exe or use the bundled Windows release.",
+        LOG_ERROR("Failed to load wintun.dll (error %lu); keep wintun.dll next to tund-cli.exe or "
+                  "use the bundled Windows release.",
                   GetLastError());
         return -1;
     }
@@ -50,59 +54,48 @@ int wintun_load(void)
     return 0;
 }
 
-WINTUN_ADAPTER_HANDLE wintun_open_adapter(LPCWSTR name)
-{
+WINTUN_ADAPTER_HANDLE wintun_open_adapter(LPCWSTR name) {
     return pWintunOpenAdapter(name);
 }
 
-WINTUN_ADAPTER_HANDLE wintun_create_adapter(LPCWSTR name, LPCWSTR tunnel_type)
-{
+WINTUN_ADAPTER_HANDLE wintun_create_adapter(LPCWSTR name, LPCWSTR tunnel_type) {
     return pWintunCreateAdapter(name, tunnel_type, NULL);
 }
 
-void wintun_close_adapter(WINTUN_ADAPTER_HANDLE adapter)
-{
+void wintun_close_adapter(WINTUN_ADAPTER_HANDLE adapter) {
     pWintunCloseAdapter(adapter);
 }
 
-bool wintun_get_adapter_luid(WINTUN_ADAPTER_HANDLE adapter, NET_LUID *luid)
-{
+bool wintun_get_adapter_luid(WINTUN_ADAPTER_HANDLE adapter, NET_LUID *luid) {
     pWintunGetAdapterLUID(adapter, luid);
     return true;
 }
 
-WINTUN_SESSION_HANDLE wintun_start_session(WINTUN_ADAPTER_HANDLE adapter, DWORD capacity)
-{
+WINTUN_SESSION_HANDLE wintun_start_session(WINTUN_ADAPTER_HANDLE adapter, DWORD capacity) {
     return pWintunStartSession(adapter, capacity);
 }
 
-void wintun_end_session(WINTUN_SESSION_HANDLE session)
-{
+void wintun_end_session(WINTUN_SESSION_HANDLE session) {
     pWintunEndSession(session);
 }
 
-HANDLE wintun_get_read_wait_event(WINTUN_SESSION_HANDLE session)
-{
+HANDLE wintun_get_read_wait_event(WINTUN_SESSION_HANDLE session) {
     return pWintunGetReadWaitEvent(session);
 }
 
-BYTE *wintun_receive_packet(WINTUN_SESSION_HANDLE session, DWORD *size)
-{
+BYTE *wintun_receive_packet(WINTUN_SESSION_HANDLE session, DWORD *size) {
     return pWintunReceivePacket(session, size);
 }
 
-void wintun_release_receive_packet(WINTUN_SESSION_HANDLE session, const BYTE *packet)
-{
+void wintun_release_receive_packet(WINTUN_SESSION_HANDLE session, const BYTE *packet) {
     pWintunReleaseReceivePacket(session, packet);
 }
 
-BYTE *wintun_allocate_send_packet(WINTUN_SESSION_HANDLE session, DWORD len)
-{
+BYTE *wintun_allocate_send_packet(WINTUN_SESSION_HANDLE session, DWORD len) {
     return pWintunAllocateSendPacket(session, len);
 }
 
-void wintun_send_packet(WINTUN_SESSION_HANDLE session, const BYTE *packet)
-{
+void wintun_send_packet(WINTUN_SESSION_HANDLE session, const BYTE *packet) {
     pWintunSendPacket(session, packet);
 }
 

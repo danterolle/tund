@@ -1,50 +1,42 @@
 #include "tui_internal.h"
 
-void tui_write(const char *s) { fputs(s, stderr); }
+void tui_write(const char *s) {
+    fputs(s, stderr);
+}
 
-void tui_printf(const char *fmt, ...)
-{
+void tui_printf(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
 }
 
-void tui_rule(void)
-{
+void tui_rule(void) {
     tui_printf(" %s", TUI_GRAY);
-    for (int i = 0; i < TUI_WIDTH; i++)
-        tui_write("─");
+    for (int i = 0; i < TUI_WIDTH; i++) tui_write("─");
     tui_printf("%s\n", TUI_RESET);
 }
 
-void tui_render_header(const char *version, const char *mode)
-{
-    tui_printf(" %s◆ TunD%s %sv%s%s %s— %s%s\n",
-               TUI_BOLD TUI_CYAN, TUI_RESET,
-               TUI_YELLOW, version, TUI_RESET,
-               TUI_GRAY, mode, TUI_RESET);
+void tui_render_header(const char *version, const char *mode) {
+    tui_printf(" %s◆ TunD%s %sv%s%s %s— %s%s\n", TUI_BOLD TUI_CYAN, TUI_RESET, TUI_YELLOW, version,
+               TUI_RESET, TUI_GRAY, mode, TUI_RESET);
     tui_rule();
 }
 
-void tui_section(const char *title)
-{
+void tui_section(const char *title) {
     tui_printf(" %s%s%s\n", TUI_BOLD TUI_CYAN, title, TUI_RESET);
 }
 
-void tui_kv(const char *label, const char *value)
-{
+void tui_kv(const char *label, const char *value) {
     tui_printf(" %s%-10s%s %s\n", TUI_GRAY, label, TUI_RESET, value);
 }
 
-void tui_uptime(time_t start, char *buf, size_t len)
-{
+void tui_uptime(time_t start, char *buf, size_t len) {
     int secs = (int)(time(NULL) - start);
     snprintf(buf, len, "%02d:%02d:%02d", secs / 3600, (secs % 3600) / 60, secs % 60);
 }
 
-static void tui_timeago(time_t ts, char *buf, size_t len)
-{
+static void tui_timeago(time_t ts, char *buf, size_t len) {
     int ago = (int)(time(NULL) - ts);
     if (ago < 2)
         snprintf(buf, len, "just now");
@@ -56,8 +48,7 @@ static void tui_timeago(time_t ts, char *buf, size_t len)
         snprintf(buf, len, "%dh %dm ago", ago / 3600, (ago % 3600) / 60);
 }
 
-static void tui_format_bytes(uint64_t bytes, char *buf, size_t len)
-{
+static void tui_format_bytes(uint64_t bytes, char *buf, size_t len) {
     const char *units[] = {"B", "KB", "MB", "GB"};
     double value = (double)bytes;
     int unit = 0;
@@ -73,8 +64,7 @@ static void tui_format_bytes(uint64_t bytes, char *buf, size_t len)
         snprintf(buf, len, "%.1f%s", value, units[unit]);
 }
 
-void tui_format_rtt(bool has_rtt, uint64_t rtt_ms, char *buf, size_t len)
-{
+void tui_format_rtt(bool has_rtt, uint64_t rtt_ms, char *buf, size_t len) {
     if (!has_rtt)
         snprintf(buf, len, "-");
     else if (rtt_ms > 9999)
@@ -83,13 +73,12 @@ void tui_format_rtt(bool has_rtt, uint64_t rtt_ms, char *buf, size_t len)
         snprintf(buf, len, "%llums", (unsigned long long)rtt_ms);
 }
 
-void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int npeers)
-{
+void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int npeers) {
     char title[32];
     snprintf(title, sizeof(title), "Peers (%d)", peer_count);
     tui_section(title);
-    tui_printf(" %s%-8s %-15s %-18s %7s %7s %7s %s%s\n",
-               TUI_GRAY, "Status", "Virtual IP", "Name", "KA RTT", "In", "Out", "Last", TUI_RESET);
+    tui_printf(" %s%-8s %-15s %-18s %7s %7s %7s %s%s\n", TUI_GRAY, "Status", "Virtual IP", "Name",
+               "KA RTT", "In", "Out", "Last", TUI_RESET);
 
     bool any = false;
     for (int i = 0; i < npeers; i++) {
@@ -103,25 +92,22 @@ void tui_render_peer_table(int peer_count, const tui_peer_t *peers, int npeers)
         tui_format_bytes(peers[i].bytes_out, out, sizeof(out));
 
         int age = (int)(time(NULL) - peers[i].last_seen);
-        const char *dot = age < 10 ? TUI_GREEN "●" TUI_RESET :
-                          age < 30 ? TUI_YELLOW "●" TUI_RESET :
-                                     TUI_RED "●" TUI_RESET;
+        const char *dot = age < 10   ? TUI_GREEN "●" TUI_RESET
+                          : age < 30 ? TUI_YELLOW "●" TUI_RESET
+                                     : TUI_RED "●" TUI_RESET;
         const char *status = age < 10 ? "online" : age < 30 ? "stale" : "timeout";
-        tui_printf(" %s %-7s %-15s %-18.18s %7s %7s %7s %s\n",
-                   dot, status, ip, peers[i].name, rtt, in, out, ago);
+        tui_printf(" %s %-7s %-15s %-18.18s %7s %7s %7s %s\n", dot, status, ip, peers[i].name, rtt,
+                   in, out, ago);
     }
-    if (!any)
-        tui_printf(" %s(no peers yet)%s\n", TUI_GRAY, TUI_RESET);
+    if (!any) tui_printf(" %s(no peers yet)%s\n", TUI_GRAY, TUI_RESET);
 }
 
-void tui_render_footer(const char *hint)
-{
+void tui_render_footer(const char *hint) {
     tui_rule();
     tui_printf(" %s%s%s\n", TUI_YELLOW, hint, TUI_RESET);
 }
 
-void tui_finish_frame(void)
-{
+void tui_finish_frame(void) {
     tui_write(TUI_CLEAR_REST);
     fflush(stderr);
 }

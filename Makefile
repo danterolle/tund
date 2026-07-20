@@ -6,6 +6,7 @@ include mk/tests.mk
 include mk/tools.mk
 include mk/release.mk
 include mk/lint.mk
+include mk/format.mk
 
 .PHONY: all clean install uninstall verify
 
@@ -23,7 +24,8 @@ $(DIST):
 	mkdir -p $(DIST)
 
 verify:
-	$(MAKE) lint-c
+	$(MAKE) format-check
+	$(MAKE) lint
 	$(MAKE) test
 	$(MAKE) tools
 	$(MAKE) peerforge-check

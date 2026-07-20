@@ -10,18 +10,18 @@
 #include <netioapi.h>
 #endif
 
-#define TUN_IFNAME_MAX  32
+#define TUN_IFNAME_MAX 32
 
 typedef struct {
-    int     fd;
-    char    ifname[TUN_IFNAME_MAX];
-    int     mtu;
+    int fd;
+    char ifname[TUN_IFNAME_MAX];
+    int mtu;
 #ifdef _WIN32
-    void    *adapter;
-    void    *session;
-    void    *read_event;
+    void *adapter;
+    void *session;
+    void *read_event;
     NET_LUID luid;
-    bool    has_luid;
+    bool has_luid;
 #endif
 } tun_device_t;
 

@@ -1,18 +1,23 @@
 #include "internal.h"
 #include "log.h"
 
-void client_update_peer(client_t *cli, uint32_t vip, const char *name, bool online)
-{
+void client_update_peer(client_t *cli, uint32_t vip, const char *name, bool online) {
     pthread_mutex_lock(&cli->peers_lock);
     int idx = -1, free_idx = -1;
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
-        if (cli->peers[i].active && cli->peers[i].virt_ip == vip) { idx = i; break; }
+        if (cli->peers[i].active && cli->peers[i].virt_ip == vip) {
+            idx = i;
+            break;
+        }
         if (!cli->peers[i].active && free_idx < 0) free_idx = i;
     }
 
     if (online) {
         if (idx < 0) {
-            if (free_idx < 0) { pthread_mutex_unlock(&cli->peers_lock); return; }
+            if (free_idx < 0) {
+                pthread_mutex_unlock(&cli->peers_lock);
+                return;
+            }
             idx = free_idx;
             cli->peers[idx].bytes_in = 0;
             cli->peers[idx].bytes_out = 0;
@@ -30,9 +35,7 @@ void client_update_peer(client_t *cli, uint32_t vip, const char *name, bool onli
     pthread_mutex_unlock(&cli->peers_lock);
 }
 
-void client_add_peer_traffic(client_t *cli, uint32_t vip,
-                             uint64_t bytes_in, uint64_t bytes_out)
-{
+void client_add_peer_traffic(client_t *cli, uint32_t vip, uint64_t bytes_in, uint64_t bytes_out) {
     pthread_mutex_lock(&cli->peers_lock);
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (cli->peers[i].active && cli->peers[i].virt_ip == vip) {
@@ -44,18 +47,15 @@ void client_add_peer_traffic(client_t *cli, uint32_t vip,
     pthread_mutex_unlock(&cli->peers_lock);
 }
 
-void client_add_broadcast_traffic(client_t *cli, uint64_t bytes_out)
-{
+void client_add_broadcast_traffic(client_t *cli, uint64_t bytes_out) {
     pthread_mutex_lock(&cli->peers_lock);
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
-        if (cli->peers[i].active)
-            cli->peers[i].bytes_out += bytes_out;
+        if (cli->peers[i].active) cli->peers[i].bytes_out += bytes_out;
     }
     pthread_mutex_unlock(&cli->peers_lock);
 }
 
-void client_log_peers(client_t *cli)
-{
+void client_log_peers(client_t *cli) {
     pthread_mutex_lock(&cli->peers_lock);
     LOG_INFO("┌─────────────────────────────────────────┐");
     LOG_INFO("│         Connected Peers (%d)              │", cli->peer_count);

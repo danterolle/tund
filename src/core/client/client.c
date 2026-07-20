@@ -1,8 +1,7 @@
 #include "internal.h"
 #include "log.h"
 
-static void *client_keepalive_thread(void *arg)
-{
+static void *client_keepalive_thread(void *arg) {
     client_t *cli = (client_t *)arg;
     uint8_t buf[TUND_MAX_PKT];
     unsigned int slept = 0;
@@ -10,14 +9,12 @@ static void *client_keepalive_thread(void *arg)
     while (tund_is_running() && !tund_stop_flag_load(&cli->ka_quit)) {
         platform_sleep(1);
         slept++;
-        if (slept < TUND_KEEPALIVE_INTERVAL)
-            continue;
+        if (slept < TUND_KEEPALIVE_INTERVAL) continue;
         slept = 0;
         if (!tund_is_running() || tund_stop_flag_load(&cli->ka_quit)) break;
 
         if (client_server_timed_out(cli, time(NULL))) {
-            LOG_WARN("Server timed out after %d seconds without a response.",
-                     TUND_SERVER_TIMEOUT);
+            LOG_WARN("Server timed out after %d seconds without a response.", TUND_SERVER_TIMEOUT);
             tund_request_stop();
             break;
         }
@@ -29,8 +26,7 @@ static void *client_keepalive_thread(void *arg)
     return NULL;
 }
 
-static void *client_tun_thread(void *arg)
-{
+static void *client_tun_thread(void *arg) {
     client_t *cli = (client_t *)arg;
     uint8_t pkt_buf[TUND_MAX_PAYLOAD];
     uint8_t msg_buf[TUND_MAX_PKT];
@@ -56,8 +52,7 @@ static void *client_tun_thread(void *arg)
     return NULL;
 }
 
-int client_init(client_t *cli, const config_t *cfg)
-{
+int client_init(client_t *cli, const config_t *cfg) {
     cli->sockfd = SOCK_INVALID;
     memset(&cli->tun, 0, sizeof(cli->tun));
     memset(&cli->server_addr, 0, sizeof(cli->server_addr));
@@ -78,12 +73,10 @@ int client_init(client_t *cli, const config_t *cfg)
     snprintf(cli->name, TUND_NAME_LEN, "%s", cfg->client_name);
     pthread_mutex_init(&cli->peers_lock, NULL);
 
-    if (net_resolve(cfg->server_ip, cfg->port, &cli->server_addr) < 0)
-        return -1;
+    if (net_resolve(cfg->server_ip, cfg->port, &cli->server_addr) < 0) return -1;
 
     cli->sockfd = net_create_socket(0);
-    if (!sock_valid(cli->sockfd))
-        return -1;
+    if (!sock_valid(cli->sockfd)) return -1;
 
     if (client_register(cli) < 0) {
         sock_close(cli->sockfd);
@@ -110,8 +103,7 @@ int client_init(client_t *cli, const config_t *cfg)
     return 0;
 }
 
-void client_run(client_t *cli)
-{
+void client_run(client_t *cli) {
     client_log_banner(cli);
     tund_stop_flag_store(&cli->ka_quit, false);
     tund_stop_flag_store(&cli->tun_quit, false);
@@ -134,8 +126,7 @@ void client_run(client_t *cli)
     cli->tun_started = true;
 
     tui_peer_t tui_peers[TUND_MAX_PEERS];
-    if (g_tui_active)
-        tui_init();
+    if (g_tui_active) tui_init();
 
     client_log_startup_checklist(cli);
 
@@ -145,29 +136,25 @@ void client_run(client_t *cli)
     int npeers;
 
     while (tund_is_running()) {
-        int ret = net_poll_peers(cli->sockfd, cli->peers, TUND_MAX_PEERS,
-                                 &cli->peers_lock, tui_peers, &npeers);
-        if (ret < 0)
-            break;
+        int ret = net_poll_peers(cli->sockfd, cli->peers, TUND_MAX_PEERS, &cli->peers_lock,
+                                 tui_peers, &npeers);
+        if (ret < 0) break;
         if (ret == 0) {
             if (g_tui_active)
-                tui_render_client(server_ip_str, ntohs(cli->server_addr.sin_port),
-                                  cli->tun.ifname, cli->virt_ip, cli->netmask,
-                                  cli->has_server_rtt, cli->server_rtt_ms,
-                                  g_start_time, npeers, tui_peers, npeers);
+                tui_render_client(server_ip_str, ntohs(cli->server_addr.sin_port), cli->tun.ifname,
+                                  cli->virt_ip, cli->netmask, cli->has_server_rtt,
+                                  cli->server_rtt_ms, g_start_time, npeers, tui_peers, npeers);
             continue;
         }
 
         struct sockaddr_in from;
         int n = net_recv(cli->sockfd, buf, sizeof(buf), &from);
-        if (n <= 0 || !net_addr_equal(&from, &cli->server_addr))
-            continue;
+        if (n <= 0 || !net_addr_equal(&from, &cli->server_addr)) continue;
         client_handle_server_packet(cli, buf, n);
     }
 }
 
-void client_shutdown(client_t *cli)
-{
+void client_shutdown(client_t *cli) {
     LOG_INFO("Disconnecting...");
     tund_stop_flag_store(&cli->ka_quit, true);
     tund_stop_flag_store(&cli->tun_quit, true);
@@ -180,8 +167,7 @@ void client_shutdown(client_t *cli)
     if (cli->ka_started) pthread_join(cli->ka_tid, NULL);
     if (cli->tun_started) pthread_join(cli->tun_tid, NULL);
 
-    if (g_tui_active)
-        tui_shutdown();
+    if (g_tui_active) tui_shutdown();
     if (sock_valid(cli->sockfd)) {
         sock_close(cli->sockfd);
         cli->sockfd = SOCK_INVALID;

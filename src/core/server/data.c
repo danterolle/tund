@@ -1,9 +1,8 @@
 #include "internal.h"
 #include "log.h"
 
-void server_handle_data(server_t *srv, const uint8_t *payload,
-                        uint16_t plen, const struct sockaddr_in *from)
-{
+void server_handle_data(server_t *srv, const uint8_t *payload, uint16_t plen,
+                        const struct sockaddr_in *from) {
     server_peer_snapshot_t broadcast_peers[TUND_MAX_PEERS];
     server_peer_snapshot_t dst_peer;
     int broadcast_count = 0;
@@ -18,8 +17,7 @@ void server_handle_data(server_t *srv, const uint8_t *payload,
 
     uint32_t src_ip = proto_get_src_ip(payload, plen);
     uint32_t dst_ip = proto_get_dst_ip(payload, plen);
-    if (src_ip == 0 || dst_ip == 0)
-        return;
+    if (src_ip == 0 || dst_ip == 0) return;
 
     pthread_mutex_lock(&srv->peers_lock);
     int sender_idx = server_find_peer_by_addr(srv, from);
@@ -32,10 +30,9 @@ void server_handle_data(server_t *srv, const uint8_t *payload,
         char src_ip_str[TUND_IP_STR_LEN];
         char assigned_ip_str[TUND_IP_STR_LEN];
         LOG_WARN("Dropped DATA with spoofed source %s from peer %s (%s)",
-                 ip_to_str_buf(src_ip, src_ip_str, sizeof(src_ip_str)),
-                 srv->peers[sender_idx].name,
-                 ip_to_str_buf(srv->peers[sender_idx].virt_ip,
-                               assigned_ip_str, sizeof(assigned_ip_str)));
+                 ip_to_str_buf(src_ip, src_ip_str, sizeof(src_ip_str)), srv->peers[sender_idx].name,
+                 ip_to_str_buf(srv->peers[sender_idx].virt_ip, assigned_ip_str,
+                               sizeof(assigned_ip_str)));
         pthread_mutex_unlock(&srv->peers_lock);
         return;
     }
@@ -50,10 +47,8 @@ void server_handle_data(server_t *srv, const uint8_t *payload,
 
     uint32_t broadcast_ip = htonl(TUND_SUBNET | ~TUND_NETMASK);
     if (dst_ip == broadcast_ip) {
-        broadcast_count = server_snapshot_broadcast_locked(srv,
-                                                           broadcast_peers,
-                                                           TUND_MAX_PEERS,
-                                                           sender_idx);
+        broadcast_count =
+            server_snapshot_broadcast_locked(srv, broadcast_peers, TUND_MAX_PEERS, sender_idx);
         send_broadcast = true;
         write_tun = true;
         pthread_mutex_unlock(&srv->peers_lock);
@@ -72,13 +67,10 @@ void server_handle_data(server_t *srv, const uint8_t *payload,
     int len = proto_build_data(buf, payload, plen);
     if (send_broadcast) {
         for (int i = 0; i < broadcast_count; i++) {
-            if (net_send(srv->sockfd, buf, len,
-                         &broadcast_peers[i].real_addr) < 0) {
+            if (net_send(srv->sockfd, buf, len, &broadcast_peers[i].real_addr) < 0) {
                 char peer_ip[TUND_IP_STR_LEN];
-                LOG_WARN("Broadcast to %s (%s) failed",
-                         broadcast_peers[i].name,
-                         ip_to_str_buf(broadcast_peers[i].virt_ip,
-                                       peer_ip, sizeof(peer_ip)));
+                LOG_WARN("Broadcast to %s (%s) failed", broadcast_peers[i].name,
+                         ip_to_str_buf(broadcast_peers[i].virt_ip, peer_ip, sizeof(peer_ip)));
             } else {
                 server_add_peer_bytes_out(srv, &broadcast_peers[i], plen);
             }
@@ -89,6 +81,5 @@ void server_handle_data(server_t *srv, const uint8_t *payload,
         else
             server_add_peer_bytes_out(srv, &dst_peer, plen);
     }
-    if (write_tun)
-        tun_write(&srv->tun, payload, plen);
+    if (write_tun) tun_write(&srv->tun, payload, plen);
 }

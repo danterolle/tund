@@ -1,11 +1,9 @@
 #include "internal.h"
 #include "log.h"
 
-static void client_handle_keepalive(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
+static void client_handle_keepalive(client_t *cli, const uint8_t *payload, uint16_t plen) {
     uint64_t sent_at = 0;
-    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at))
-        return;
+    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at)) return;
 
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_keepalive_ack(buf, sent_at);
@@ -13,25 +11,19 @@ static void client_handle_keepalive(client_t *cli, const uint8_t *payload, uint1
         LOG_WARN("Keepalive reply to server failed");
 }
 
-static void client_handle_keepalive_ack(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
+static void client_handle_keepalive_ack(client_t *cli, const uint8_t *payload, uint16_t plen) {
     uint64_t sent_at = 0;
-    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at))
-        return;
+    if (!proto_read_keepalive_timestamp(payload, plen, &sent_at)) return;
     uint64_t now = now_ms();
-    if (now < sent_at)
-        return;
+    if (now < sent_at) return;
 
     uint64_t sample = now - sent_at;
-    cli->server_rtt_ms = smooth_rtt_ms(cli->server_rtt_ms, sample,
-                                       cli->has_server_rtt);
+    cli->server_rtt_ms = smooth_rtt_ms(cli->server_rtt_ms, sample, cli->has_server_rtt);
     cli->has_server_rtt = true;
-    LOG_DEBUG("Server keepalive RTT: %llums",
-              (unsigned long long)cli->server_rtt_ms);
+    LOG_DEBUG("Server keepalive RTT: %llums", (unsigned long long)cli->server_rtt_ms);
 }
 
-static void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
+static void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint16_t plen) {
     int entry_size = (int)sizeof(msg_peer_entry_t);
     int count = plen / entry_size;
     if (!g_tui_active) LOG_INFO("Received peer list: %d peer(s)", count);
@@ -43,8 +35,7 @@ static void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint1
     if (!g_tui_active && count > 0) client_log_peers(cli);
 }
 
-static void client_handle_peer_join(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
+static void client_handle_peer_join(client_t *cli, const uint8_t *payload, uint16_t plen) {
     if (plen < 4 + TUND_NAME_LEN) return;
 
     uint32_t vip;
@@ -59,8 +50,7 @@ static void client_handle_peer_join(client_t *cli, const uint8_t *payload, uint1
     if (!g_tui_active) client_log_peers(cli);
 }
 
-static void client_handle_peer_leave(client_t *cli, const uint8_t *payload, uint16_t plen)
-{
+static void client_handle_peer_leave(client_t *cli, const uint8_t *payload, uint16_t plen) {
     if (plen < 4) return;
 
     uint32_t vip;
@@ -87,8 +77,7 @@ static void client_handle_peer_leave(client_t *cli, const uint8_t *payload, uint
         LOG_INFO("No peers connected.");
 }
 
-void client_handle_server_packet(client_t *cli, uint8_t *buf, int len)
-{
+void client_handle_server_packet(client_t *cli, uint8_t *buf, int len) {
     uint8_t type;
     uint16_t payload_len;
     int hdr = proto_read_hdr(buf, &type, &payload_len);
@@ -113,12 +102,27 @@ void client_handle_server_packet(client_t *cli, uint8_t *buf, int len)
         client_add_peer_traffic(cli, proto_get_src_ip(payload, payload_len), payload_len, 0);
         tun_write(&cli->tun, payload, payload_len);
         break;
-    case MSG_PEER_LIST:     client_handle_peer_list(cli, payload, payload_len); break;
-    case MSG_PEER_JOIN:     client_handle_peer_join(cli, payload, payload_len); break;
-    case MSG_PEER_LEAVE:    client_handle_peer_leave(cli, payload, payload_len); break;
-    case MSG_KEEPALIVE:     client_handle_keepalive(cli, payload, payload_len); break;
-    case MSG_KEEPALIVE_ACK: client_handle_keepalive_ack(cli, payload, payload_len); break;
-    case MSG_DISCONNECT:    LOG_WARN("Server disconnected!"); tund_request_stop(); break;
-    default:                LOG_DEBUG("Unknown message type 0x%02X", type); break;
+    case MSG_PEER_LIST:
+        client_handle_peer_list(cli, payload, payload_len);
+        break;
+    case MSG_PEER_JOIN:
+        client_handle_peer_join(cli, payload, payload_len);
+        break;
+    case MSG_PEER_LEAVE:
+        client_handle_peer_leave(cli, payload, payload_len);
+        break;
+    case MSG_KEEPALIVE:
+        client_handle_keepalive(cli, payload, payload_len);
+        break;
+    case MSG_KEEPALIVE_ACK:
+        client_handle_keepalive_ack(cli, payload, payload_len);
+        break;
+    case MSG_DISCONNECT:
+        LOG_WARN("Server disconnected!");
+        tund_request_stop();
+        break;
+    default:
+        LOG_DEBUG("Unknown message type 0x%02X", type);
+        break;
     }
 }

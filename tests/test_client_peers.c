@@ -3,8 +3,7 @@
 
 #include <string.h>
 
-static void test_update_peer_lifecycle(void)
-{
+static void test_update_peer_lifecycle(void) {
     client_t cli = {0};
     uint32_t vip = htonl(TUND_IP_START);
 
@@ -33,8 +32,7 @@ static void test_update_peer_lifecycle(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_update_peer_truncates_names(void)
-{
+static void test_update_peer_truncates_names(void) {
     client_t cli = {0};
     char long_name[64];
 
@@ -49,8 +47,7 @@ static void test_update_peer_truncates_names(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_update_peer_table_full(void)
-{
+static void test_update_peer_table_full(void) {
     client_t cli = {0};
 
     tund_test_init_client(&cli);
@@ -67,8 +64,7 @@ static void test_update_peer_table_full(void)
     tund_test_destroy_client(&cli);
 }
 
-static void test_traffic_accounting(void)
-{
+static void test_traffic_accounting(void) {
     client_t cli = {0};
     uint32_t first = htonl(TUND_IP_START);
     uint32_t second = htonl(TUND_IP_START + 1);
@@ -98,8 +94,7 @@ static void test_traffic_accounting(void)
     tund_test_destroy_client(&cli);
 }
 
-int main(void)
-{
+int main(void) {
     test_update_peer_lifecycle();
     test_update_peer_truncates_names();
     test_update_peer_table_full();

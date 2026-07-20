@@ -3,8 +3,7 @@
 #include "tui.h"
 
 #ifdef _WIN32
-static int ensure_winsock(void)
-{
+static int ensure_winsock(void) {
     static int initialized = 0;
     if (initialized) return 0;
     WSADATA wsa;
@@ -20,10 +19,8 @@ static int ensure_winsock(void)
 #define ensure_winsock() 0
 #endif
 
-socket_t net_create_socket(uint16_t bind_port)
-{
-    if (ensure_winsock() < 0)
-        return (socket_t)-1;
+socket_t net_create_socket(uint16_t bind_port) {
+    if (ensure_winsock() < 0) return (socket_t)-1;
 
     socket_t sockfd;
     struct sockaddr_in addr;
@@ -36,8 +33,7 @@ socket_t net_create_socket(uint16_t bind_port)
         return (socket_t)-1;
     }
 
-    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
-               (const char *)&optval, sizeof(optval));
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&optval, sizeof(optval));
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
@@ -45,7 +41,8 @@ socket_t net_create_socket(uint16_t bind_port)
     addr.sin_port = htons(bind_port);
 
     if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        LOG_ERROR("Cannot bind UDP port %u: %s. If another TunD/server is running, stop it or choose a different port with -p.",
+        LOG_ERROR("Cannot bind UDP port %u: %s. If another TunD/server is running, stop it or "
+                  "choose a different port with -p.",
                   bind_port, sock_errstr(SOCK_Error()));
         sock_close(sockfd);
         return (socket_t)-1;
@@ -55,30 +52,25 @@ socket_t net_create_socket(uint16_t bind_port)
     return sockfd;
 }
 
-int net_send(socket_t sockfd, uint8_t *buf, int len,
-             const struct sockaddr_in *dest)
-{
+int net_send(socket_t sockfd, uint8_t *buf, int len, const struct sockaddr_in *dest) {
     if (len < TUND_HDR_SIZE) return -1;
     proto_sign(buf, len, g_auth_key0, g_auth_key1);
-    ssize_t sent = sendto(sockfd, (const char *)buf, (size_t)len, 0,
-                          (const struct sockaddr *)dest, sizeof(*dest));
+    ssize_t sent = sendto(sockfd, (const char *)buf, (size_t)len, 0, (const struct sockaddr *)dest,
+                          sizeof(*dest));
     if (sent < 0) {
         char dest_ip[TUND_IP_STR_LEN];
         LOG_ERROR("sendto(%s:%u) failed: %s",
                   ip_to_str_buf(dest->sin_addr.s_addr, dest_ip, sizeof(dest_ip)),
-                  ntohs(dest->sin_port),
-                  sock_errstr(SOCK_Error()));
+                  ntohs(dest->sin_port), sock_errstr(SOCK_Error()));
         return -1;
     }
     return 0;
 }
 
-int net_recv(socket_t sockfd, uint8_t *buf, int bufsize,
-             struct sockaddr_in *from)
-{
+int net_recv(socket_t sockfd, uint8_t *buf, int bufsize, struct sockaddr_in *from) {
     socklen_t fromlen = sizeof(*from);
-    ssize_t n = recvfrom(sockfd, (char *)buf, (size_t)bufsize, 0,
-                         (struct sockaddr *)from, &fromlen);
+    ssize_t n =
+        recvfrom(sockfd, (char *)buf, (size_t)bufsize, 0, (struct sockaddr *)from, &fromlen);
     if (n < 0) {
         int err = SOCK_Error();
         if (err == SOCK_EAGAIN || err == SOCK_EWOULDBLOCK || err == SOCK_EINTR)
@@ -96,16 +88,13 @@ int net_recv(socket_t sockfd, uint8_t *buf, int bufsize,
     return (int)n;
 }
 
-bool net_addr_equal(const struct sockaddr_in *a, const struct sockaddr_in *b)
-{
+bool net_addr_equal(const struct sockaddr_in *a, const struct sockaddr_in *b) {
     return a->sin_family == b->sin_family && a->sin_port == b->sin_port &&
            a->sin_addr.s_addr == b->sin_addr.s_addr;
 }
 
-int net_resolve(const char *host, uint16_t port, struct sockaddr_in *out)
-{
-    if (ensure_winsock() < 0)
-        return -1;
+int net_resolve(const char *host, uint16_t port, struct sockaddr_in *out) {
+    if (ensure_winsock() < 0) return -1;
 
     struct addrinfo hints, *res;
 
@@ -115,8 +104,9 @@ int net_resolve(const char *host, uint16_t port, struct sockaddr_in *out)
 
     int err = getaddrinfo(host, NULL, &hints, &res);
     if (err != 0) {
-        LOG_ERROR("Cannot resolve server '%s': %s. Check the hostname/IP and DNS/network connectivity.",
-                  host, gai_strerror(err));
+        LOG_ERROR(
+            "Cannot resolve server '%s': %s. Check the hostname/IP and DNS/network connectivity.",
+            host, gai_strerror(err));
         return -1;
     }
 
@@ -125,14 +115,13 @@ int net_resolve(const char *host, uint16_t port, struct sockaddr_in *out)
     freeaddrinfo(res);
 
     char out_ip[TUND_IP_STR_LEN];
-    LOG_DEBUG("Resolved %s -> %s:%u",
-              host, ip_to_str_buf(out->sin_addr.s_addr, out_ip, sizeof(out_ip)), port);
+    LOG_DEBUG("Resolved %s -> %s:%u", host,
+              ip_to_str_buf(out->sin_addr.s_addr, out_ip, sizeof(out_ip)), port);
     return 0;
 }
 
-int net_poll_peers(socket_t sockfd, peer_t *peers, int max_peers,
-                   pthread_mutex_t *lock, tui_peer_t *tui_peers, int *npeers)
-{
+int net_poll_peers(socket_t sockfd, peer_t *peers, int max_peers, pthread_mutex_t *lock,
+                   tui_peer_t *tui_peers, int *npeers) {
     int ret = platform_poll_one(sockfd, 1000);
     if (ret < 0) {
         int err = SOCK_Error();
