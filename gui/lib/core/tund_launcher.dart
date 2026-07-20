@@ -96,11 +96,11 @@ class TundLauncher {
     _process = process;
     onStarted?.call();
     _stdout = process.stdout
-        .transform(systemEncoding.decoder)
+        .transform(tundProcessOutputDecoder)
         .map(sanitizeProcessOutput)
         .listen(onLog);
     _stderr = process.stderr
-        .transform(systemEncoding.decoder)
+        .transform(tundProcessOutputDecoder)
         .map(sanitizeProcessOutput)
         .listen(onLog);
 

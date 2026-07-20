@@ -196,6 +196,16 @@ void main() {
   });
 
   group('process output sanitization', () {
+    test('decodes UTF-8 CLI output on every platform', () {
+      final bytes = [
+        0xE2, 0x95, 0x94, // ╔
+        0xE2, 0x98, 0x85, // ★
+        0xE2, 0x86, 0x92, // →
+      ];
+
+      expect(tundProcessOutputDecoder.convert(bytes), '╔★→');
+    });
+
     test('removes ANSI color sequences', () {
       final output = sanitizeProcessOutput(
         '\u001B[33mWarning: TunD requires root privileges\u001B[0m\n',

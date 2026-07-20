@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+const tundProcessOutputDecoder = Utf8Decoder(allowMalformed: true);
+
 final _ansiEscapePattern = RegExp(
   '\u001B(?:'
   r'[@-Z\\-_]'
