@@ -1,9 +1,15 @@
 #ifdef __APPLE__
 
+#include "protocol.h"
 #include "tun.h"
-#include "tund.h"
 #include "log.h"
 
+#include <arpa/inet.h>
+#include <errno.h>
+#include <poll.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/kern_control.h>
 #include <sys/sys_domain.h>

@@ -2,10 +2,15 @@
 
 #include "log.h"
 #include "tun.h"
-#include "tund.h"
 
+#include <arpa/inet.h>
+#include <errno.h>
 #include <net/if.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/wait.h>
 

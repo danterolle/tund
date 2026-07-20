@@ -1,5 +1,6 @@
 #include "internal.h"
 #include "log.h"
+#include "version.h"
 
 void server_log_banner(const server_t *srv) {
     char version[64], port[64], ip[64], tun[64], server_ip[TUND_IP_STR_LEN];

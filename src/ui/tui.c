@@ -1,5 +1,5 @@
 #include "tui_internal.h"
-#include "tund.h"
+#include "version.h"
 
 #include <stdio.h>
 #ifdef _WIN32

@@ -1,5 +1,6 @@
 #include "internal.h"
 #include "log.h"
+#include "version.h"
 
 void client_log_banner(const client_t *cli) {
     char version[64], ip[64], server[64], tun[64], name[64], virt_ip[TUND_IP_STR_LEN],
