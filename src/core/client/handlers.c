@@ -98,6 +98,8 @@ void client_handle_server_packet(client_t *cli, uint8_t *buf, int len)
     }
     if (TUND_HDR_SIZE + payload_len > len) return;
 
+    client_mark_server_seen(cli);
+
     uint8_t *payload = buf + TUND_HDR_SIZE;
     switch (type) {
     case MSG_DATA:

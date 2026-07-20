@@ -49,6 +49,7 @@
 /* Timing */
 #define TUND_KEEPALIVE_INTERVAL   10  /* seconds */
 #define TUND_PEER_TIMEOUT         30  /* seconds */
+#define TUND_SERVER_TIMEOUT       30  /* seconds */
 #define TUND_REGISTER_TIMEOUT     5   /* seconds — wait for ASSIGN */
 #define TUND_REGISTER_RETRIES     3
 

@@ -31,7 +31,7 @@ PROTO_SRC := src/protocol/protocol.c
 APP_SRC  := src/app/main.c src/app/cli.c src/app/log.c src/app/platform.c
 WIN_RUNTIME_SRC := src/app/win_runtime.c
 UI_SRC   := src/ui/tui.c src/ui/render.c src/ui/events.c
-CLIENT_SRC := src/core/client/client.c src/core/client/peers.c src/core/client/register.c src/core/client/handlers.c src/core/client/log.c
+CLIENT_SRC := src/core/client/client.c src/core/client/peers.c src/core/client/register.c src/core/client/handlers.c src/core/client/session.c src/core/client/log.c
 SERVER_SRC := src/core/server/server.c src/core/server/peers.c src/core/server/handlers.c src/core/server/data.c src/core/server/keepalive.c src/core/server/threads.c src/core/server/log.c
 ifneq ($(filter MINGW%,$(UNAME_S)),)
     APP_SRC += $(WIN_RUNTIME_SRC)
@@ -49,7 +49,7 @@ TEST_SERVER_PEERS_SRCS := tests/test_server_peers.c src/core/server/peers.c
 TEST_SERVER_DATA_SRCS := tests/test_server_data.c src/core/server/data.c src/core/server/peers.c
 TEST_SERVER_HANDLERS_SRCS := tests/test_server_handlers.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c
 TEST_CLIENT_PEERS_SRCS := tests/test_client_peers.c src/core/client/peers.c
-TEST_CLIENT_HANDLERS_SRCS := tests/test_client_handlers.c src/core/client/handlers.c src/core/client/peers.c
+TEST_CLIENT_HANDLERS_SRCS := tests/test_client_handlers.c src/core/client/handlers.c src/core/client/peers.c src/core/client/session.c
 TOOL_SRCS := tools/peerforge/main.c tools/peerforge/options.c tools/peerforge/net.c tools/peerforge/client.c
 PEERFORGE_SERVER_SRCS := tools/peerforge/server.c src/net/network.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c $(PROTO_SRC)
 MACOS_UNIVERSAL_TARGET = $(DIST)/tund-cli-darwin-universal

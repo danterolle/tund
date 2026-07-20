@@ -84,6 +84,7 @@ void tund_test_init_client(client_t *cli)
     cli->server_addr = tund_test_addr(0xC0000201, TUND_PORT);
     cli->virt_ip = htonl(TUND_IP_START);
     cli->netmask = htonl(TUND_NETMASK);
+    atomic_init(&cli->last_server_seen, (uint_fast64_t)time(NULL));
     pthread_mutex_init(&cli->peers_lock, NULL);
 }
 

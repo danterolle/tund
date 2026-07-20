@@ -13,6 +13,8 @@ void client_add_broadcast_traffic(client_t *cli, uint64_t bytes_out);
 void client_log_peers(client_t *cli);
 void client_log_banner(const client_t *cli);
 void client_log_startup_checklist(const client_t *cli);
+void client_mark_server_seen(client_t *cli);
+bool client_server_timed_out(const client_t *cli, time_t now);
 int client_register(client_t *cli);
 void client_handle_server_packet(client_t *cli, uint8_t *buf, int len);
 

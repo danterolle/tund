@@ -123,6 +123,25 @@ static void test_keepalive_ack_updates_rtt(void)
     tund_test_destroy_client(&cli);
 }
 
+static void test_server_packet_refreshes_timeout(void)
+{
+    client_t cli = {0};
+    uint8_t buf[TUND_MAX_PKT];
+    time_t now = time(NULL);
+
+    tund_test_init_client(&cli);
+    atomic_store_explicit(&cli.last_server_seen,
+                          (uint_fast64_t)(now - TUND_SERVER_TIMEOUT - 1),
+                          memory_order_relaxed);
+    CHECK(client_server_timed_out(&cli, now));
+
+    int len = proto_build_keepalive_ack(buf, now_ms() - 10);
+    client_handle_server_packet(&cli, buf, len);
+
+    CHECK(!client_server_timed_out(&cli, time(NULL)));
+    tund_test_destroy_client(&cli);
+}
+
 static void test_disconnect_requests_stop(void)
 {
     client_t cli = {0};
@@ -161,6 +180,7 @@ int main(void)
     test_data_writes_tun_and_accounts_peer();
     test_keepalive_replies_with_ack();
     test_keepalive_ack_updates_rtt();
+    test_server_packet_refreshes_timeout();
     test_disconnect_requests_stop();
     test_truncated_packet_is_ignored();
 

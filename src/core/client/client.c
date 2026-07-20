@@ -14,6 +14,13 @@ static void *client_keepalive_thread(void *arg)
         slept = 0;
         if (!tund_is_running() || tund_stop_flag_load(&cli->ka_quit)) break;
 
+        if (client_server_timed_out(cli, time(NULL))) {
+            LOG_WARN("Server timed out after %d seconds without a response.",
+                     TUND_SERVER_TIMEOUT);
+            tund_request_stop();
+            break;
+        }
+
         int len = proto_build_keepalive(buf, now_ms());
         if (net_send(cli->sockfd, buf, len, &cli->server_addr) < 0)
             LOG_WARN("Keepalive send failed");
@@ -57,6 +64,7 @@ int client_init(client_t *cli, const config_t *cfg)
     cli->netmask = 0;
     cli->server_rtt_ms = 0;
     cli->has_server_rtt = false;
+    atomic_init(&cli->last_server_seen, 0);
     memset(cli->name, 0, sizeof(cli->name));
     memset(cli->peers, 0, sizeof(cli->peers));
     cli->peer_count = 0;
@@ -79,6 +87,7 @@ int client_init(client_t *cli, const config_t *cfg)
         sock_close(cli->sockfd);
         return -1;
     }
+    client_mark_server_seen(cli);
 
     if (tun_open(&cli->tun) < 0) {
         sock_close(cli->sockfd);

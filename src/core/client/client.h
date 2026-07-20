@@ -12,6 +12,7 @@ typedef struct {
     uint32_t            netmask;                    /* Subnet mask (nbo) */
     uint64_t            server_rtt_ms;
     bool                has_server_rtt;
+    atomic_uint_fast64_t last_server_seen;
     char                name[TUND_NAME_LEN];      /* Display name */
     peer_t              peers[TUND_MAX_PEERS];    /* Known peers */
     int                 peer_count;                 /* Active peer count */
