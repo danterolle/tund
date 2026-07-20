@@ -110,6 +110,7 @@ jobs:
             curl
       - run: make
       - run: ./tund-cli.exe --help
+      - run: make test
       - run: make tools
       - name: Build GUI
         shell: pwsh
