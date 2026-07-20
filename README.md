@@ -57,7 +57,9 @@ C keeps that layer small, explicit and dependency-light. It also made the projec
 
 ### AI-assisted development
 
-AI was used as a pair-programming assistant during development. Generated code did not land unchanged: it was reviewed first, then refactored and tested. Corrections were made before it became part of the project.
+AI was used as a pair-programming assistant during development. The C core matches my own experience and was reviewed, refactored and tested accordingly.
+
+The Flutter GUI is different: I do not know Flutter well. It exists because it was the quickest practical way to provide a cross-platform launcher, so that part relied more heavily on AI assistance and follow-up testing.
 
 ## How it works
 
