@@ -14,7 +14,7 @@
 
 Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge Simulator) LAN parties and direct-IP multiplayer with friends.
 
-It behaves like Radmin VPN, but open source and cross-platform. The core is written in C — Linux and macOS use only system libraries; Windows bundles Wintun for TUN support.
+It is self-hosted, cross-platform, and dependency-light. The core is written in C: Linux and macOS use system networking APIs, while Windows uses Wintun for TUN support.
 
 ## Table of contents
 
