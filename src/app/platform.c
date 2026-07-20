@@ -34,6 +34,8 @@ void app_setup_signals(void)
 
 #else
 
+#include <signal.h>
+
 void app_init_early(void) {}
 
 bool app_stderr_is_tty(void)

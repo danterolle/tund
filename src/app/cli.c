@@ -1,6 +1,7 @@
 #include "cli.h"
 
 #include <getopt.h>
+#include <stdlib.h>
 
 static void print_usage(const char *prog, bool show_desc)
 {

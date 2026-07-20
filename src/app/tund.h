@@ -2,14 +2,12 @@
 #define TUND_H
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdatomic.h>
 #include <string.h>
 #include <errno.h>
 #include <time.h>
-#include <signal.h>
 
 #ifdef _WIN32
 #define _WIN32_WINNT 0x0601
