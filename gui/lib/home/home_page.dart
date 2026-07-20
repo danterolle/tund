@@ -37,6 +37,7 @@ class _TundHomePageState extends State<TundHomePage> {
   bool verbose = false;
   bool showKey = false;
   bool privilegeNoticeAccepted = false;
+  bool stopRequested = false;
   GuiStatus status = GuiStatus.ready;
   GuidedError? guidedError;
 
@@ -77,6 +78,7 @@ class _TundHomePageState extends State<TundHomePage> {
     setState(() {
       status = GuiStatus.starting;
       guidedError = null;
+      stopRequested = false;
       hostPeerTracker.clear();
       hostPeers = const [];
       log.clear();
@@ -95,15 +97,24 @@ class _TundHomePageState extends State<TundHomePage> {
         },
       );
       if (!mounted) return;
+      final stoppedByUser = stopRequested;
       setState(() {
-        status = exitCode == 0 ? GuiStatus.stopped : GuiStatus.failed;
-        guidedError = exitCode == 0 ? null : guideTundFailure(log.toString());
+        status = statusForTundExit(exitCode, stopRequested: stoppedByUser);
+        guidedError = guidedErrorForTundExit(
+          exitCode,
+          stopRequested: stoppedByUser,
+          output: log.toString(),
+        );
+        stopRequested = false;
       });
-      appendLog('\nTunD exited with code $exitCode.\n');
+      appendLog(stoppedByUser
+          ? '\nTunD stopped.\n'
+          : '\nTunD exited with code $exitCode.\n');
     } on TundLaunchException catch (error) {
       if (!mounted) return;
       setState(() {
         status = GuiStatus.failed;
+        stopRequested = false;
         guidedError = GuidedError(
           title: error.title,
           message: error.message,
@@ -114,6 +125,7 @@ class _TundHomePageState extends State<TundHomePage> {
       if (!mounted) return;
       setState(() {
         status = GuiStatus.failed;
+        stopRequested = false;
         guidedError = const GuidedError(
           title: 'Could not start tund-cli',
           message:
@@ -125,7 +137,11 @@ class _TundHomePageState extends State<TundHomePage> {
   }
 
   void stopTund() {
-    setState(() => status = GuiStatus.stopping);
+    setState(() {
+      status = GuiStatus.stopping;
+      stopRequested = true;
+      guidedError = null;
+    });
     appendLog('\nStopping TunD...\n');
     launcher.stop();
   }
@@ -320,4 +336,21 @@ class _TundHomePageState extends State<TundHomePage> {
       onStop: stopTund,
     );
   }
+}
+
+GuiStatus statusForTundExit(int exitCode, {required bool stopRequested}) {
+  if (stopRequested || exitCode == 0) return GuiStatus.stopped;
+  return GuiStatus.failed;
+}
+
+GuidedError? guidedErrorForTundExit(
+  int exitCode, {
+  required bool stopRequested,
+  required String output,
+}) {
+  if (statusForTundExit(exitCode, stopRequested: stopRequested) !=
+      GuiStatus.failed) {
+    return null;
+  }
+  return guideTundFailure(output);
 }

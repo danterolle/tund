@@ -6,6 +6,7 @@ import 'package:tund_gui/app.dart';
 import 'package:tund_gui/core/status.dart';
 import 'package:tund_gui/core/tund_config.dart';
 import 'package:tund_gui/home/home_controls.dart';
+import 'package:tund_gui/home/home_page.dart';
 import 'package:tund_gui/widgets/log_box.dart';
 
 Finder fieldByLabel(String label) {
@@ -24,6 +25,29 @@ Future<void> pumpAppAndAcceptPrivilegeNotice(WidgetTester tester) async {
 }
 
 void main() {
+  test('treats a requested stop as a clean exit', () {
+    expect(statusForTundExit(1, stopRequested: true), GuiStatus.stopped);
+    expect(
+      guidedErrorForTundExit(
+        1,
+        stopRequested: true,
+        output: 'Failed to load wintun.dll',
+      ),
+      isNull,
+    );
+  });
+
+  test('keeps unexpected non-zero exits as failures', () {
+    final error = guidedErrorForTundExit(
+      1,
+      stopRequested: false,
+      output: 'Failed to load wintun.dll',
+    );
+
+    expect(statusForTundExit(1, stopRequested: false), GuiStatus.failed);
+    expect(error?.title, 'Wintun is missing or unavailable');
+  });
+
   testWidgets('shows the privileges notice on startup', (tester) async {
     await tester.pumpWidget(const TundApp());
     await tester.pumpAndSettle();
