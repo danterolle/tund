@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:tund_gui/app.dart';
+import 'package:tund_gui/core/status.dart';
+import 'package:tund_gui/core/tund_config.dart';
+import 'package:tund_gui/home/home_controls.dart';
+import 'package:tund_gui/widgets/log_box.dart';
 
 Finder fieldByLabel(String label) {
   final textField = find.ancestor(
@@ -86,8 +90,7 @@ void main() {
     expect(find.text('Enter the server IP or hostname.'), findsOneWidget);
   });
 
-  testWidgets('generates a network key from the launcher form',
-      (tester) async {
+  testWidgets('generates a network key from the launcher form', (tester) async {
     await pumpAppAndAcceptPrivilegeNotice(tester);
 
     await tester.ensureVisible(find.text('Generate key'));
@@ -102,8 +105,8 @@ void main() {
   });
 
   testWidgets('copies the network key from the launcher form', (tester) async {
-    final messenger = TestDefaultBinaryMessengerBinding
-        .instance.defaultBinaryMessenger;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     Object? clipboardPayload;
     messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
       if (call.method == 'Clipboard.setData') {
@@ -127,8 +130,8 @@ void main() {
   });
 
   testWidgets('shows and copies the host client command', (tester) async {
-    final messenger = TestDefaultBinaryMessengerBinding
-        .instance.defaultBinaryMessenger;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     Object? clipboardPayload;
     messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
       if (call.method == 'Clipboard.setData') {
@@ -160,6 +163,79 @@ void main() {
       'text': 'tund-cli client -s SERVER_IP -p 12345 -k "a-long-random-key"',
     });
     expect(find.text('Client command copied.'), findsOneWidget);
+  });
+
+  testWidgets('can copy the host client command while running', (tester) async {
+    final port = TextEditingController(text: '12345');
+    final server = TextEditingController();
+    final name = TextEditingController();
+    final key = TextEditingController(text: 'a-long-random-key');
+    var copied = false;
+    addTearDown(() {
+      server.dispose();
+      port.dispose();
+      name.dispose();
+      key.dispose();
+    });
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: HomeControls(
+            status: GuiStatus.running,
+            guidedError: null,
+            privilegeMessage: 'Privileges are required.',
+            mode: TundMode.server,
+            running: true,
+            showKey: false,
+            verbose: false,
+            server: server,
+            port: port,
+            name: name,
+            networkKey: key,
+            onModeChanged: (_) {},
+            onToggleKeyVisibility: () {},
+            onGenerateKey: () {},
+            onCopyKey: () async {},
+            onCopyClientCommand: () async {
+              copied = true;
+            },
+            onVerboseChanged: (_) {},
+            onStart: () async {},
+            onStop: () {},
+          ),
+        ),
+      ),
+    ));
+
+    await tester.ensureVisible(find.text('Copy client command'));
+    await tester.tap(find.text('Copy client command'));
+    await tester.pumpAndSettle();
+
+    expect(copied, isTrue);
+  });
+
+  testWidgets('expanded logs keep a bounded vertical scroll area',
+      (tester) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    final text = List.generate(80, (i) => 'log line $i').join('\n');
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 640,
+          height: 320,
+          child: TundLogBox(
+            text: text,
+            controller: controller,
+            expanded: true,
+          ),
+        ),
+      ),
+    ));
+
+    expect(controller.position.maxScrollExtent, greaterThan(0));
   });
 
   testWidgets('does not repeat the privileges dialog after startup acceptance',

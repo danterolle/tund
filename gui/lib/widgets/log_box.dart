@@ -16,6 +16,33 @@ class TundLogBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final logContent = Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: TundColors.bg2,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: TundColors.border),
+      ),
+      child: Scrollbar(
+        controller: controller,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(14),
+          controller: controller,
+          child: SelectableText(
+            text.isEmpty ? 'Logs will appear here after TunD starts.' : text,
+            style: const TextStyle(
+              color: TundColors.muted,
+              fontFamily: 'Cascadia Mono',
+              fontFamilyFallback: ['Consolas', 'monospace'],
+              fontSize: 12.5,
+              height: 1.35,
+            ),
+          ),
+        ),
+      ),
+    );
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -40,37 +67,10 @@ class TundLogBox extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: expanded ? null : 148,
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: TundColors.bg2,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: TundColors.border),
-              ),
-              child: Scrollbar(
-                controller: controller,
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(14),
-                  controller: controller,
-                  child: SelectableText(
-                    text.isEmpty
-                        ? 'Logs will appear here after TunD starts.'
-                        : text,
-                    style: const TextStyle(
-                      color: TundColors.muted,
-                      fontFamily: 'Cascadia Mono',
-                      fontFamilyFallback: ['Consolas', 'monospace'],
-                      fontSize: 12.5,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          if (expanded)
+            Expanded(child: logContent)
+          else
+            SizedBox(height: 148, child: logContent),
         ],
       ),
     );

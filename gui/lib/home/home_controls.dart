@@ -146,7 +146,7 @@ class HomeControls extends StatelessWidget {
                 key: keyValue.text,
                 maskKey: hasKey,
               ),
-              canCopy: !running && hasKey,
+              canCopy: hasKey,
               onCopy: () {
                 onCopyClientCommand();
               },
