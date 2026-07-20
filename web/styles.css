@@ -297,6 +297,23 @@ p {
   padding: 18px;
 }
 
+.preview-grid {
+  display: grid;
+  grid-template-columns: 1.18fr .82fr;
+  gap: 14px;
+}
+
+.preview-grid figure {
+  margin: 0;
+}
+
+.preview-grid figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
 .preview-image {
   display: block;
   width: 100%;
@@ -451,6 +468,10 @@ footer a:hover {
 @media (max-width: 860px) {
   .hero,
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-grid {
     grid-template-columns: 1fr;
   }
 

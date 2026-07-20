@@ -18,11 +18,14 @@ It is self-hosted and cross-platform. The C core stays dependency-light: Linux a
 
 > **Scope:** TunD is for trusted LAN-party groups. It authenticates TunD datagrams and rejects replayed datagrams, but it does **not** encrypt packet contents.
 
+<p align="center">
+  <img src="web/assets/gui-preview.png" width="760" alt="TunD desktop GUI running on Windows">
+</p>
+
 ## Table of contents
 
 - [Project rationale](#project-rationale)
 - [How it works](#how-it-works)
-- [Preview](#preview)
 - [Quick start](#quick-start)
 - [Features](#features)
 - [Game compatibility](#game-compatibility)
@@ -72,12 +75,6 @@ AI was used as a pair-programming assistant during development. Generated code d
 3. All clients automatically discover each other
 4. Traffic is tunneled over UDP through the server
 5. Each client gets a virtual IP in the `10.9.0.0/24` range
-
-## Preview
-
-<p align="center">
-  <img src="web/assets/tui-preview.svg" width="760" alt="TunD terminal UI preview">
-</p>
 
 ## Quick start
 
