@@ -53,6 +53,7 @@ jobs:
           flutter-version: '3.44.6'
           channel: stable
           cache: true
+      - run: brew install clang-format
       - run: make
       - run: make format-check
       - run: make lint
