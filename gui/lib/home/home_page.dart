@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/error_guidance.dart';
+import '../core/host_peer.dart';
 import '../core/key_helpers.dart';
 import '../core/privileges.dart';
 import '../core/share_command.dart';
@@ -29,8 +30,10 @@ class _TundHomePageState extends State<TundHomePage> {
   final log = StringBuffer();
   final logScroll = ScrollController();
   final launcher = TundLauncher();
+  final hostPeerTracker = HostPeerTracker();
 
   TundMode mode = TundMode.server;
+  List<HostPeer> hostPeers = const [];
   bool verbose = false;
   bool showKey = false;
   bool privilegeNoticeAccepted = false;
@@ -74,6 +77,8 @@ class _TundHomePageState extends State<TundHomePage> {
     setState(() {
       status = GuiStatus.starting;
       guidedError = null;
+      hostPeerTracker.clear();
+      hostPeers = const [];
       log.clear();
     });
     appendLog(
@@ -199,7 +204,13 @@ class _TundHomePageState extends State<TundHomePage> {
 
   void appendLog(String text) {
     if (!mounted) return;
-    setState(() => log.write(text));
+    setState(() {
+      log.write(text);
+      if (mode == TundMode.server) {
+        hostPeerTracker.applyLog(text);
+        hostPeers = hostPeerTracker.peers;
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (logScroll.hasClients) {
         logScroll.jumpTo(logScroll.position.maxScrollExtent);
@@ -245,10 +256,20 @@ class _TundHomePageState extends State<TundHomePage> {
                   const SizedBox(width: 20),
                   Expanded(
                     flex: 5,
-                    child: TundLogBox(
-                      text: log.toString(),
-                      controller: logScroll,
-                      expanded: true,
+                    child: Column(
+                      children: [
+                        if (mode == TundMode.server) ...[
+                          TundPeerTable(peers: hostPeers, running: running),
+                          const SizedBox(height: 18),
+                        ],
+                        Expanded(
+                          child: TundLogBox(
+                            text: log.toString(),
+                            controller: logScroll,
+                            expanded: true,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -260,6 +281,10 @@ class _TundHomePageState extends State<TundHomePage> {
                 children: [
                   TundCard(child: controls()),
                   const SizedBox(height: 18),
+                  if (mode == TundMode.server) ...[
+                    TundPeerTable(peers: hostPeers, running: running),
+                    const SizedBox(height: 18),
+                  ],
                   TundLogBox(text: log.toString(), controller: logScroll),
                 ],
               ),

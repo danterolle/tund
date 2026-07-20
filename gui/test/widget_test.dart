@@ -37,6 +37,8 @@ void main() {
         findsOneWidget);
     expect(find.text('Host a LAN'), findsOneWidget);
     expect(find.text('Join a LAN'), findsOneWidget);
+    expect(find.text('Connected peers'), findsOneWidget);
+    expect(find.text('Start hosting to see connected peers.'), findsOneWidget);
   });
 
   testWidgets('switches between host and join forms', (tester) async {
@@ -56,6 +58,7 @@ void main() {
         find.text(
             'This computer becomes the hub at 10.9.0.1. Allow inbound UDP on the selected port.'),
         findsNothing);
+    expect(find.text('Connected peers'), findsNothing);
   });
 
   testWidgets('shows validation errors before launching', (tester) async {
