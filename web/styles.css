@@ -254,10 +254,6 @@ p {
   gap: 14px;
 }
 
-.grid.two-column {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .card {
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -455,10 +451,6 @@ footer a:hover {
 @media (max-width: 860px) {
   .hero,
   .grid {
-    grid-template-columns: 1fr;
-  }
-
-  .grid.two-column {
     grid-template-columns: 1fr;
   }
 
