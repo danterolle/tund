@@ -4,50 +4,53 @@ SITEST_SRC := tools/sitest/sitest.c
 SITEST_HDR := tools/sitest/sitest.h
 TUND_TEST_SUPPORT_SRC := tests/tund_test_support.c
 TUND_TEST_SUPPORT_HDR := tests/tund_test_support.h
-SITEST_SRCS := $(SITEST_SRC)
 TUND_TEST_SUPPORT_SRCS := $(TUND_TEST_SUPPORT_SRC) $(PROTO_SRC)
-TEST_PROTOCOL_SRCS := tests/test_protocol.c
-TEST_SERVER_PEERS_SRCS := tests/test_server_peers.c src/core/server/peers.c
-TEST_SERVER_DATA_SRCS := tests/test_server_data.c src/core/server/data.c src/core/server/peers.c
-TEST_SERVER_HANDLERS_SRCS := tests/test_server_handlers.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c
-TEST_CLIENT_PEERS_SRCS := tests/test_client_peers.c src/core/client/peers.c
-TEST_CLIENT_HANDLERS_SRCS := tests/test_client_handlers.c src/core/client/handlers.c src/core/client/peers.c src/core/client/session.c
-
-TEST_TARGET := $(DIST)/test_protocol$(EXEEXT)
-TEST_SERVER_PEERS_TARGET := $(DIST)/test_server_peers$(EXEEXT)
-TEST_SERVER_DATA_TARGET := $(DIST)/test_server_data$(EXEEXT)
-TEST_SERVER_HANDLERS_TARGET := $(DIST)/test_server_handlers$(EXEEXT)
-TEST_CLIENT_PEERS_TARGET := $(DIST)/test_client_peers$(EXEEXT)
-TEST_CLIENT_HANDLERS_TARGET := $(DIST)/test_client_handlers$(EXEEXT)
-TEST_TARGETS := $(TEST_TARGET) $(TEST_SERVER_PEERS_TARGET) $(TEST_SERVER_DATA_TARGET) $(TEST_SERVER_HANDLERS_TARGET) $(TEST_CLIENT_PEERS_TARGET) $(TEST_CLIENT_HANDLERS_TARGET)
-SAN_TEST_TARGET := $(DIST)/test_protocol_sanitize$(EXEEXT)
-SAN_SERVER_PEERS_TARGET := $(DIST)/test_server_peers_sanitize$(EXEEXT)
-SAN_SERVER_DATA_TARGET := $(DIST)/test_server_data_sanitize$(EXEEXT)
-SAN_SERVER_HANDLERS_TARGET := $(DIST)/test_server_handlers_sanitize$(EXEEXT)
-SAN_CLIENT_PEERS_TARGET := $(DIST)/test_client_peers_sanitize$(EXEEXT)
-SAN_CLIENT_HANDLERS_TARGET := $(DIST)/test_client_handlers_sanitize$(EXEEXT)
-SAN_TEST_TARGETS := $(SAN_TEST_TARGET) $(SAN_SERVER_PEERS_TARGET) $(SAN_SERVER_DATA_TARGET) $(SAN_SERVER_HANDLERS_TARGET) $(SAN_CLIENT_PEERS_TARGET) $(SAN_CLIENT_HANDLERS_TARGET)
 
 SITEST_LIB := $(DIST)/libsitest.a
-SITEST_OBJS := $(addprefix $(DIST)/test-obj/,$(SITEST_SRCS:.c=.o))
 TUND_TEST_SUPPORT_LIB := $(DIST)/libtund-test-support.a
-TUND_TEST_SUPPORT_OBJS := $(addprefix $(DIST)/test-obj/,$(TUND_TEST_SUPPORT_SRCS:.c=.o))
 SAN_SITEST_LIB := $(DIST)/libsitest_sanitize.a
-SAN_SITEST_OBJS := $(addprefix $(DIST)/test-obj-sanitize/,$(SITEST_SRCS:.c=.o))
 SAN_TUND_TEST_SUPPORT_LIB := $(DIST)/libtund-test-support_sanitize.a
+
+SITEST_OBJS := $(DIST)/test-obj/$(SITEST_SRC:.c=.o)
+TUND_TEST_SUPPORT_OBJS := $(addprefix $(DIST)/test-obj/,$(TUND_TEST_SUPPORT_SRCS:.c=.o))
+SAN_SITEST_OBJS := $(DIST)/test-obj-sanitize/$(SITEST_SRC:.c=.o)
 SAN_TUND_TEST_SUPPORT_OBJS := $(addprefix $(DIST)/test-obj-sanitize/,$(TUND_TEST_SUPPORT_SRCS:.c=.o))
 
+TEST_NAMES := \
+	protocol \
+	server_peers \
+	server_data \
+	server_handlers \
+	client_peers \
+	client_handlers
+
+test_protocol_SRCS := tests/test_protocol.c $(PROTO_SRC)
+test_protocol_LIBS := $(SITEST_LIB)
+test_protocol_SAN_LIBS := $(SAN_SITEST_LIB)
+test_protocol_DEPS := src/protocol/protocol.h $(SITEST_HDR)
+
+test_server_peers_SRCS := tests/test_server_peers.c src/core/server/peers.c
+test_server_data_SRCS := tests/test_server_data.c src/core/server/data.c src/core/server/peers.c
+test_server_handlers_SRCS := tests/test_server_handlers.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c
+test_client_peers_SRCS := tests/test_client_peers.c src/core/client/peers.c
+test_client_handlers_SRCS := tests/test_client_handlers.c src/core/client/handlers.c src/core/client/peers.c src/core/client/session.c
+
+TEST_TARGETS := $(addprefix $(DIST)/test_,$(addsuffix $(EXEEXT),$(TEST_NAMES)))
+SAN_TEST_TARGETS := $(addprefix $(DIST)/test_,$(addsuffix _sanitize$(EXEEXT),$(TEST_NAMES)))
+
 test: $(TEST_TARGETS)
-	./$(TEST_TARGET)
-	./$(TEST_SERVER_PEERS_TARGET)
-	./$(TEST_SERVER_DATA_TARGET)
-	./$(TEST_SERVER_HANDLERS_TARGET)
-	./$(TEST_CLIENT_PEERS_TARGET)
-	./$(TEST_CLIENT_HANDLERS_TARGET)
+	@set -e; for test_bin in $(TEST_TARGETS); do "./$$test_bin"; done
+
+sanitize: $(SAN_TEST_TARGETS)
+	@set -e; for test_bin in $(SAN_TEST_TARGETS); do "./$$test_bin"; done
 
 $(DIST)/test-obj/%.o: %.c $(HDRS) $(SITEST_HDR) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(TEST_INCLUDES) -c -o $@ $<
+
+$(DIST)/test-obj-sanitize/%.o: %.c $(HDRS) $(SITEST_HDR) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -c -o $@ $<
 
 $(SITEST_LIB): $(SITEST_OBJS) | $(DIST)
 	$(AR) rcs $@ $(SITEST_OBJS)
@@ -55,56 +58,18 @@ $(SITEST_LIB): $(SITEST_OBJS) | $(DIST)
 $(TUND_TEST_SUPPORT_LIB): $(TUND_TEST_SUPPORT_OBJS) | $(DIST)
 	$(AR) rcs $@ $(TUND_TEST_SUPPORT_OBJS)
 
-$(TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(SITEST_LIB) $(PROTO_SRC) src/protocol/protocol.h $(SITEST_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(SITEST_LIB) $(LDFLAGS)
-
-$(TEST_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_SERVER_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
-
-$(TEST_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_SERVER_DATA_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
-
-$(TEST_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
-
-$(TEST_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
-
-$(TEST_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(SITEST_LIB) $(TUND_TEST_SUPPORT_LIB) $(LDFLAGS)
-
-sanitize: $(SAN_TEST_TARGETS)
-	./$(SAN_TEST_TARGET)
-	./$(SAN_SERVER_PEERS_TARGET)
-	./$(SAN_SERVER_DATA_TARGET)
-	./$(SAN_SERVER_HANDLERS_TARGET)
-	./$(SAN_CLIENT_PEERS_TARGET)
-	./$(SAN_CLIENT_HANDLERS_TARGET)
-
-$(DIST)/test-obj-sanitize/%.o: %.c $(HDRS) $(SITEST_HDR) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -c -o $@ $<
-
 $(SAN_SITEST_LIB): $(SAN_SITEST_OBJS) | $(DIST)
 	$(AR) rcs $@ $(SAN_SITEST_OBJS)
 
 $(SAN_TUND_TEST_SUPPORT_LIB): $(SAN_TUND_TEST_SUPPORT_OBJS) | $(DIST)
 	$(AR) rcs $@ $(SAN_TUND_TEST_SUPPORT_OBJS)
 
-$(SAN_TEST_TARGET): $(TEST_PROTOCOL_SRCS) $(SAN_SITEST_LIB) $(PROTO_SRC) src/protocol/protocol.h $(SITEST_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_PROTOCOL_SRCS) $(PROTO_SRC) $(SAN_SITEST_LIB) $(LDFLAGS) $(SAN_FLAGS)
+define test_rule
+$(DIST)/test_$(1)$(EXEEXT): $$(test_$(1)_SRCS) $$(SITEST_LIB) $$(TUND_TEST_SUPPORT_LIB) $$(HDRS) $$(TUND_TEST_SUPPORT_HDR) $$(test_$(1)_DEPS) | $$(DIST)
+	$$(CC) $$(CFLAGS) $$(TEST_INCLUDES) -o $$@ $$(test_$(1)_SRCS) $$(or $$(test_$(1)_LIBS),$$(SITEST_LIB) $$(TUND_TEST_SUPPORT_LIB)) $$(LDFLAGS)
 
-$(SAN_SERVER_PEERS_TARGET): $(TEST_SERVER_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
+$(DIST)/test_$(1)_sanitize$(EXEEXT): $$(test_$(1)_SRCS) $$(SAN_SITEST_LIB) $$(SAN_TUND_TEST_SUPPORT_LIB) $$(HDRS) $$(TUND_TEST_SUPPORT_HDR) $$(test_$(1)_DEPS) | $$(DIST)
+	$$(CC) $$(CFLAGS) $$(TEST_INCLUDES) $$(SAN_FLAGS) -o $$@ $$(test_$(1)_SRCS) $$(or $$(test_$(1)_SAN_LIBS),$$(SAN_SITEST_LIB) $$(SAN_TUND_TEST_SUPPORT_LIB)) $$(LDFLAGS) $$(SAN_FLAGS)
+endef
 
-$(SAN_SERVER_DATA_TARGET): $(TEST_SERVER_DATA_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_DATA_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
-
-$(SAN_SERVER_HANDLERS_TARGET): $(TEST_SERVER_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_SERVER_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
-
-$(SAN_CLIENT_PEERS_TARGET): $(TEST_CLIENT_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_PEERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
-
-$(SAN_CLIENT_HANDLERS_TARGET): $(TEST_CLIENT_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(HDRS) $(TUND_TEST_SUPPORT_HDR) | $(DIST)
-	$(CC) $(CFLAGS) $(TEST_INCLUDES) $(SAN_FLAGS) -o $@ $(TEST_CLIENT_HANDLERS_SRCS) $(SAN_SITEST_LIB) $(SAN_TUND_TEST_SUPPORT_LIB) $(LDFLAGS) $(SAN_FLAGS)
+$(foreach test_name,$(TEST_NAMES),$(eval $(call test_rule,$(test_name))))
