@@ -218,7 +218,6 @@ class HomeControls extends StatelessWidget {
       controller: name,
       label: 'Display name',
       running: running,
-      enabled: mode == TundMode.client,
       maxLength: 31,
     );
 

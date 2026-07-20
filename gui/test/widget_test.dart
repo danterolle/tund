@@ -65,6 +65,16 @@ void main() {
     expect(find.text('Connected peers'), findsNothing);
   });
 
+  testWidgets('allows editing the display name in host mode', (tester) async {
+    await pumpAppAndAcceptPrivilegeNotice(tester);
+
+    await tester.enterText(fieldByLabel('Display name'), 'Host PC');
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<EditableText>(fieldByLabel('Display name'));
+    expect(field.controller.text, 'Host PC');
+  });
+
   testWidgets('shows validation errors before launching', (tester) async {
     await pumpAppAndAcceptPrivilegeNotice(tester);
 
