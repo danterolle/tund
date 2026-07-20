@@ -1,5 +1,6 @@
 #include "tund.h"
 #include "cli.h"
+#include "log.h"
 #include "platform.h"
 #include "server.h"
 #include "client.h"

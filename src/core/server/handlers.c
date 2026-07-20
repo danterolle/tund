@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "log.h"
 
 static int build_peer_list_from_snapshot(uint8_t *buf,
                                          const msg_peer_entry_t *entries,

@@ -1,4 +1,5 @@
 #include "network.h"
+#include "log.h"
 #include "tui.h"
 
 #ifdef _WIN32

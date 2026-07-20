@@ -2,6 +2,7 @@
 
 #include "tun.h"
 #include "tund.h"
+#include "log.h"
 
 #include <fcntl.h>
 #include <sys/ioctl.h>

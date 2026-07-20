@@ -1,6 +1,7 @@
 #ifdef __APPLE__
 
 #include "internal.h"
+#include "log.h"
 
 int tun_set_ip(tun_device_t *dev, uint32_t ip, uint32_t netmask)
 {

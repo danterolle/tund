@@ -1,5 +1,7 @@
 #include "cli.h"
 
+#include "log.h"
+
 #include <getopt.h>
 #include <stdlib.h>
 

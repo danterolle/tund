@@ -113,7 +113,6 @@ static inline uint64_t now_ms(void)
 
 #endif
 
-#include "log.h"
 #include "protocol.h"
 
 #define TUND_MAX_PEERS    253     /* 10.9.0.2 .. 10.9.0.254 */

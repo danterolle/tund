@@ -1,6 +1,7 @@
 #include "protocol.h"
 #include "server.h"
 #include "../../src/core/server/internal.h"
+#include "log.h"
 #include "network.h"
 #include "tun.h"
 

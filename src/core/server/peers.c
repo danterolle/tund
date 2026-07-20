@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "log.h"
 
 uint32_t server_alloc_ip(const server_t *srv)
 {

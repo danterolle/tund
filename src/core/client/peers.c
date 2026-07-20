@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "log.h"
 
 void client_update_peer(client_t *cli, uint32_t vip, const char *name, bool online)
 {

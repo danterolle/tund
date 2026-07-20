@@ -3,6 +3,7 @@
 #include "tun.h"
 #include "tund.h"
 #include "internal.h"
+#include "log.h"
 
 #include <sys/kern_control.h>
 #include <sys/sys_domain.h>

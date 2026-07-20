@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "log.h"
 
 static int handle_assign(client_t *cli, const uint8_t *payload, uint16_t len)
 {

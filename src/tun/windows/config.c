@@ -1,6 +1,7 @@
 #ifdef _WIN32
 
 #include "internal.h"
+#include "log.h"
 
 static uint8_t prefix_len_from_netmask(uint32_t netmask_nbo)
 {

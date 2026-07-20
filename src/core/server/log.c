@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "log.h"
 
 void server_log_banner(const server_t *srv)
 {

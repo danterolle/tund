@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "log.h"
 
 int server_init(server_t *srv, const config_t *cfg)
 {

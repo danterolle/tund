@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "log.h"
 
 static void *client_keepalive_thread(void *arg)
 {

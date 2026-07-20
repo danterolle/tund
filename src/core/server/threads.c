@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "log.h"
 
 void *server_timeout_thread(void *arg)
 {

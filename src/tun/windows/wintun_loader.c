@@ -1,6 +1,7 @@
 #ifdef _WIN32
 
 #include "internal.h"
+#include "log.h"
 
 static HMODULE g_wintun_dll = NULL;
 

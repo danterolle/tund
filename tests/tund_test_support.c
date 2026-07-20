@@ -1,4 +1,5 @@
 #include "tund_test_support.h"
+#include "log.h"
 
 #include <stdarg.h>
 #include <stdio.h>
