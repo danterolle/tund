@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TunD - virtual LAN for LAN-party games</title>
+<meta name="description" content="TunD creates a small self-hosted virtual IPv4 LAN for trusted LAN-party games and direct-IP multiplayer.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <div class="brand">
+          <svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="0" y="0" width="140" height="140" rx="24" fill="#1e2327" stroke="#333a40" stroke-width="1"/>
+            <g transform="translate(70,70)">
+              <line x1="0" y1="0" x2="0" y2="-42" stroke="#85B7EB" stroke-width="4"/>
+              <line x1="0" y1="0" x2="40" y2="-13" stroke="#85B7EB" stroke-width="4"/>
+              <line x1="0" y1="0" x2="25" y2="34" stroke="#85B7EB" stroke-width="4"/>
+              <line x1="0" y1="0" x2="-25" y2="34" stroke="#85B7EB" stroke-width="4"/>
+              <line x1="0" y1="0" x2="-40" y2="-13" stroke="#85B7EB" stroke-width="4"/>
+              <circle cx="0" cy="0" r="14" fill="#378ADD"/>
+              <circle cx="0" cy="-42" r="8" fill="#85B7EB"/>
+              <circle cx="40" cy="-13" r="8" fill="#85B7EB"/>
+              <circle cx="25" cy="34" r="8" fill="#85B7EB"/>
+              <circle cx="-25" cy="34" r="8" fill="#85B7EB"/>
+              <circle cx="-40" cy="-13" r="8" fill="#85B7EB"/>
+            </g>
+          </svg>
+          <h1>TunD</h1>
+        </div>
+        <span class="badge"><i class="ti ti-rocket"></i>Release v1.18</span>
+        <h2>A small virtual LAN for trusted LAN-party games.</h2>
+        <p class="hero-copy">
+          TunD creates a self-hosted IPv4 tunnel for games like Artemis and direct-IP multiplayer. Use the desktop GUI when you want a launcher, or the CLI when you want one binary and a terminal.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#downloads"><i class="ti ti-download"></i>Download v1.18</a>
+          <a class="button" href="#quickstart"><i class="ti ti-terminal-2"></i>Quick start</a>
+          <a class="button" href="https://github.com/danterolle/tund"><i class="ti ti-brand-github"></i>Source</a>
+        </div>
+      </div>
+
+      <aside class="hero-panel" aria-label="Project summary">
+        <div class="panel-header">
+          <span class="panel-title"><i class="ti ti-info-circle"></i>What it does</span>
+        </div>
+        <div class="panel-body">
+          <div class="facts">
+            <div class="fact">
+              <i class="ti ti-network"></i>
+              <div><strong>Virtual subnet</strong><span>Fixed IPv4 LAN at 10.9.0.0/24 with automatic peer addresses.</span></div>
+            </div>
+            <div class="fact">
+              <i class="ti ti-hierarchy-3"></i>
+              <div><strong>Hub and spoke</strong><span>One reachable host relays packets between clients behind NAT.</span></div>
+            </div>
+            <div class="fact">
+              <i class="ti ti-shield-check"></i>
+              <div><strong>Authenticated</strong><span>Packets are checked with the shared key and replay window.</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section" id="downloads">
+      <div class="section-head">
+        <h2>Downloads</h2>
+        <p>Use the GUI bundle for the easiest start, or the standalone CLI for terminals, scripts, and headless hosts.</p>
+      </div>
+      <div class="grid">
+        <article class="card download-card">
+          <h3><i class="ti ti-brand-windows"></i>Windows</h3>
+          <p>Includes the GUI, CLI, Flutter runtime files, and <code>wintun.dll</code>. Keep every extracted file in the same folder.</p>
+          <a class="button primary" href="https://github.com/danterolle/tund/releases/download/v1.18/tund-windows-x86_64.zip">
+            <i class="ti ti-download"></i>Download bundle
+          </a>
+        </article>
+        <article class="card download-card">
+          <h3><i class="ti ti-brand-apple"></i>macOS</h3>
+          <p>Universal Apple Silicon and Intel builds. Choose the GUI launcher or the standalone CLI binary.</p>
+          <a class="button primary" href="https://github.com/danterolle/tund/releases/download/v1.18/tund-gui-darwin-universal.zip">
+            <i class="ti ti-download"></i>Download GUI
+          </a>
+          <a class="button" href="https://github.com/danterolle/tund/releases/download/v1.18/tund-cli-darwin-universal">
+            <i class="ti ti-terminal-2"></i>Download CLI
+          </a>
+        </article>
+        <article class="card download-card">
+          <h3><i class="ti ti-brand-debian"></i>Linux</h3>
+          <p>Choose the desktop GUI bundle or the standalone CLI binary for terminal-first usage.</p>
+          <a class="button primary" href="https://github.com/danterolle/tund/releases/download/v1.18/tund-gui-linux-x86_64.tar.gz">
+            <i class="ti ti-download"></i>Download GUI
+          </a>
+          <a class="button" href="https://github.com/danterolle/tund/releases/download/v1.18/tund-cli-linux-x86_64">
+            <i class="ti ti-terminal-2"></i>Download CLI
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="quickstart">
+      <div class="section-head">
+        <h2>Quick start</h2>
+        <p>Run one reachable machine as the host, then connect each player with the same shared network key.</p>
+      </div>
+      <div class="quickstart">
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-title"><i class="ti ti-server"></i>Host</span>
+            <button class="copy-btn" data-copy="sudo ./tund-cli server -k &quot;a-long-random-key&quot;"><i class="ti ti-copy"></i>Copy</button>
+          </div>
+          <pre><span class="comment"># on the machine that should host the virtual LAN</span>
+<span class="cmd">sudo ./tund-cli server</span> -k <span class="str">"a-long-random-key"</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-title"><i class="ti ti-device-gamepad-2"></i>Join</span>
+            <button class="copy-btn" data-copy="sudo ./tund-cli client -s &lt;server_ip&gt; -k &quot;a-long-random-key&quot;"><i class="ti ti-copy"></i>Copy</button>
+          </div>
+          <pre><span class="comment"># on every machine that should join</span>
+<span class="cmd">sudo ./tund-cli client</span> -s &lt;server_ip&gt; -k <span class="str">"a-long-random-key"</span></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid">
+        <article class="card">
+          <h3><i class="ti ti-plug-connected"></i>No accounts</h3>
+          <p>There is no registration service or hosted backend. You only need a reachable host IP, UDP port, and shared key.</p>
+        </article>
+        <article class="card">
+          <h3><i class="ti ti-broadcast"></i>LAN-style games</h3>
+          <p>Built for direct-IP IPv4 games and LAN-party workflows. It transports IPv4 packets, including subnet broadcast.</p>
+        </article>
+        <article class="card">
+          <h3><i class="ti ti-code"></i>C core, GUI launcher</h3>
+          <p>The tunnel is implemented in C. The Flutter GUI starts the existing CLI instead of reimplementing networking.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="notice">
+        <i class="ti ti-alert-triangle"></i>
+        <div>
+          <strong>Authenticated, not encrypted.</strong>
+          <p>TunD rejects packets without the shared key, but packet contents are not confidential. Use it with trusted groups and trusted networks, not as a privacy VPN.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Platform notes</h2>
+        <p>The tunnel needs administrator/root privileges because it creates and configures a virtual network interface.</p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <h3><i class="ti ti-brand-windows"></i>Windows firewall</h3>
+          <p>If this machine is the host, allow inbound UDP 9909. ICMP ping can still be blocked without affecting game traffic.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-title">netsh</span>
+              <button class="copy-btn" data-copy="netsh advfirewall firewall add rule name=&quot;TunD&quot; dir=in action=allow protocol=udp localport=9909"><i class="ti ti-copy"></i>Copy</button>
+            </div>
+            <pre><span class="cmd">netsh advfirewall firewall add rule name="TunD" dir=in action=allow protocol=udp localport=9909</span></pre>
+          </div>
+        </article>
+        <article class="card">
+          <h3><i class="ti ti-brand-apple"></i>macOS first run</h3>
+          <p>If macOS blocks the unsigned app or binary, clear the quarantine flag once after extracting the release.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-title">quarantine</span>
+              <button class="copy-btn" data-copy="xattr -dr com.apple.quarantine ./tund-gui-darwin-universal&#10;xattr -d com.apple.quarantine ./tund-cli-darwin-universal"><i class="ti ti-copy"></i>Copy</button>
+            </div>
+            <pre><span class="cmd">xattr -dr com.apple.quarantine ./tund-gui-darwin-universal</span>
+<span class="cmd">xattr -d com.apple.quarantine ./tund-cli-darwin-universal</span></pre>
+          </div>
+        </article>
+        <article class="card">
+          <h3><i class="ti ti-shield-lock"></i>Linux host firewall</h3>
+          <p>Clients usually only need outbound UDP. Hosts must allow inbound UDP on the selected port.</p>
+          <ol class="steps">
+            <li><span class="step-number">1</span><span>Ubuntu/Debian: <code>sudo ufw allow 9909/udp</code></span></li>
+            <li><span class="step-number">2</span><span>Fedora/RHEL: <code>sudo firewall-cmd --add-port=9909/udp --permanent</code></span></li>
+            <li><span class="step-number">3</span><span>Then test with direct game traffic or <code>nc</code> if ping is blocked.</span></li>
+          </ol>
+        </article>
+      </div>
+    </section>
+
+    <footer>
+      <a href="https://github.com/danterolle/tund"><i class="ti ti-brand-github"></i>Repository</a>
+      <a href="https://github.com/danterolle/tund/releases"><i class="ti ti-package"></i>Releases</a>
+      <a href="https://github.com/danterolle/tund/blob/main/docs/USAGE.md"><i class="ti ti-book"></i>Usage</a>
+      <a href="https://github.com/danterolle/tund/blob/main/docs/TECHNICAL.md"><i class="ti ti-file-text"></i>Technical docs</a>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
