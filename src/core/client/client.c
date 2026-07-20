@@ -66,6 +66,7 @@ int client_init(client_t *cli, const config_t *cfg)
     cli->server_rtt_ms = 0;
     cli->has_server_rtt = false;
     atomic_init(&cli->last_server_seen, 0);
+    proto_replay_reset(&cli->server_replay);
     memset(cli->name, 0, sizeof(cli->name));
     memset(cli->peers, 0, sizeof(cli->peers));
     cli->peer_count = 0;

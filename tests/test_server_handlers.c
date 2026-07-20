@@ -150,6 +150,30 @@ static void test_keepalive_ack_updates_rtt(void)
     tund_test_destroy_server(&srv);
 }
 
+static void test_replayed_data_is_ignored(void)
+{
+    server_t srv = {0};
+    struct sockaddr_in first = tund_test_addr(0xC0000201, 10001);
+    struct sockaddr_in second = tund_test_addr(0xC0000202, 10002);
+    uint8_t pkt[20];
+    uint8_t buf[TUND_MAX_PKT];
+
+    tund_test_init_server(&srv);
+    register_peer(&srv, &first, "alpha");
+    register_peer(&srv, &second, "beta");
+    tund_test_build_ipv4_packet(pkt, srv.peers[0].virt_ip, srv.peers[1].virt_ip);
+    int len = proto_build_data(buf, pkt, sizeof(pkt));
+    tund_test_reset_io();
+
+    server_handle_packet(&srv, buf, len, &first);
+    server_handle_packet(&srv, buf, len, &first);
+
+    CHECK(tund_test_send_count == 1);
+    CHECK(srv.peers[0].bytes_in == sizeof(pkt));
+    CHECK(srv.peers[1].bytes_out == sizeof(pkt));
+    tund_test_destroy_server(&srv);
+}
+
 static void test_invalid_packets_do_not_register_peer(void)
 {
     server_t srv = {0};
@@ -176,6 +200,7 @@ int main(void)
     test_disconnect_marks_peer_inactive_and_broadcasts_leave();
     test_keepalive_replies_with_ack();
     test_keepalive_ack_updates_rtt();
+    test_replayed_data_is_ignored();
     test_invalid_packets_do_not_register_peer();
 
     return sitest_finish("server handler tests");

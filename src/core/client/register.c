@@ -78,6 +78,13 @@ int client_register(client_t *cli)
             LOG_WARN("Server sent a truncated handshake reply.");
             continue;
         }
+        uint64_t sequence = 0;
+        if (!proto_read_sequence(buf, &sequence) ||
+            !proto_replay_accept(&cli->server_replay, sequence)) {
+            bad = true;
+            LOG_WARN("Server sent a replayed handshake reply.");
+            continue;
+        }
         if (type == MSG_ASSIGN && handle_assign(cli, buf + TUND_HDR_SIZE, payload_len))
             return 0;
         bad = true;

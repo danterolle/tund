@@ -151,6 +151,7 @@ typedef struct {
     uint64_t            bytes_out;
     uint64_t            rtt_ms;
     bool                has_rtt;
+    proto_replay_window_t replay;
 } peer_t;
 
 typedef enum {

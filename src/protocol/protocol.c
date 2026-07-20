@@ -1,12 +1,16 @@
 #include "protocol.h"
 
+#include <stdatomic.h>
 #include <string.h>
+#include <time.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
 #include <arpa/inet.h>
 #endif
+
+static uint64_t proto_next_sequence(void);
 
 int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_len)
 {
@@ -15,8 +19,39 @@ int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_len)
     buf[2] = type;
     buf[3] = (uint8_t)(payload_len >> 8);
     buf[4] = (uint8_t)(payload_len & 0xFF);
+    uint64_t sequence = proto_next_sequence();
+    for (int i = 7; i >= 0; i--) {
+        buf[TUND_SEQUENCE_OFFSET + i] = (uint8_t)(sequence & 0xFF);
+        sequence >>= 8;
+    }
     memset(buf + TUND_AUTH_TAG_OFFSET, 0, TUND_AUTH_TAG_SIZE);
     return TUND_HDR_SIZE;
+}
+
+static atomic_uint_fast64_t g_proto_next_sequence = ATOMIC_VAR_INIT(0);
+
+static uint64_t proto_initial_sequence(void)
+{
+    uint64_t now = (uint64_t)time(NULL);
+    uint64_t addr = (uint64_t)(uintptr_t)&g_proto_next_sequence;
+    uint64_t seed = (now << 32) ^ (addr & 0xFFFFFFFFULL);
+    return seed == 0 ? 1 : seed;
+}
+
+static uint64_t proto_next_sequence(void)
+{
+    uint_fast64_t current =
+        atomic_load_explicit(&g_proto_next_sequence, memory_order_relaxed);
+    if (current == 0) {
+        uint_fast64_t expected = 0;
+        atomic_compare_exchange_strong_explicit(&g_proto_next_sequence,
+                                                &expected,
+                                                (uint_fast64_t)proto_initial_sequence(),
+                                                memory_order_relaxed,
+                                                memory_order_relaxed);
+    }
+    return (uint64_t)atomic_fetch_add_explicit(&g_proto_next_sequence, 1,
+                                               memory_order_relaxed) + 1;
 }
 
 static uint64_t proto_rotl64(uint64_t x, int b)
@@ -29,6 +64,14 @@ static uint64_t proto_load64_le(const uint8_t *p)
     uint64_t v = 0;
     for (int i = 0; i < 8; i++)
         v |= (uint64_t)p[i] << (8 * i);
+    return v;
+}
+
+static uint64_t proto_load64_be(const uint8_t *p)
+{
+    uint64_t v = 0;
+    for (int i = 0; i < 8; i++)
+        v = (v << 8) | p[i];
     return v;
 }
 
@@ -96,6 +139,51 @@ int proto_read_hdr(const uint8_t *buf, uint8_t *type, uint16_t *payload_len)
     *type = buf[2];
     *payload_len = (uint16_t)((buf[3] << 8) | buf[4]);
     return 0;
+}
+
+bool proto_read_sequence(const uint8_t *buf, uint64_t *sequence)
+{
+    uint64_t value = proto_load64_be(buf + TUND_SEQUENCE_OFFSET);
+    if (value == 0)
+        return false;
+    *sequence = value;
+    return true;
+}
+
+void proto_replay_reset(proto_replay_window_t *window)
+{
+    window->highest = 0;
+    window->seen = 0;
+}
+
+bool proto_replay_accept(proto_replay_window_t *window, uint64_t sequence)
+{
+    if (sequence == 0)
+        return false;
+
+    if (window->highest == 0) {
+        window->highest = sequence;
+        window->seen = 1;
+        return true;
+    }
+
+    if (sequence > window->highest) {
+        uint64_t shift = sequence - window->highest;
+        window->seen = shift >= 64 ? 1 : (window->seen << shift) | 1;
+        window->highest = sequence;
+        return true;
+    }
+
+    uint64_t age = window->highest - sequence;
+    if (age >= 64)
+        return false;
+
+    uint64_t bit = 1ULL << age;
+    if ((window->seen & bit) != 0)
+        return false;
+
+    window->seen |= bit;
+    return true;
 }
 
 int proto_build_register(uint8_t *buf, const char *name)

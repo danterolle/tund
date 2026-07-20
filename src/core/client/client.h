@@ -13,6 +13,7 @@ typedef struct {
     uint64_t            server_rtt_ms;
     bool                has_server_rtt;
     atomic_uint_fast64_t last_server_seen;
+    proto_replay_window_t server_replay;
     char                name[TUND_NAME_LEN];      /* Display name */
     peer_t              peers[TUND_MAX_PEERS];    /* Known peers */
     int                 peer_count;                 /* Active peer count */

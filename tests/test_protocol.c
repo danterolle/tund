@@ -32,6 +32,9 @@ static void test_header_roundtrip(void)
     CHECK(buf[2] == MSG_DATA);
     CHECK(buf[3] == 0x12);
     CHECK(buf[4] == 0x34);
+    uint64_t sequence = 0;
+    CHECK(proto_read_sequence(buf, &sequence));
+    CHECK(sequence > 0);
 
     for (int i = 0; i < TUND_AUTH_TAG_SIZE; i++)
         CHECK(buf[TUND_AUTH_TAG_OFFSET + i] == 0);
@@ -69,6 +72,11 @@ static void test_authentication(void)
     CHECK(!proto_verify(buf, len, other_k0, other_k1));
 
     buf[1] ^= 0x01;
+    CHECK(!proto_verify(buf, len, k0, k1));
+
+    len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
+    proto_sign(buf, len, k0, k1);
+    buf[TUND_SEQUENCE_OFFSET + 7] ^= 0x01;
     CHECK(!proto_verify(buf, len, k0, k1));
 
     len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
@@ -160,6 +168,20 @@ static void test_dst_ip(void)
     CHECK(proto_get_dst_ip(ip_pkt, 19) == 0);
 }
 
+static void test_replay_window(void)
+{
+    proto_replay_window_t replay;
+    proto_replay_reset(&replay);
+
+    CHECK(proto_replay_accept(&replay, 100));
+    CHECK(!proto_replay_accept(&replay, 100));
+    CHECK(proto_replay_accept(&replay, 99));
+    CHECK(!proto_replay_accept(&replay, 99));
+    CHECK(proto_replay_accept(&replay, 120));
+    CHECK(!proto_replay_accept(&replay, 55));
+    CHECK(!proto_replay_accept(&replay, 0));
+}
+
 int main(void)
 {
     test_siphash_vector();
@@ -167,6 +189,7 @@ int main(void)
     test_authentication();
     test_builders();
     test_dst_ip();
+    test_replay_window();
 
     return sitest_finish("protocol tests");
 }

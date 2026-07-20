@@ -3,18 +3,19 @@
  * protocol.h — Wire protocol definitions
  *
  * Every UDP datagram exchanged between server and client starts with
- * a 13-byte header. The final 8 bytes are a keyed integrity tag.
+ * a 21-byte header. The final 8 bytes are a keyed integrity tag.
  *
- *   +-------+---------+------+-----------------+----------------+
- *   | Magic | Version | Type | Length (16-bit) | Tag (64-bit)   |
- *   +-------+---------+------+-----------------+----------------+
- *   |                         Payload ...                       |
- *   +-----------------------------------------------------------+
+ *   +-------+---------+------+--------+----------------+----------------+
+ *   | Magic | Version | Type | Length | Seq (64-bit)   | Tag (64-bit)   |
+ *   +-------+---------+------+--------+----------------+----------------+
+ *   |                           Payload ...                             |
+ *   +-------------------------------------------------------------------+
  *
  * Magic  = 0xA9
  * Version = TUND_PROTOCOL_VERSION
  * Type   = one of MSG_* constants
  * Length = big-endian uint16 payload length (NOT including header)
+ * Seq    = sender sequence number for replay protection
  */
 
 #ifndef TUND_PROTOCOL_H
@@ -25,10 +26,12 @@
 #include <stdint.h>
 
 #define TUND_MAGIC        0xA9
-#define TUND_PROTOCOL_VERSION 2
+#define TUND_PROTOCOL_VERSION 3
 #define TUND_PORT         9909
+#define TUND_SEQUENCE_SIZE 8
 #define TUND_AUTH_TAG_SIZE 8
-#define TUND_AUTH_TAG_OFFSET 5
+#define TUND_SEQUENCE_OFFSET 5
+#define TUND_AUTH_TAG_OFFSET (TUND_SEQUENCE_OFFSET + TUND_SEQUENCE_SIZE)
 #define TUND_HDR_SIZE     (TUND_AUTH_TAG_OFFSET + TUND_AUTH_TAG_SIZE)
 #define TUND_MAX_PAYLOAD  1600   /* MTU 1500 + some headroom */
 #define TUND_MAX_PKT      (TUND_HDR_SIZE + TUND_MAX_PAYLOAD)
@@ -71,13 +74,21 @@ typedef struct {
     uint8_t  status;        /* 1 = online, 0 = offline */
 } __attribute__((packed)) msg_peer_entry_t;
 
+typedef struct {
+    uint64_t highest;
+    uint64_t seen;
+} proto_replay_window_t;
+
 int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_len);
 int proto_read_hdr(const uint8_t *buf, uint8_t *type, uint16_t *payload_len);
+bool proto_read_sequence(const uint8_t *buf, uint64_t *sequence);
 
 uint64_t proto_siphash24(const uint8_t *in, size_t len, uint64_t k0, uint64_t k1);
 void proto_key_from_passphrase(const char *passphrase, uint64_t *k0, uint64_t *k1);
 void proto_sign(uint8_t *buf, int len, uint64_t k0, uint64_t k1);
 bool proto_verify(const uint8_t *buf, int len, uint64_t k0, uint64_t k1);
+void proto_replay_reset(proto_replay_window_t *window);
+bool proto_replay_accept(proto_replay_window_t *window, uint64_t sequence);
 
 int proto_build_register(uint8_t *buf, const char *name);
 int proto_build_assign(uint8_t *buf, uint32_t virt_ip, uint32_t netmask, uint16_t mtu);

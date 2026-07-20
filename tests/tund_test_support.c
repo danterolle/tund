@@ -117,6 +117,7 @@ void tund_test_set_server_peer(server_t *srv, int idx, uint32_t vip_host,
     memset(srv->peers[idx].name, 0, sizeof(srv->peers[idx].name));
     if (name)
         snprintf(srv->peers[idx].name, TUND_NAME_LEN, "%s", name);
+    proto_replay_reset(&srv->peers[idx].replay);
     if (!was_active)
         srv->peer_count++;
 }
