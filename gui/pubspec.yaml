@@ -1,7 +1,7 @@
 name: tund_gui
 description: Minimal desktop GUI launcher for Tund.
 publish_to: "none"
-version: 1.16.0+16
+version: 1.17.0+17
 
 environment:
   sdk: ^3.5.0
