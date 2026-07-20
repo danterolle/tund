@@ -4,13 +4,20 @@ TunD authenticates datagrams with a shared key. Packets without the key should n
 
 TunD also rejects replayed sequence numbers within a small sliding window for each known remote endpoint. This is replay protection for TunD datagrams, not traffic confidentiality.
 
-TunD does **not** encrypt packet contents. Treat it as a tool for trusted networks and small trusted groups, not as a privacy VPN. The absence of encryption is a documented limitation, not a vulnerability by itself.
+TunD does **not** encrypt packet contents. Treat it as a tool for trusted networks and small trusted groups. Do not use it as a privacy VPN. The absence of encryption is a documented limitation, not a vulnerability by itself.
 
 ## Reporting a vulnerability
 
 Please report security issues privately.
 
-Use GitHub private vulnerability reporting from the repository's **Security** tab when available. If private reporting is unavailable, open a minimal public issue asking for a private contact path, but do not include exploit details, keys, crash dumps, or sensitive logs in the public issue.
+Use GitHub private vulnerability reporting from the repository's **Security** tab when available. If private reporting is unavailable, open a minimal public issue asking for a private contact path.
+
+Do not include sensitive material in a public issue. That includes:
+
+- exploit details
+- keys
+- crash dumps
+- sensitive logs
 
 Include as much as you can share safely:
 

@@ -2,25 +2,31 @@
 
 ## Purpose and scope
 
-TunD is a self-hosted, hub-and-spoke virtual IPv4 LAN. It creates a local Layer-3 TUN interface on every participant and relays IP packets through one UDP server. It is intended for small, trusted groups and games that work over IPv4, such as Artemis Space Ship Simulator.
+TunD is a self-hosted hub-and-spoke virtual IPv4 LAN. It creates a local Layer-3 TUN interface on every participant and relays IP packets through one UDP server. It is intended for small trusted groups and IPv4 games such as Artemis Space Ship Simulator.
 
-It is not an Ethernet bridge, a general-purpose privacy VPN, or a replacement for a production VPN. It does not transport Ethernet frames, IPv6, or arbitrary multicast discovery.
+TunD is deliberately not:
+
+- an Ethernet bridge
+- a general-purpose privacy VPN
+- a replacement for a production VPN
+
+It does not transport Ethernet frames, IPv6 or arbitrary multicast discovery.
 
 ## Components
 
 | Component | Responsibility |
 |---|---|
-| `src/app/` | Entry point, CLI parsing, logging, platform startup, Windows elevation, common types, global state. |
-| `src/protocol/` | Datagram framing, message serialisation, virtual-network constants and SipHash MAC. |
-| `src/net/` | UDP sockets, hostname resolution, packet authentication, source-address comparison. |
+| `src/app/` | Entry point. CLI parsing. Logging. Platform startup. Windows elevation. Common types. Global state. |
+| `src/protocol/` | Datagram framing. Message serialisation. Virtual-network constants. SipHash MAC. |
+| `src/net/` | UDP sockets. Hostname resolution. Packet authentication. Source-address comparison. |
 | `src/core/` | Core server/client state machines and shared orchestration. |
-| `src/core/server/` | Server peer table, packet handlers, timeout/TUN threads, lifecycle and logging. |
-| `src/core/client/` | Client registration, peer table, server message handlers, logging, and tunnel lifecycle. |
-| `src/tun/` | Cross-platform TUN API plus Linux, macOS, and Windows platform implementations. |
+| `src/core/server/` | Server peer table. Packet handlers. Timeout/TUN threads. Lifecycle and logging. |
+| `src/core/client/` | Client registration. Peer table. Server message handlers. Logging. Tunnel lifecycle. |
+| `src/tun/` | Cross-platform TUN API. Linux/macOS/Windows platform implementations. |
 | `src/tun/linux/` | Linux `/dev/net/tun` implementation. |
 | `src/tun/darwin/` | macOS `utun` device and interface configuration. |
-| `src/tun/windows/` | Windows Wintun loading, process helpers, and IP/route/MTU configuration. |
-| `src/ui/` | Public TUI API, rendering helpers, and recent event log. |
+| `src/tun/windows/` | Windows Wintun loading. Process helpers. IP/route/MTU configuration. |
+| `src/ui/` | Public TUI API. Rendering helpers. Recent event log. |
 | [`gui/`](../gui/README.md) | Optional Flutter desktop launcher that starts `tund-cli` without reimplementing the tunnel. |
 
 ## Virtual network
@@ -56,21 +62,33 @@ Every TunD datagram uses the following 21-byte header followed by a payload:
 | 5–12 | sequence | Sender sequence number for replay protection. |
 | 13–20 | tag | 64-bit SipHash integrity tag. |
 
-The tag covers the stable header fields, sequence number, and payload. `network.c` signs every outgoing packet and drops any incoming packet with an invalid tag before message parsing. Clients and servers keep a small sliding window per remote endpoint and drop replayed sequence numbers. All participants must therefore use the same access key and protocol version.
+The tag covers stable header fields plus sequence number and payload. `network.c` signs every outgoing packet and drops any incoming packet with an invalid tag before message parsing. Clients and servers keep a small sliding window per remote endpoint and drop replayed sequence numbers. All participants must therefore use the same access key and protocol version.
 
-Message types are `REGISTER`, `ASSIGN`, `PEER_LIST`, `DATA`, `KEEPALIVE`, `KEEPALIVE_ACK`, `DISCONNECT`, `PEER_JOIN`, and `PEER_LEAVE`.
+Message types:
+
+| Type | Direction |
+|---|---|
+| `REGISTER` | Client to server |
+| `ASSIGN` | Server to client |
+| `PEER_LIST` | Server to client |
+| `DATA` | Bidirectional |
+| `KEEPALIVE` | Bidirectional |
+| `KEEPALIVE_ACK` | Bidirectional |
+| `DISCONNECT` | Client to server |
+| `PEER_JOIN` | Server to client |
+| `PEER_LEAVE` | Server to client |
 
 ## Keepalive and RTT
 
 `KEEPALIVE` carries the sender's monotonic millisecond timestamp. The receiver replies with `KEEPALIVE_ACK` containing the same timestamp. The original sender compares it with its current monotonic time to estimate RTT.
 
-Clients periodically probe the server and display smoothed keepalive RTT in the TUI. The server also probes each active peer, updates `last_seen`, and records smoothed per-peer keepalive RTT for the peer table. TunD uses a simple EWMA (`7/8` previous value, `1/8` latest sample) to hide scheduler spikes while still following real changes. This is an application-level health metric, not an ICMP ping measurement.
+Clients periodically probe the server and display smoothed keepalive RTT in the TUI. The server also probes each active peer. It updates `last_seen` and records smoothed per-peer keepalive RTT for the peer table. TunD uses a simple EWMA: `7/8` previous value and `1/8` latest sample. This hides scheduler spikes while still following real changes. It is an application-level health metric, not an ICMP ping measurement.
 
 ## Packet forwarding
 
 ### Client → server
 
-The client TUN thread reads an IPv4 packet, wraps it as `MSG_DATA`, signs it and sends it to the configured server. The server accepts data only if the UDP source endpoint belongs to an active peer.
+The client TUN thread reads an IPv4 packet. It wraps the packet as `MSG_DATA`, signs the datagram and sends it to the configured server. The server accepts data only if the UDP source endpoint belongs to an active peer.
 
 ### Server → client
 
@@ -86,7 +104,7 @@ Clients accept traffic only when its UDP source address equals the configured se
 
 The server has a timeout thread and a TUN-reader thread. Each client has a keepalive thread and a TUN-reader thread. Peer-table access is protected by a mutex. UI state for the TUI is copied under the same peer lock.
 
-On shutdown, TunD sets stop flags, sends disconnect notifications where possible, and closes the TUN before joining its reader thread. Linux and macOS TUN reads are guarded by short `poll()` timeouts so Ctrl+C remains responsive even when closing the descriptor does not immediately unblock a read. Windows waits on Wintun's read event with a bounded timeout.
+On shutdown, TunD sets stop flags and sends disconnect notifications where possible. It closes the TUN before joining its reader thread. Linux and macOS TUN reads are guarded by short `poll()` timeouts. Ctrl+C remains responsive even when closing the descriptor does not immediately unblock a read. Windows waits on Wintun's read event with a bounded timeout.
 
 ## Security model
 
@@ -98,4 +116,4 @@ Do not describe TunD as a confidential VPN until it uses a reviewed authenticate
 
 - **Linux:** requires `/dev/net/tun` and root/CAP_NET_ADMIN.
 - **macOS:** uses an OS-managed `utun` interface configured via `ioctl(SIOCAIFADDR)` and `ioctl(SIOCSIFMTU)`; the subnet route is added through `fork`+`exec(/sbin/route)` — no shell processes are spawned. Run with administrator rights.
-- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. If started without elevation, TunD relaunches itself through UAC with the same arguments. TunD uses `netsh` for adapter IP/MTU configuration, creates the tunnel route with IP Helper APIs, then verifies IP address, route, and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.
+- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. If started without elevation, TunD relaunches itself through UAC with the same arguments. TunD uses `netsh` for adapter IP/MTU configuration. It creates the tunnel route with IP Helper APIs. It then verifies IP address plus route and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.

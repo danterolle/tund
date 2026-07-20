@@ -8,7 +8,7 @@ Release assets include desktop GUI bundles and standalone CLI binaries:
 
 | Asset | Contents |
 |---|---|
-| `tund-windows-x86_64.zip` | Windows GUI, CLI, Flutter runtime files, and `wintun.dll`. Keep all files together. |
+| `tund-windows-x86_64.zip` | Full Windows bundle. Includes GUI + CLI + Flutter runtime + `wintun.dll`. Keep all files together. |
 | `tund-gui-darwin-universal.zip` | macOS GUI bundle for Apple Silicon and Intel. Run `tund-gui.command` from the extracted folder. |
 | `tund-cli-darwin-universal` | Standalone macOS CLI binary. |
 | `tund-gui-linux-x86_64.tar.gz` | Linux desktop GUI bundle with the CLI included. |
@@ -33,7 +33,7 @@ On Windows:
 Options:
 
 ```text
--k, --key <key>      Shared network key (same on all computers, 12+ characters)
+-k, --key <key>      Shared network key (same on all computers; minimum 12 characters)
 -p, --port <port>    UDP port (default: 9909)
 -t, --no-tui         Disable terminal UI (live peer dashboard)
 -v, --verbose        Debug logging
@@ -57,7 +57,7 @@ Options:
 -s, --server <ip>    Server IP/hostname (required)
 -p, --port <port>    Server port (default: 9909)
 -n, --name <name>    Display name (default: hostname)
--k, --key <key>      Shared network key (same on all computers, 12+ characters)
+-k, --key <key>      Shared network key (same on all computers; minimum 12 characters)
 -t, --no-tui         Disable terminal UI (live peer dashboard)
 -v, --verbose        Debug logging
 ```
@@ -100,7 +100,15 @@ Run `tund-cli.exe` from the generated `dist` directory.
 make verify
 ```
 
-This checks C formatting, runs C linting, unit tests, the Peerforge UDP integration check, sanitizer tests, the native build, and the Windows cross-build.
+This runs the full local verification set:
+
+- C formatting
+- C linting
+- unit tests
+- Peerforge UDP integration check
+- sanitizer tests
+- native build
+- Windows cross-build
 
 ### Peerforge diagnostic tool
 
@@ -122,11 +130,17 @@ With a TunD server already running, simulate clients without creating real TUN i
 ./dist/peerforge -s 127.0.0.1 -k "a-long-random-key" -n 253 -K 1 -d 32
 ```
 
-This covers registration, authenticated keepalives, and optional client-to-client DATA probes. It does not test OS routing or real TUN drivers.
+This covers:
+
+- registration
+- authenticated keepalives
+- optional client-to-client DATA probes
+
+It does not test OS routing or real TUN drivers.
 
 ## Verify it works
 
-After a client connects, the server TUI should show the peer, its virtual IP, and a keepalive RTT value. From the client, first try:
+After a successful client connection the server TUI should show peer details. Those details include virtual IP and keepalive RTT. From the client side first try:
 
 ```bash
 ping 10.9.0.1

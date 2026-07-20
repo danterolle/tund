@@ -14,7 +14,7 @@
 
 Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge Simulator) LAN parties and direct-IP multiplayer with friends.
 
-It is self-hosted, cross-platform, and dependency-light. The core is written in C: Linux and macOS use system networking APIs, while Windows uses Wintun for TUN support.
+It is self-hosted and cross-platform. The C core stays dependency-light: Linux and macOS use system networking APIs, while Windows uses Wintun for TUN support.
 
 ## Table of contents
 
@@ -30,17 +30,38 @@ It is self-hosted, cross-platform, and dependency-light. The core is written in 
 
 ### Why not just wrap WireGuard?
 
-WireGuard would be the right foundation for a production VPN: it is easier to trust, much more secure, and already reviewed. TunD is deliberately narrower. It is a small, self-hosted LAN-party tool with a fixed virtual IPv4 subnet, automatic peer assignment, and enough broadcast support for LAN-style games. A thin WireGuard wrapper would still need to own configuration, routing, platform setup, privileges and much more around a tool that was not designed specifically for this workflow.
+WireGuard would be the right foundation for a production VPN. It is easier to trust, much more secure and already reviewed.
+
+TunD is deliberately narrower. It is a small LAN-party tool with:
+
+- a self-hosted hub
+- a fixed virtual IPv4 subnet
+- automatic peer assignment
+- enough broadcast support for LAN-style games
+
+A thin WireGuard wrapper would still need to own the product workflow around WireGuard:
+
+- configuration
+- routing
+- platform setup
+- privilege handling
 
 Do not use TunD when you need a confidential VPN.
 
 ### Why C?
 
-The core talks directly to UDP sockets, TUN devices, platform routing APIs, and Wintun. C keeps that layer small, explicit, dependency-light, and close to the operating-system interfaces involved. It also made the project useful as a learning exercise rather than just glue around a larger stack.
+The core talks directly to the operating-system interfaces involved:
+
+- UDP sockets
+- TUN devices
+- platform routing APIs
+- Wintun on Windows
+
+C keeps that layer small, explicit and dependency-light. It also made the project useful as a learning exercise rather than just glue around a larger stack.
 
 ### AI-assisted development
 
-AI was used as a pair-programming assistant during development. Generated code was reviewed, refactored, tested, and corrected before becoming part of the project.
+AI was used as a pair-programming assistant during development. Generated code did not land unchanged: it was reviewed first, then refactored and tested. Corrections were made before it became part of the project.
 
 ## How it works
 
@@ -73,27 +94,33 @@ On every machine that should join the LAN:
 sudo ./tund-cli client -s <server_ip> -k "a-long-random-key"
 ```
 
-Use the same key everywhere. On desktop releases, run `tund-gui` for the GUI or `tund-cli` for the CLI; if needed, the CLI still requires administrator/root privileges for TUN setup. See the [GUI README](gui/README.md) for details.
+Use the same key everywhere. Desktop releases include a GUI launcher and a CLI. The CLI still requires administrator/root privileges for TUN setup. See the [GUI README](gui/README.md) for details.
 
-Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). For full usage, build, and verification steps, see [Usage](docs/USAGE.md).
+Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). See [Usage](docs/USAGE.md) for full instructions.
 
 ## Features
 
 - **Zero registration** — no accounts or external service
 - **NAT-friendly clients** — clients only need outbound UDP to a reachable server
-- **Cross-platform** — Windows, macOS, and Linux
+- **Cross-platform** — Windows/macOS/Linux
 - **Flutter desktop GUI** — optional launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
 - **Single CLI binary** — server and client modes in one program
 - **IPv4 broadcast support** — useful for LAN-style discovery in compatible games
-- **Authenticated membership** — packets without the shared network key are discarded, and replayed TunD datagrams are rejected
+- **Authenticated membership** — packets without the shared network key are discarded; replayed TunD datagrams are rejected
 
 ## Game compatibility
 
-TunD transports IPv4 traffic (including the IPv4 subnet broadcast address). It is suitable for direct-IP games and games such as Artemis that use ordinary IPv4 networking. It is not an Ethernet bridge: games requiring Layer-2 discovery, IPv6, or multicast discovery may need direct IP entry or may not work.
+TunD transports IPv4 traffic, including the IPv4 subnet broadcast address. It is suitable for direct-IP games and games such as Artemis that use ordinary IPv4 networking.
+
+It is not an Ethernet bridge. Games may need direct IP entry when they require unsupported discovery. Some of those games may not work.
+
+- Layer-2 discovery
+- IPv6
+- multicast discovery
 
 The shared key authenticates packets but does **not** encrypt traffic. TunD is not a production VPN — it is a weekend project for trusted networks, not a privacy tool. Do not use on untrusted networks or untrusted servers.
 
-For Artemis, start the server first, connect every station with the same key, then use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
+Artemis setup is straightforward. Start the server first. Connect every station with the same key. Use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
 
 ## Documentation
 

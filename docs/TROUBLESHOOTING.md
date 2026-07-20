@@ -74,10 +74,10 @@ sudo firewall-cmd --reload
 
 | Symptom | Likely cause |
 |---|---|
-| Client times out during registration | Wrong server address, blocked UDP port, server not running, or firewall issue |
+| Client times out during registration | Wrong server address; blocked UDP port; server not running; firewall issue |
 | Authentication failure | Shared key mismatch or incompatible protocol version |
 | Route/subnet error | Another VPN or LAN already uses `10.9.0.0/24` |
 | Ping fails but peer is connected | ICMP blocked by host firewall |
 | Windows cannot load Wintun | `wintun.dll` missing or not beside `tund-cli.exe` |
-| Linux cannot open `/dev/net/tun` | Missing TUN device, missing privileges, or kernel module not loaded |
+| Linux cannot open `/dev/net/tun` | Missing TUN device; missing privileges; kernel module not loaded |
 | TUI flickers in old `cmd.exe` | Use Windows Terminal or run with `--no-tui` |

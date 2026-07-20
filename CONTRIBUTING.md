@@ -40,7 +40,7 @@ flutter test
 
 ## Documentation and website
 
-- Keep the security model wording consistent: authenticated, replay-protected TunD datagrams; no packet encryption.
+- Keep the security model wording consistent. TunD datagrams are authenticated and replay-protected. Packet contents are not encrypted.
 - Website sources live in `web/` and are published by the `Pages` workflow as the GitHub Pages site root.
 - Release steps are documented in [`docs/RELEASE.md`](docs/RELEASE.md).
 
