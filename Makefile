@@ -23,6 +23,7 @@ $(DIST):
 	mkdir -p $(DIST)
 
 verify:
+	$(MAKE) lint-c
 	$(MAKE) test
 	$(MAKE) tools
 	$(MAKE) peerforge-check

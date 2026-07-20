@@ -90,7 +90,7 @@ Run `tund-cli.exe` from the generated `dist` directory.
 make verify
 ```
 
-This runs unit tests, the Peerforge UDP integration check, sanitizer tests, the native build, and the Windows cross-build.
+This runs C linting, unit tests, the Peerforge UDP integration check, sanitizer tests, the native build, and the Windows cross-build.
 
 ### Peerforge diagnostic tool
 
