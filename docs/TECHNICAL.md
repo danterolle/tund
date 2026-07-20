@@ -90,9 +90,9 @@ On shutdown, TunD sets stop flags, sends disconnect notifications where possible
 
 ## Security model
 
-The shared key authenticates datagrams and prevents unauthorised endpoints without the key from registering or injecting packets. It does **not** encrypt packet contents and it does not provide replay protection. Use a long random key and only trusted networks/servers.
+The shared key authenticates datagrams and prevents unauthorised endpoints without the key from registering or injecting packets. TunD also rejects replayed sequence numbers within a small sliding window for each known remote endpoint. It does **not** encrypt packet contents. Use a long random key and only trusted networks/servers.
 
-Do not describe TunD as a confidential VPN until it uses a reviewed authenticated-encryption transport and replay protection.
+Do not describe TunD as a confidential VPN until it uses a reviewed authenticated-encryption transport.
 
 ## Platform notes
 

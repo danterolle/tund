@@ -12,8 +12,8 @@ static void print_usage(const char *prog, bool show_desc) {
                         "\n");
     fprintf(stderr,
             "Usage:\n"
-            "  %s server [-p port] [-v]\n"
-            "  %s client -s <server_ip> [-p port] [-n name] [-v]\n"
+            "  %s server -k <key> [-p port] [-v]\n"
+            "  %s client -s <server_ip> -k <key> [-p port] [-n name] [-v]\n"
             "\n"
             "Modes:\n"
             "  server   Run as hub server (requires public IP)\n"
@@ -29,13 +29,13 @@ static void print_usage(const char *prog, bool show_desc) {
             "  -h, --help           Show this help\n"
             "\n"
             "Examples:\n"
-            "  sudo %s server                        # Start server on port %u\n"
-            "  sudo %s client -s 1.2.3.4 -n MyPC     # Connect to server\n"
-            "  sudo %s server -p 12345               # Custom port\n"
+            "  sudo %s server -k \"a-long-random-key\"\n"
+            "  sudo %s client -s 1.2.3.4 -n MyPC -k \"a-long-random-key\"\n"
+            "  sudo %s server -p 12345 -k \"a-long-random-key\"\n"
             "\n"
             "Note: Requires root/sudo for TUN interface creation.\n"
             "\n",
-            prog, prog, TUND_PORT, prog, TUND_PORT, prog, prog);
+            prog, prog, TUND_PORT, prog, prog, prog);
 }
 
 static cli_result_t parse_mode(const char *prog, const char *mode, config_t *cfg) {
