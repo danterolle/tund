@@ -40,7 +40,7 @@ The core talks directly to UDP sockets, TUN devices, platform routing APIs, and 
 
 ### AI-assisted development
 
-The C core was built with AI used as a pair-programming assistant: generated code was inspected, refactored, modularised, and corrected under my supervision. The Flutter GUI relied more heavily on AI-generated code because I do not know Flutter/Dart at all; Flutter was simply the most effective path to a cross-platform GUI. In both cases, the final shape reflects my software engineering experience and review, not blind code generation.
+AI was used as a pair-programming assistant during development. Generated code was reviewed, refactored, tested, and corrected before becoming part of the project.
 
 ## How it works
 
@@ -85,7 +85,7 @@ Pre-built binaries are available on the [releases page](https://github.com/dante
 - **Flutter desktop GUI** — optional launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
 - **Single CLI binary** — server and client modes in one program
 - **IPv4 broadcast support** — useful for LAN-style discovery in compatible games
-- **Authenticated membership** — packets without the shared network key are discarded
+- **Authenticated membership** — packets without the shared network key are discarded, and replayed TunD datagrams are rejected
 
 ## Game compatibility
 
@@ -100,6 +100,7 @@ For Artemis, start the server first, connect every station with the same key, th
 - [Usage](docs/USAGE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Technical documentation](docs/TECHNICAL.md)
+- [Release checklist](docs/RELEASE.md)
 - [GUI README](gui/README.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)

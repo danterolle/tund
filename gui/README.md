@@ -2,9 +2,15 @@
 
 Minimal Flutter GUI for Windows, macOS, and Linux.
 
-It starts the existing `tund-cli`; it does not reimplement the tunnel.
+It starts the existing `tund-cli`; it does not reimplement the tunnel. Keep the GUI and CLI together in release bundles so the launcher can find the executable.
 
-This GUI exists because a friend explicitly asked for a Windows-friendly way to use TunD without opening a single terminal window. I am not familiar with Flutter or Dart so this code was primarily produced by AI under my supervision and practical engineering experience.
+## Release layout
+
+- **Windows:** `tund-gui.exe`, `tund-cli.exe`, `wintun.dll`, `flutter_windows.dll`, and the `data/` directory must stay in the same extracted folder.
+- **macOS:** run `tund-gui.command` next to `tund-gui.app`; do not run `sudo tund-gui.app`.
+- **Linux:** launch the GUI bundle with the privileges required for TUN setup, or run the standalone CLI with `sudo`.
+
+The GUI warns about administrator/root privileges before starting `tund-cli`.
 
 ## Local build
 
@@ -17,4 +23,4 @@ flutter build macos --release
 flutter build linux --release
 ```
 
-The GUI starts `tund-cli` from its bundle/folder and warns before launch that TUN setup requires Administrator/root privileges. On Windows the runner asks for UAC elevation. On macOS release builds, run `tund-gui.command` next to `tund-gui.app`; do not run `sudo tund-gui.app`. On Linux, launch the GUI with the required privileges or run `tund-cli` directly with `sudo`.
+Release packaging copies the CLI into the GUI bundle/folder during CI. For local manual testing, place the matching `tund-cli` binary beside the GUI executable if the launcher cannot find it.

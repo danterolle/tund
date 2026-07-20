@@ -2,9 +2,9 @@
 
 TunD authenticates datagrams with a shared key. Packets without the key should not be able to register as peers or inject traffic into the virtual network.
 
-TunD does **not** encrypt packet contents and does **not** provide replay protection. Treat it as a tool for trusted networks and small trusted groups, not as a privacy VPN.
+TunD also rejects replayed sequence numbers within a small sliding window for each known remote endpoint. This is replay protection for TunD datagrams, not traffic confidentiality.
 
-The absence of encryption is a documented limitation, not a vulnerability by itself.
+TunD does **not** encrypt packet contents. Treat it as a tool for trusted networks and small trusted groups, not as a privacy VPN. The absence of encryption is a documented limitation, not a vulnerability by itself.
 
 ## Reporting a vulnerability
 

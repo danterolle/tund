@@ -39,14 +39,36 @@ netsh advfirewall set allprofiles state on
 - **Unverified developer warning**: the first time you run TunD, macOS may show "Apple cannot verify the identity of the developer". This happens because the binary is not signed with an Apple Developer certificate. To bypass:
 
 ```bash
-xattr -d com.apple.quarantine ./tund-cli
 xattr -dr com.apple.quarantine ./tund-gui-darwin-universal
+xattr -d com.apple.quarantine ./tund-cli-darwin-universal
 ```
 
 Run the relevant command once before launching the CLI or GUI. If the warning persists, open **System Settings → Privacy & Security** and click **Open Anyway** next to the blocked TunD entry.
 
 - **TUN interface**: macOS creates a `utun` device automatically when TunD starts. For the GUI release, run `tund-gui.command` next to `tund-gui.app`; running `sudo tund-gui.app` targets the bundle directory and will not start the app with the required privileges.
 - **ICMP (ping)**: like Windows, macOS may block ICMP on the virtual interface. Ping is not required for game traffic.
+
+## Linux notes
+
+- **Privileges**: TunD needs root or `CAP_NET_ADMIN` to create and configure the TUN device.
+- **TUN device**: if `/dev/net/tun` is missing, load the kernel module:
+
+```bash
+sudo modprobe tun
+```
+
+- **Server firewall**: if this Linux host is the server, allow inbound UDP on the selected port:
+
+```bash
+sudo ufw allow 9909/udp
+```
+
+or, on firewalld-based systems:
+
+```bash
+sudo firewall-cmd --add-port=9909/udp --permanent
+sudo firewall-cmd --reload
+```
 
 ## Common symptoms
 
@@ -57,4 +79,5 @@ Run the relevant command once before launching the CLI or GUI. If the warning pe
 | Route/subnet error | Another VPN or LAN already uses `10.9.0.0/24` |
 | Ping fails but peer is connected | ICMP blocked by host firewall |
 | Windows cannot load Wintun | `wintun.dll` missing or not beside `tund-cli.exe` |
+| Linux cannot open `/dev/net/tun` | Missing TUN device, missing privileges, or kernel module not loaded |
 | TUI flickers in old `cmd.exe` | Use Windows Terminal or run with `--no-tui` |

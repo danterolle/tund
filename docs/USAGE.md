@@ -4,7 +4,17 @@
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases).
 
-Release assets include `tund-cli` binaries and optional desktop GUI bundles. macOS is published as a universal build for Apple Silicon and Intel; run `tund-gui.command` from the extracted GUI folder so the app starts with administrator privileges. Windows releases also include `wintun.dll`; keep all files from the Windows zip together. For GUI-specific notes, see the [GUI README](../gui/README.md).
+Release assets include desktop GUI bundles and standalone CLI binaries:
+
+| Asset | Contents |
+|---|---|
+| `tund-windows-x86_64.zip` | Windows GUI, CLI, Flutter runtime files, and `wintun.dll`. Keep all files together. |
+| `tund-gui-darwin-universal.zip` | macOS GUI bundle for Apple Silicon and Intel. Run `tund-gui.command` from the extracted folder. |
+| `tund-cli-darwin-universal` | Standalone macOS CLI binary. |
+| `tund-gui-linux-x86_64.tar.gz` | Linux desktop GUI bundle with the CLI included. |
+| `tund-cli-linux-x86_64` | Standalone Linux CLI binary. |
+
+The CLI examples below use `./tund-cli`; release binary names may differ. GUI-specific notes are in the [GUI README](../gui/README.md).
 
 ## Start the server
 
