@@ -1,6 +1,14 @@
 #include "tui_internal.h"
 #include "tund.h"
 
+#include <stdio.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 void tui_init(void) {
     tui_events_start();
     tui_write(TUI_ALT_BUF);

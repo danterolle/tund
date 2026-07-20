@@ -2,9 +2,9 @@
 
 #include "tun.h"
 #include "tund.h"
-#include "internal.h"
 #include "log.h"
 
+#include <sys/ioctl.h>
 #include <sys/kern_control.h>
 #include <sys/sys_domain.h>
 #include <net/if_utun.h>

@@ -3,6 +3,13 @@
 
 #include <pthread.h>
 #include <stdatomic.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
+#ifdef _WIN32
+#define localtime_r(t, tm) localtime_s((tm), (t))
+#endif
 
 #define TUI_MAX_EVENTS        7
 #define TUI_EVENT_MESSAGE_LEN 128

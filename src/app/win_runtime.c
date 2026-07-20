@@ -1,6 +1,7 @@
 #ifdef _WIN32
 
 #include "win_runtime.h"
+#include "tund.h"
 
 #include <shellapi.h>
 

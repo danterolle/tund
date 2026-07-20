@@ -3,17 +3,7 @@
 
 #include "tui.h"
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#define localtime_r(t, tm) localtime_s((tm), (t))
-#else
-#include <arpa/inet.h>
-#endif
+#include <stddef.h>
 
 #define TUI_CLEAR       "\033[2J\033[H"
 #define TUI_HOME        "\033[H"

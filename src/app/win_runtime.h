@@ -3,7 +3,7 @@
 
 #ifdef _WIN32
 
-#include "tund.h"
+#include <stdbool.h>
 
 void win_runtime_init_early(void);
 bool win_runtime_stderr_is_tty(void);

@@ -73,7 +73,6 @@ static inline int platform_poll_one(socket_t fd, int timeout_ms) {
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
 #include <pthread.h>
 #include <sys/types.h>
 #include <poll.h>

@@ -1,6 +1,5 @@
 #include "network.h"
 #include "log.h"
-#include "tui.h"
 
 #ifdef _WIN32
 static int ensure_winsock(void) {
@@ -16,6 +15,8 @@ static int ensure_winsock(void) {
 }
 
 #else
+#include <netdb.h>
+
 #define ensure_winsock() 0
 #endif
 

@@ -1,5 +1,15 @@
 #include "tui_internal.h"
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <time.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 void tui_write(const char *s) {
     fputs(s, stderr);
 }
