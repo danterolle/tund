@@ -5,6 +5,8 @@ import 'process_output.dart';
 import 'tund_config.dart';
 
 class TundLauncher {
+  static const _stopTimeout = Duration(seconds: 3);
+
   Process? _process;
   StreamSubscription<String>? _stdout;
   StreamSubscription<String>? _stderr;
@@ -114,13 +116,25 @@ class TundLauncher {
   }
 
   void stop() {
-    _process?.kill();
+    final process = _process;
+    if (process == null) return;
+    process.kill();
+    unawaited(_forceKillIfStillRunning(process));
   }
 
   void dispose() {
     _stdout?.cancel();
     _stderr?.cancel();
-    _process?.kill();
+    stop();
+  }
+
+  Future<void> _forceKillIfStillRunning(Process process) async {
+    final exited = await process.exitCode
+        .then((_) => true)
+        .timeout(_stopTimeout, onTimeout: () => false);
+    if (!exited && _process == process) {
+      process.kill(ProcessSignal.sigkill);
+    }
   }
 }
 
