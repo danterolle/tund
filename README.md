@@ -16,10 +16,13 @@ Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge
 
 It is self-hosted and cross-platform. The C core stays dependency-light: Linux and macOS use system networking APIs, while Windows uses Wintun for TUN support.
 
+> **Scope:** TunD is for trusted LAN-party groups. It authenticates TunD datagrams and rejects replayed datagrams, but it does **not** encrypt packet contents.
+
 ## Table of contents
 
 - [Project rationale](#project-rationale)
 - [How it works](#how-it-works)
+- [Preview](#preview)
 - [Quick start](#quick-start)
 - [Features](#features)
 - [Game compatibility](#game-compatibility)
@@ -28,13 +31,15 @@ It is self-hosted and cross-platform. The C core stays dependency-light: Linux a
 
 ## Project rationale
 
-### Why not just wrap WireGuard?
+### Why not use WireGuard/Tailscale/ZeroTier?
 
-WireGuard would be the right foundation for a production VPN. It is easier to trust because it is much more secure and already reviewed.
+Those are better choices for general secure networking. Use them when confidentiality matters. Use them when you need broader routing features. Use them when you want production-grade trust.
 
-TunD is deliberately narrower. It is a small self-hosted LAN-party tool. It owns a fixed virtual IPv4 subnet; it assigns peers automatically; it carries enough broadcast traffic for LAN-style games. A thin WireGuard wrapper would not remove the hard parts for this workflow. The project would still need to own configuration. It would still need routing. It would still need platform setup and privilege handling around a tool designed for a different purpose.
+TunD is deliberately narrower. It is a small self-hosted LAN-party tool. It owns a fixed virtual IPv4 subnet; it assigns peers automatically; it carries enough broadcast traffic for LAN-style games.
 
-Do not use TunD when you need a confidential VPN.
+A wrapper around another networking tool would still need to own the TunD-specific workflow. It would still need simple hosting. It would still need peer assignment. It would still need routing setup, platform permissions and game-focused guidance.
+
+Do not use TunD when you need confidential traffic.
 
 ### Why C?
 
@@ -67,6 +72,12 @@ AI was used as a pair-programming assistant during development. Generated code d
 3. All clients automatically discover each other
 4. Traffic is tunneled over UDP through the server
 5. Each client gets a virtual IP in the `10.9.0.0/24` range
+
+## Preview
+
+<p align="center">
+  <img src="web/assets/tui-preview.svg" width="760" alt="TunD terminal UI preview">
+</p>
 
 ## Quick start
 

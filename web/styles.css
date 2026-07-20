@@ -209,6 +209,11 @@ p {
   font-size: 20px;
 }
 
+.fact.warning i {
+  background: rgba(227, 184, 92, .12);
+  color: var(--yellow);
+}
+
 .fact strong {
   display: block;
   margin-bottom: 2px;
@@ -249,6 +254,10 @@ p {
   gap: 14px;
 }
 
+.grid.two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .card {
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -283,6 +292,22 @@ p {
 
 .download-card .button {
   width: 100%;
+}
+
+.preview-section {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: rgba(30, 35, 39, .7);
+  padding: 18px;
+}
+
+.preview-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #101316;
 }
 
 .quickstart {
@@ -430,6 +455,10 @@ footer a:hover {
 @media (max-width: 860px) {
   .hero,
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid.two-column {
     grid-template-columns: 1fr;
   }
 

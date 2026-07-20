@@ -61,9 +61,21 @@
               <i class="ti ti-shield-check"></i>
               <div><strong>Authenticated</strong><span>Packets are checked with the shared key and replay window.</span></div>
             </div>
+            <div class="fact warning">
+              <i class="ti ti-alert-triangle"></i>
+              <div><strong>Not encrypted</strong><span>Use TunD with trusted groups. Do not treat it as a privacy tool.</span></div>
+            </div>
           </div>
         </div>
       </aside>
+    </section>
+
+    <section class="section preview-section">
+      <div class="section-head">
+        <h2>Preview</h2>
+        <p>The CLI includes a live terminal UI for connected peers, traffic counters and keepalive RTT.</p>
+      </div>
+      <img class="preview-image" src="assets/tui-preview.svg" alt="TunD terminal UI preview">
     </section>
 
     <section class="section" id="downloads">
@@ -151,6 +163,23 @@
           <strong>Authenticated, not encrypted.</strong>
           <p>TunD rejects packets without the shared key, but packet contents are not confidential. Use it with trusted groups and trusted networks, not as a privacy VPN.</p>
         </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Positioning</h2>
+        <p>TunD is intentionally narrow. It is a small LAN-party tool, not a general secure-networking platform.</p>
+      </div>
+      <div class="grid two-column">
+        <article class="card">
+          <h3><i class="ti ti-circle-check"></i>Use TunD when</h3>
+          <p>You want a self-hosted IPv4 LAN for trusted friends. The host is reachable over UDP. The game works with direct IP or ordinary IPv4 broadcast.</p>
+        </article>
+        <article class="card">
+          <h3><i class="ti ti-circle-x"></i>Use another tool when</h3>
+          <p>You need traffic confidentiality. You need production security. You want account-based access control or broader routing. WireGuard/Tailscale/ZeroTier are better fits for that scope.</p>
+        </article>
       </div>
     </section>
 
