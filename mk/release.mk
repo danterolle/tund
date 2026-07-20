@@ -33,12 +33,7 @@ else
 endif
 
 $(DIST)/wintun.dll: | $(DIST)
-	@echo "  ↓ Downloading wintun.dll from wintun.net..."
-	curl -fsSL $(WINTUN_URL) -o /tmp/wintun.zip
-	printf '%s  %s\n' "$(WINTUN_SHA256)" "/tmp/wintun.zip" | shasum -a 256 -c -
-	unzip -o /tmp/wintun.zip wintun/bin/amd64/wintun.dll -d /tmp >/dev/null
-	cp /tmp/wintun/bin/amd64/wintun.dll $(DIST)/wintun.dll
-	@echo "  ✓ wintun.dll downloaded"
+	tools/fetch-wintun.sh "$(WINTUN_URL)" "$(WINTUN_SHA256)" "$@"
 
 windows: $(TARGET_WCON) $(DIST)/wintun.dll
 	@echo ""
