@@ -1,4 +1,17 @@
 .PHONY: lint-c
 
+LINT_C_SRCS := $(sort \
+	$(SRCS) \
+	$(TEST_PROTOCOL_SRCS) \
+	$(TEST_SERVER_PEERS_SRCS) \
+	$(TEST_SERVER_DATA_SRCS) \
+	$(TEST_SERVER_HANDLERS_SRCS) \
+	$(TEST_CLIENT_PEERS_SRCS) \
+	$(TEST_CLIENT_HANDLERS_SRCS) \
+	$(SITEST_SRC) \
+	$(TUND_TEST_SUPPORT_SRCS) \
+	$(TOOL_SRCS) \
+	$(PEERFORGE_SERVER_SRCS))
+
 lint-c:
-	tools/check-c-includes.sh
+	tools/lint-c.sh $(CFLAGS) $(TEST_INCLUDES) -- $(LINT_C_SRCS)
