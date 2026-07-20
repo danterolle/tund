@@ -5,6 +5,7 @@ include mk/sources.mk
 include mk/tests.mk
 include mk/tools.mk
 include mk/release.mk
+include mk/lint.mk
 
 .PHONY: all clean install uninstall verify
 

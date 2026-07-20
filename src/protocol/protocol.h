@@ -11,11 +11,11 @@
  *   |                           Payload ...                             |
  *   +-------------------------------------------------------------------+
  *
- * Magic  = 0xA9
+ * Magic   = 0xA9
  * Version = TUND_PROTOCOL_VERSION
- * Type   = one of MSG_* constants
- * Length = big-endian uint16 payload length (NOT including header)
- * Seq    = sender sequence number for replay protection
+ * Type    = one of MSG_* constants
+ * Length  = big-endian uint16 payload length (NOT including header)
+ * Seq     = sender sequence number for replay protection
  */
 
 #ifndef TUND_PROTOCOL_H
