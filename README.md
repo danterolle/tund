@@ -33,11 +33,11 @@ It is self-hosted and cross-platform. The C core stays dependency-light: Linux a
 
 ### Why not use WireGuard/Tailscale/ZeroTier?
 
-Those are better choices for general secure networking. Use them when confidentiality matters. Use them when you need broader routing features. Use them when you want production-grade trust.
+Those are better choices for general secure networking, especially when confidentiality or production-grade trust matters.
 
-TunD is deliberately narrower. It is a small self-hosted LAN-party tool. It owns a fixed virtual IPv4 subnet; it assigns peers automatically; it carries enough broadcast traffic for LAN-style games.
+TunD is deliberately narrower: a small self-hosted LAN-party tool with a fixed virtual IPv4 subnet, automatic peer assignment and enough broadcast support for LAN-style games.
 
-A wrapper around another networking tool would still need to own the TunD-specific workflow. It would still need simple hosting. It would still need peer assignment. It would still need routing setup, platform permissions and game-focused guidance.
+A wrapper around another networking tool would still need to build most of that product workflow: simple hosting, peer assignment, routing setup, platform permissions and game-focused guidance around a tool designed for a broader purpose.
 
 Do not use TunD when you need confidential traffic.
 
