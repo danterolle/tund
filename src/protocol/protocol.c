@@ -12,13 +12,21 @@
 BOOLEAN NTAPI SystemFunction036(PVOID random_buffer, ULONG random_buffer_length);
 #else
 #include <arpa/inet.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <unistd.h>
 #endif
 
 static uint64_t proto_next_sequence(void);
 static bool proto_random_bytes(uint8_t *buf, size_t len);
 static void proto_write_payload_len(uint8_t *buf, uint16_t payload_len);
+
+#ifndef _WIN32
+static int proto_random_fd(void);
+static pthread_mutex_t g_proto_random_lock = PTHREAD_MUTEX_INITIALIZER;
+static int g_proto_random_fd = -1;
+#endif
 
 int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_len) {
     if (payload_len > TUND_MAX_PLAINTEXT) return -1;
@@ -60,24 +68,37 @@ static uint64_t proto_next_sequence(void) {
     return (uint64_t)atomic_fetch_add_explicit(&g_proto_next_sequence, 1, memory_order_relaxed) + 1;
 }
 
+#ifndef _WIN32
+static int proto_random_fd(void) {
+    pthread_mutex_lock(&g_proto_random_lock);
+    if (g_proto_random_fd < 0) {
+        int flags = O_RDONLY;
+#ifdef O_CLOEXEC
+        flags |= O_CLOEXEC;
+#endif
+        g_proto_random_fd = open("/dev/urandom", flags);
+    }
+    int fd = g_proto_random_fd;
+    pthread_mutex_unlock(&g_proto_random_lock);
+    return fd;
+}
+#endif
+
 static bool proto_random_bytes(uint8_t *buf, size_t len) {
 #ifdef _WIN32
     if (len > (size_t)ULONG_MAX) return false;
     return SystemFunction036(buf, (ULONG)len) != FALSE;
 #else
-    int fd = open("/dev/urandom", O_RDONLY);
+    int fd = proto_random_fd();
     if (fd < 0) return false;
 
     size_t offset = 0;
     while (offset < len) {
         ssize_t got = read(fd, buf + offset, len - offset);
-        if (got <= 0) {
-            close(fd);
-            return false;
-        }
+        if (got < 0 && errno == EINTR) continue;
+        if (got <= 0) return false;
         offset += (size_t)got;
     }
-    close(fd);
     return true;
 #endif
 }
