@@ -1,30 +1,43 @@
 #include "protocol.h"
+#include "monocypher.h"
 
 #include <stdatomic.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+BOOLEAN NTAPI SystemFunction036(PVOID random_buffer, ULONG random_buffer_length);
 #else
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 static uint64_t proto_next_sequence(void);
+static bool proto_random_bytes(uint8_t *buf, size_t len);
+static void proto_write_payload_len(uint8_t *buf, uint16_t payload_len);
 
 int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_len) {
+    if (payload_len > TUND_MAX_PLAINTEXT) return -1;
     buf[0] = TUND_MAGIC;
     buf[1] = TUND_PROTOCOL_VERSION;
     buf[2] = type;
-    buf[3] = (uint8_t)(payload_len >> 8);
-    buf[4] = (uint8_t)(payload_len & 0xFF);
+    proto_write_payload_len(buf, payload_len);
     uint64_t sequence = proto_next_sequence();
     for (int i = 7; i >= 0; i--) {
         buf[TUND_SEQUENCE_OFFSET + i] = (uint8_t)(sequence & 0xFF);
         sequence >>= 8;
     }
-    memset(buf + TUND_AUTH_TAG_OFFSET, 0, TUND_AUTH_TAG_SIZE);
+    if (!proto_random_bytes(buf + TUND_NONCE_OFFSET, TUND_NONCE_SIZE)) return -1;
     return TUND_HDR_SIZE;
+}
+
+static void proto_write_payload_len(uint8_t *buf, uint16_t payload_len) {
+    buf[3] = (uint8_t)(payload_len >> 8);
+    buf[4] = (uint8_t)(payload_len & 0xFF);
 }
 
 static atomic_uint_fast64_t g_proto_next_sequence = ATOMIC_VAR_INIT(0);
@@ -45,6 +58,28 @@ static uint64_t proto_next_sequence(void) {
                                                 memory_order_relaxed, memory_order_relaxed);
     }
     return (uint64_t)atomic_fetch_add_explicit(&g_proto_next_sequence, 1, memory_order_relaxed) + 1;
+}
+
+static bool proto_random_bytes(uint8_t *buf, size_t len) {
+#ifdef _WIN32
+    if (len > (size_t)ULONG_MAX) return false;
+    return SystemFunction036(buf, (ULONG)len) != FALSE;
+#else
+    int fd = open("/dev/urandom", O_RDONLY);
+    if (fd < 0) return false;
+
+    size_t offset = 0;
+    while (offset < len) {
+        ssize_t got = read(fd, buf + offset, len - offset);
+        if (got <= 0) {
+            close(fd);
+            return false;
+        }
+        offset += (size_t)got;
+    }
+    close(fd);
+    return true;
+#endif
 }
 
 static uint64_t proto_rotl64(uint64_t x, int b) {
@@ -110,25 +145,55 @@ uint64_t proto_siphash24(const uint8_t *in, size_t len, uint64_t k0, uint64_t k1
     return v0 ^ v1 ^ v2 ^ v3;
 }
 
-void proto_key_from_passphrase(const char *passphrase, uint64_t *k0, uint64_t *k1) {
-    *k0 = proto_siphash24((const uint8_t *)passphrase, strlen(passphrase), 0x0706050403020100ULL,
-                          0x0f0e0d0c0b0a0908ULL);
-    *k1 = proto_siphash24((const uint8_t *)passphrase, strlen(passphrase), 0xfedcba9876543210ULL,
-                          0x0123456789abcdefULL);
+void proto_key_from_passphrase(const char *passphrase, uint8_t key[TUND_KEY_SIZE]) {
+    static const uint8_t context[] = "TunD transport key v1";
+    crypto_blake2b_ctx ctx;
+    crypto_blake2b_init(&ctx, TUND_KEY_SIZE);
+    crypto_blake2b_update(&ctx, context, sizeof(context) - 1);
+    crypto_blake2b_update(&ctx, (const uint8_t *)passphrase, strlen(passphrase));
+    crypto_blake2b_final(&ctx, key);
 }
 
-void proto_sign(uint8_t *buf, int len, uint64_t k0, uint64_t k1) {
-    uint64_t tag = proto_siphash24(buf, TUND_AUTH_TAG_OFFSET, k0, k1) ^
-                   proto_siphash24(buf + TUND_HDR_SIZE, (size_t)len - TUND_HDR_SIZE, k0, k1);
-    for (int i = 0; i < 8; i++) buf[TUND_AUTH_TAG_OFFSET + i] = (uint8_t)(tag >> (8 * i));
+int proto_encrypt(uint8_t *buf, int len, const uint8_t key[TUND_KEY_SIZE]) {
+    if (len < TUND_HDR_SIZE) return -1;
+    int plaintext_len = len - TUND_HDR_SIZE;
+    if (plaintext_len < 0 || plaintext_len > TUND_MAX_PLAINTEXT) return -1;
+
+    uint8_t ciphertext[TUND_MAX_PLAINTEXT];
+    uint8_t mac[TUND_AUTH_TAG_SIZE];
+    uint16_t wire_payload_len = (uint16_t)(plaintext_len + TUND_AUTH_TAG_SIZE);
+    proto_write_payload_len(buf, wire_payload_len);
+
+    crypto_aead_lock(ciphertext, mac, key, buf + TUND_NONCE_OFFSET, buf, TUND_HDR_SIZE,
+                     buf + TUND_HDR_SIZE, (size_t)plaintext_len);
+    memcpy(buf + TUND_HDR_SIZE, ciphertext, (size_t)plaintext_len);
+    memcpy(buf + TUND_HDR_SIZE + plaintext_len, mac, sizeof(mac));
+    crypto_wipe(ciphertext, sizeof(ciphertext));
+    crypto_wipe(mac, sizeof(mac));
+    return TUND_HDR_SIZE + (int)wire_payload_len;
 }
 
-bool proto_verify(const uint8_t *buf, int len, uint64_t k0, uint64_t k1) {
-    if (len < TUND_HDR_SIZE) return false;
-    uint64_t got = proto_load64_le(buf + TUND_AUTH_TAG_OFFSET);
-    uint64_t tag = proto_siphash24(buf, TUND_AUTH_TAG_OFFSET, k0, k1) ^
-                   proto_siphash24(buf + TUND_HDR_SIZE, (size_t)len - TUND_HDR_SIZE, k0, k1);
-    return got == tag;
+int proto_decrypt(uint8_t *buf, int len, const uint8_t key[TUND_KEY_SIZE]) {
+    uint8_t type;
+    uint16_t wire_payload_len;
+    if (len < TUND_HDR_SIZE + TUND_AUTH_TAG_SIZE) return -1;
+    if (proto_read_hdr(buf, &type, &wire_payload_len) < 0) return -1;
+    (void)type;
+    if (wire_payload_len < TUND_AUTH_TAG_SIZE || TUND_HDR_SIZE + wire_payload_len != len) return -1;
+
+    int plaintext_len = (int)wire_payload_len - TUND_AUTH_TAG_SIZE;
+    if (plaintext_len > TUND_MAX_PLAINTEXT) return -1;
+
+    uint8_t plaintext[TUND_MAX_PLAINTEXT];
+    const uint8_t *mac = buf + TUND_HDR_SIZE + plaintext_len;
+    int failed = crypto_aead_unlock(plaintext, mac, key, buf + TUND_NONCE_OFFSET, buf,
+                                    TUND_HDR_SIZE, buf + TUND_HDR_SIZE, (size_t)plaintext_len);
+    if (failed) return -1;
+
+    memcpy(buf + TUND_HDR_SIZE, plaintext, (size_t)plaintext_len);
+    proto_write_payload_len(buf, (uint16_t)plaintext_len);
+    crypto_wipe(plaintext, sizeof(plaintext));
+    return TUND_HDR_SIZE + plaintext_len;
 }
 
 int proto_read_hdr(const uint8_t *buf, uint8_t *type, uint16_t *payload_len) {
@@ -180,14 +245,14 @@ bool proto_replay_accept(proto_replay_window_t *window, uint64_t sequence) {
 int proto_build_register(uint8_t *buf, const char *name) {
     uint16_t nlen = (uint16_t)strlen(name);
     if (nlen > TUND_NAME_LEN) nlen = TUND_NAME_LEN;
-    proto_write_hdr(buf, MSG_REGISTER, nlen);
+    if (proto_write_hdr(buf, MSG_REGISTER, nlen) < 0) return -1;
     memcpy(buf + TUND_HDR_SIZE, name, nlen);
     return TUND_HDR_SIZE + nlen;
 }
 
 int proto_build_assign(uint8_t *buf, uint32_t virt_ip, uint32_t netmask, uint16_t mtu) {
     uint16_t plen = 10;
-    proto_write_hdr(buf, MSG_ASSIGN, plen);
+    if (proto_write_hdr(buf, MSG_ASSIGN, plen) < 0) return -1;
     uint8_t *p = buf + TUND_HDR_SIZE;
     memcpy(p, &virt_ip, 4);
     p += 4;
@@ -199,13 +264,13 @@ int proto_build_assign(uint8_t *buf, uint32_t virt_ip, uint32_t netmask, uint16_
 }
 
 int proto_build_data(uint8_t *buf, const uint8_t *ip_pkt, uint16_t ip_len) {
-    proto_write_hdr(buf, MSG_DATA, ip_len);
+    if (proto_write_hdr(buf, MSG_DATA, ip_len) < 0) return -1;
     memcpy(buf + TUND_HDR_SIZE, ip_pkt, ip_len);
     return TUND_HDR_SIZE + ip_len;
 }
 
 static int proto_build_timestamp_msg(uint8_t *buf, uint8_t type, uint64_t timestamp) {
-    proto_write_hdr(buf, type, 8);
+    if (proto_write_hdr(buf, type, 8) < 0) return -1;
     uint8_t *p = buf + TUND_HDR_SIZE;
     for (int i = 7; i >= 0; i--) {
         p[i] = (uint8_t)(timestamp & 0xFF);
@@ -231,13 +296,13 @@ bool proto_read_keepalive_timestamp(const uint8_t *payload, uint16_t payload_len
 }
 
 int proto_build_disconnect(uint8_t *buf) {
-    proto_write_hdr(buf, MSG_DISCONNECT, 0);
+    if (proto_write_hdr(buf, MSG_DISCONNECT, 0) < 0) return -1;
     return TUND_HDR_SIZE;
 }
 
 int proto_build_peer_join(uint8_t *buf, uint32_t virt_ip, const char *name) {
     uint16_t plen = 4 + TUND_NAME_LEN;
-    proto_write_hdr(buf, MSG_PEER_JOIN, plen);
+    if (proto_write_hdr(buf, MSG_PEER_JOIN, plen) < 0) return -1;
     uint8_t *p = buf + TUND_HDR_SIZE;
     memcpy(p, &virt_ip, 4);
     p += 4;
@@ -247,7 +312,7 @@ int proto_build_peer_join(uint8_t *buf, uint32_t virt_ip, const char *name) {
 }
 
 int proto_build_peer_leave(uint8_t *buf, uint32_t virt_ip) {
-    proto_write_hdr(buf, MSG_PEER_LEAVE, 4);
+    if (proto_write_hdr(buf, MSG_PEER_LEAVE, 4) < 0) return -1;
     memcpy(buf + TUND_HDR_SIZE, &virt_ip, 4);
     return TUND_HDR_SIZE + 4;
 }

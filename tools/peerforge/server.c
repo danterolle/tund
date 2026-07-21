@@ -10,8 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-uint64_t g_auth_key0 = 0;
-uint64_t g_auth_key1 = 0;
+uint8_t g_crypto_key[TUND_KEY_SIZE];
 tund_stop_flag_t g_running = ATOMIC_VAR_INIT(true);
 bool g_tui_active = false;
 time_t g_start_time = 0;
@@ -140,6 +139,6 @@ int main(int argc, char **argv) {
     peerforge_server_options_t opts;
     if (!parse_options(argc, argv, &opts)) return 2;
 
-    proto_key_from_passphrase(opts.key, &g_auth_key0, &g_auth_key1);
+    proto_key_from_passphrase(opts.key, g_crypto_key);
     return run_server(&opts);
 }

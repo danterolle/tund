@@ -74,7 +74,7 @@ void tun_close(tun_device_t *dev) {
 }
 
 int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize) {
-    uint8_t tmp[TUND_MAX_PAYLOAD + 4];
+    uint8_t tmp[TUND_MAX_PLAINTEXT + 4];
     int maxread = bufsize + 4;
     if (maxread > (int)sizeof(tmp)) maxread = (int)sizeof(tmp);
 
@@ -95,7 +95,7 @@ int tun_read(tun_device_t *dev, uint8_t *buf, int bufsize) {
 }
 
 int tun_write(tun_device_t *dev, const uint8_t *buf, int len) {
-    uint8_t tmp[TUND_MAX_PAYLOAD + 4];
+    uint8_t tmp[TUND_MAX_PLAINTEXT + 4];
     if (len + 4 > (int)sizeof(tmp)) return -1;
 
     uint32_t af = htonl(AF_INET);

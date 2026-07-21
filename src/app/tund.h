@@ -182,8 +182,7 @@ static inline uint64_t smooth_rtt_ms(uint64_t current, uint64_t sample, bool has
 }
 
 extern tund_stop_flag_t g_running;
-extern uint64_t g_auth_key0;
-extern uint64_t g_auth_key1;
+extern uint8_t g_crypto_key[TUND_KEY_SIZE];
 
 static inline bool tund_is_running(void) {
     return tund_stop_flag_load(&g_running);

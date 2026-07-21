@@ -3,18 +3,20 @@
  * protocol.h — Wire protocol definitions
  *
  * Every UDP datagram exchanged between server and client starts with
- * a 21-byte header. The final 8 bytes are a keyed integrity tag.
+ * a 37-byte header. The payload is encrypted and authenticated.
  *
  *   +-------+---------+------+--------+----------------+----------------+
- *   | Magic | Version | Type | Length | Seq (64-bit)   | Tag (64-bit)   |
+ *   | Magic | Version | Type | Length | Seq (64-bit)   | Nonce (192-bit)|
  *   +-------+---------+------+--------+----------------+----------------+
- *   |                           Payload ...                             |
+ *   |                    Ciphertext ... | MAC (128-bit)                  |
  *   +-------------------------------------------------------------------+
  *
  * Magic   = 0xA9
  * Version = TUND_PROTOCOL_VERSION
  * Type    = one of MSG_* constants
- * Length  = big-endian uint16 payload length (NOT including header)
+ * Length  = big-endian uint16 payload length (NOT including header). Builders
+ *           store plaintext length; encrypted wire datagrams store ciphertext
+ *           length including the MAC.
  * Seq     = sender sequence number for replay protection
  */
 
@@ -26,14 +28,17 @@
 #include <stdint.h>
 
 #define TUND_MAGIC            0xA9
-#define TUND_PROTOCOL_VERSION 3
+#define TUND_PROTOCOL_VERSION 4
 #define TUND_PORT             9909
 #define TUND_SEQUENCE_SIZE    8
-#define TUND_AUTH_TAG_SIZE    8
+#define TUND_NONCE_SIZE       24
+#define TUND_AUTH_TAG_SIZE    16
+#define TUND_KEY_SIZE         32
 #define TUND_SEQUENCE_OFFSET  5
-#define TUND_AUTH_TAG_OFFSET  (TUND_SEQUENCE_OFFSET + TUND_SEQUENCE_SIZE)
-#define TUND_HDR_SIZE         (TUND_AUTH_TAG_OFFSET + TUND_AUTH_TAG_SIZE)
-#define TUND_MAX_PAYLOAD      1600 /* MTU 1500 + some headroom */
+#define TUND_NONCE_OFFSET     (TUND_SEQUENCE_OFFSET + TUND_SEQUENCE_SIZE)
+#define TUND_HDR_SIZE         (TUND_NONCE_OFFSET + TUND_NONCE_SIZE)
+#define TUND_MAX_PLAINTEXT    1600 /* MTU 1500 + some headroom */
+#define TUND_MAX_PAYLOAD      (TUND_MAX_PLAINTEXT + TUND_AUTH_TAG_SIZE)
 #define TUND_MAX_PKT          (TUND_HDR_SIZE + TUND_MAX_PAYLOAD)
 #define TUND_NAME_LEN         32
 #define TUND_TUN_MTU          1400 /* Leave room for UDP encapsulation */
@@ -84,9 +89,9 @@ int proto_read_hdr(const uint8_t *buf, uint8_t *type, uint16_t *payload_len);
 bool proto_read_sequence(const uint8_t *buf, uint64_t *sequence);
 
 uint64_t proto_siphash24(const uint8_t *in, size_t len, uint64_t k0, uint64_t k1);
-void proto_key_from_passphrase(const char *passphrase, uint64_t *k0, uint64_t *k1);
-void proto_sign(uint8_t *buf, int len, uint64_t k0, uint64_t k1);
-bool proto_verify(const uint8_t *buf, int len, uint64_t k0, uint64_t k1);
+void proto_key_from_passphrase(const char *passphrase, uint8_t key[TUND_KEY_SIZE]);
+int proto_encrypt(uint8_t *buf, int len, const uint8_t key[TUND_KEY_SIZE]);
+int proto_decrypt(uint8_t *buf, int len, const uint8_t key[TUND_KEY_SIZE]);
 void proto_replay_reset(proto_replay_window_t *window);
 bool proto_replay_accept(proto_replay_window_t *window, uint64_t sequence);
 

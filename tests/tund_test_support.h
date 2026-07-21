@@ -20,7 +20,7 @@ typedef struct {
 
 typedef struct {
     int len;
-    uint8_t buf[TUND_MAX_PAYLOAD];
+    uint8_t buf[TUND_MAX_PLAINTEXT];
 } tund_test_tun_write_record_t;
 
 extern int tund_test_send_count;

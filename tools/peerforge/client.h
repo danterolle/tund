@@ -2,6 +2,7 @@
 #define PEERFORGE_CLIENT_H
 
 #include "net.h"
+#include "protocol.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,8 +15,7 @@ typedef struct {
 
 typedef struct {
     struct sockaddr_in server;
-    uint64_t key0;
-    uint64_t key1;
+    uint8_t key[TUND_KEY_SIZE];
     int timeout_ms;
 } peerforge_session_t;
 

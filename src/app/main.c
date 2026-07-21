@@ -8,8 +8,7 @@ int g_log_level = LOG_LEVEL_INFO;
 bool g_tui_active = true;
 time_t g_start_time = 0;
 tund_stop_flag_t g_running = ATOMIC_VAR_INIT(true);
-uint64_t g_auth_key0 = 0;
-uint64_t g_auth_key1 = 0;
+uint8_t g_crypto_key[TUND_KEY_SIZE];
 
 static server_t g_server;
 static client_t g_client;
@@ -25,7 +24,7 @@ int main(int argc, char *argv[]) {
     g_log_level = cfg.log_level;
     g_tui_active = cfg.tui_mode;
     g_start_time = time(NULL);
-    proto_key_from_passphrase(cfg.access_key, &g_auth_key0, &g_auth_key1);
+    proto_key_from_passphrase(cfg.access_key, g_crypto_key);
 
     if (cfg.tui_mode && !app_stderr_is_tty()) {
         cfg.tui_mode = false;

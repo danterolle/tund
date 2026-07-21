@@ -45,7 +45,7 @@ void tui_render_server(uint16_t port, const char *tun_name, uint32_t virt_ip, ui
     tui_rule();
     tui_render_events();
     snprintf(value, sizeof(value),
-             "Ctrl+C quit · UDP %u · subnet 10.9.0.0/24 · authenticated, not encrypted", port);
+             "Ctrl+C quit · UDP %u · subnet 10.9.0.0/24 · encrypted in transit", port);
     tui_render_footer(value);
     tui_finish_frame();
 }
@@ -76,8 +76,8 @@ void tui_render_client(const char *server_addr, uint16_t port, const char *tun_n
     tui_render_peer_table(peer_count, peers, npeers);
     tui_rule();
     tui_render_events();
-    snprintf(value, sizeof(value), "Ctrl+C quit · server %s:%u · authenticated, not encrypted",
-             server_addr, port);
+    snprintf(value, sizeof(value), "Ctrl+C quit · server %s:%u · encrypted in transit", server_addr,
+             port);
     tui_render_footer(value);
     tui_finish_frame();
 }

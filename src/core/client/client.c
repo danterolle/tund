@@ -31,7 +31,7 @@ static void *client_keepalive_thread(void *arg) {
 
 static void *client_tun_thread(void *arg) {
     client_t *cli = (client_t *)arg;
-    uint8_t pkt_buf[TUND_MAX_PAYLOAD];
+    uint8_t pkt_buf[TUND_MAX_PLAINTEXT];
     uint8_t msg_buf[TUND_MAX_PKT];
 
     while (tund_is_running() && !tund_stop_flag_load(&cli->tun_quit)) {

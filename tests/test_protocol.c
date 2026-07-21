@@ -22,21 +22,24 @@ static void test_header_roundtrip(void) {
     uint16_t payload_len = 0;
 
     memset(buf, 0xCC, sizeof(buf));
-    CHECK(proto_write_hdr(buf, MSG_DATA, 0x1234) == TUND_HDR_SIZE);
+    CHECK(proto_write_hdr(buf, MSG_DATA, 0x0123) == TUND_HDR_SIZE);
     CHECK(buf[0] == TUND_MAGIC);
     CHECK(buf[1] == TUND_PROTOCOL_VERSION);
     CHECK(buf[2] == MSG_DATA);
-    CHECK(buf[3] == 0x12);
-    CHECK(buf[4] == 0x34);
+    CHECK(buf[3] == 0x01);
+    CHECK(buf[4] == 0x23);
     uint64_t sequence = 0;
     CHECK(proto_read_sequence(buf, &sequence));
     CHECK(sequence > 0);
 
-    for (int i = 0; i < TUND_AUTH_TAG_SIZE; i++) CHECK(buf[TUND_AUTH_TAG_OFFSET + i] == 0);
+    bool nonce_has_data = false;
+    for (int i = 0; i < TUND_NONCE_SIZE; i++)
+        nonce_has_data = nonce_has_data || buf[TUND_NONCE_OFFSET + i] != 0;
+    CHECK(nonce_has_data);
 
     CHECK(proto_read_hdr(buf, &type, &payload_len) == 0);
     CHECK(type == MSG_DATA);
-    CHECK(payload_len == 0x1234);
+    CHECK(payload_len == 0x0123);
 
     buf[0] = 0;
     CHECK(proto_read_hdr(buf, &type, &payload_len) == TUND_HDR_BAD_MAGIC);
@@ -46,36 +49,74 @@ static void test_header_roundtrip(void) {
     CHECK(proto_read_hdr(buf, &type, &payload_len) == TUND_HDR_BAD_VERSION);
 }
 
-static void test_authentication(void) {
+static void test_transport_encryption(void) {
     uint8_t ip_pkt[20];
     uint8_t buf[TUND_MAX_PKT];
-    uint64_t k0, k1, other_k0, other_k1;
+    uint8_t original_payload[20];
+    uint8_t key[TUND_KEY_SIZE], other_key[TUND_KEY_SIZE];
 
     for (size_t i = 0; i < sizeof(ip_pkt); i++) ip_pkt[i] = (uint8_t)i;
     ip_pkt[0] = 0x45;
+    memcpy(original_payload, ip_pkt, sizeof(original_payload));
 
-    proto_key_from_passphrase("a-long-random-key", &k0, &k1);
-    proto_key_from_passphrase("another-random-key", &other_k0, &other_k1);
+    proto_key_from_passphrase("a-long-random-key", key);
+    proto_key_from_passphrase("another-random-key", other_key);
 
     int len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
-    proto_sign(buf, len, k0, k1);
+    int wire_len = proto_encrypt(buf, len, key);
+    CHECK(wire_len == len + TUND_AUTH_TAG_SIZE);
+    CHECK(memcmp(buf + TUND_HDR_SIZE, original_payload, sizeof(original_payload)) != 0);
+    CHECK(proto_decrypt(buf, wire_len, other_key) < 0);
+    CHECK(proto_decrypt(buf, wire_len, key) == len);
+    CHECK(memcmp(buf + TUND_HDR_SIZE, original_payload, sizeof(original_payload)) == 0);
 
-    CHECK(proto_verify(buf, len, k0, k1));
-    CHECK(!proto_verify(buf, TUND_HDR_SIZE - 1, k0, k1));
-    CHECK(!proto_verify(buf, len, other_k0, other_k1));
-
+    len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
+    wire_len = proto_encrypt(buf, len, key);
     buf[1] ^= 0x01;
-    CHECK(!proto_verify(buf, len, k0, k1));
+    CHECK(proto_decrypt(buf, wire_len, key) < 0);
 
     len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
-    proto_sign(buf, len, k0, k1);
+    wire_len = proto_encrypt(buf, len, key);
     buf[TUND_SEQUENCE_OFFSET + 7] ^= 0x01;
-    CHECK(!proto_verify(buf, len, k0, k1));
+    CHECK(proto_decrypt(buf, wire_len, key) < 0);
 
     len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
-    proto_sign(buf, len, k0, k1);
+    wire_len = proto_encrypt(buf, len, key);
     buf[TUND_HDR_SIZE + 5] ^= 0xFF;
-    CHECK(!proto_verify(buf, len, k0, k1));
+    CHECK(proto_decrypt(buf, wire_len, key) < 0);
+
+    len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
+    wire_len = proto_encrypt(buf, len, key);
+    buf[wire_len - 1] ^= 0xFF;
+    CHECK(proto_decrypt(buf, wire_len, key) < 0);
+}
+
+static void test_key_derivation(void) {
+    uint8_t key[TUND_KEY_SIZE], same_key[TUND_KEY_SIZE], other_key[TUND_KEY_SIZE];
+    proto_key_from_passphrase("a-long-random-key", key);
+    proto_key_from_passphrase("a-long-random-key", same_key);
+    proto_key_from_passphrase("another-random-key", other_key);
+
+    CHECK(memcmp(key, same_key, sizeof(key)) == 0);
+    CHECK(memcmp(key, other_key, sizeof(key)) != 0);
+
+    bool key_has_data = false;
+    for (int i = 0; i < TUND_KEY_SIZE; i++) key_has_data = key_has_data || key[i] != 0;
+    CHECK(key_has_data);
+}
+
+static void test_siphash_tamper_vector(void) {
+    uint8_t ip_pkt[20];
+    uint8_t buf[TUND_MAX_PKT];
+    uint64_t k0 = 0x0706050403020100ULL;
+    uint64_t k1 = 0x0f0e0d0c0b0a0908ULL;
+
+    for (size_t i = 0; i < sizeof(ip_pkt); i++) ip_pkt[i] = (uint8_t)i;
+    ip_pkt[0] = 0x45;
+    int len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
+    uint64_t tag = proto_siphash24(buf, (size_t)len, k0, k1);
+    buf[1] ^= 0x01;
+    CHECK(proto_siphash24(buf, (size_t)len, k0, k1) != tag);
 }
 
 static void test_builders(void) {
@@ -174,7 +215,9 @@ static void test_replay_window(void) {
 int main(void) {
     test_siphash_vector();
     test_header_roundtrip();
-    test_authentication();
+    test_transport_encryption();
+    test_key_derivation();
+    test_siphash_tamper_vector();
     test_builders();
     test_dst_ip();
     test_replay_window();

@@ -55,9 +55,16 @@ socket_t net_create_socket(uint16_t bind_port) {
 
 int net_send(socket_t sockfd, uint8_t *buf, int len, const struct sockaddr_in *dest) {
     if (len < TUND_HDR_SIZE) return -1;
-    proto_sign(buf, len, g_auth_key0, g_auth_key1);
-    ssize_t sent = sendto(sockfd, (const char *)buf, (size_t)len, 0, (const struct sockaddr *)dest,
-                          sizeof(*dest));
+    if (len > TUND_HDR_SIZE + TUND_MAX_PLAINTEXT) return -1;
+    uint8_t wire[TUND_MAX_PKT];
+    memcpy(wire, buf, (size_t)len);
+    int wire_len = proto_encrypt(wire, len, g_crypto_key);
+    if (wire_len < 0) {
+        LOG_ERROR("Failed to encrypt outgoing datagram");
+        return -1;
+    }
+    ssize_t sent = sendto(sockfd, (const char *)wire, (size_t)wire_len, 0,
+                          (const struct sockaddr *)dest, sizeof(*dest));
     if (sent < 0) {
         char dest_ip[TUND_IP_STR_LEN];
         LOG_ERROR("sendto(%s:%u) failed: %s",
@@ -65,6 +72,7 @@ int net_send(socket_t sockfd, uint8_t *buf, int len, const struct sockaddr_in *d
                   ntohs(dest->sin_port), sock_errstr(SOCK_Error()));
         return -1;
     }
+    if (sent != wire_len) return -1;
     return 0;
 }
 
@@ -79,14 +87,15 @@ int net_recv(socket_t sockfd, uint8_t *buf, int bufsize, struct sockaddr_in *fro
         LOG_ERROR("recvfrom() failed: %s", sock_errstr(err));
         return NET_RECV_ERROR;
     }
-    if (!proto_verify(buf, (int)n, g_auth_key0, g_auth_key1)) {
+    int decrypted = proto_decrypt(buf, (int)n, g_crypto_key);
+    if (decrypted < 0) {
         char from_ip[TUND_IP_STR_LEN];
-        LOG_DEBUG("Dropped unauthenticated packet from %s:%u",
+        LOG_DEBUG("Dropped undecryptable packet from %s:%u",
                   ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)),
                   ntohs(from->sin_port));
         return NET_RECV_AUTH_FAILED;
     }
-    return (int)n;
+    return decrypted;
 }
 
 bool net_addr_equal(const struct sockaddr_in *a, const struct sockaddr_in *b) {

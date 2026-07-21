@@ -9,7 +9,7 @@ static int build_peer_list_from_snapshot(uint8_t *buf, const msg_peer_entry_t *e
     int count = 0;
 
     for (int i = 0; i < entry_count; i++) {
-        if (offset + (int)sizeof(msg_peer_entry_t) > TUND_MAX_PAYLOAD) break;
+        if (offset + (int)sizeof(msg_peer_entry_t) > TUND_MAX_PLAINTEXT) break;
         memcpy(payload + offset, &entries[i], sizeof(entries[i]));
         offset += (int)sizeof(msg_peer_entry_t);
         count++;

@@ -22,12 +22,13 @@ void peerforge_client_close(peerforge_client_t *client) {
     peerforge_client_init(client);
 }
 
-static int send_signed(peerforge_socket_t sock, uint8_t *buf, int len,
-                       const peerforge_session_t *session) {
-    proto_sign(buf, len, session->key0, session->key1);
-    int sent = (int)sendto(sock, (const char *)buf, (size_t)len, 0,
+static int send_encrypted(peerforge_socket_t sock, uint8_t *buf, int len,
+                          const peerforge_session_t *session) {
+    int wire_len = proto_encrypt(buf, len, session->key);
+    if (wire_len < 0) return -1;
+    int sent = (int)sendto(sock, (const char *)buf, (size_t)wire_len, 0,
                            (const struct sockaddr *)&session->server, sizeof(session->server));
-    return sent == len ? 0 : -1;
+    return sent == wire_len ? 0 : -1;
 }
 
 static int recv_message(peerforge_socket_t sock, const peerforge_session_t *session, uint8_t *buf,
@@ -39,8 +40,8 @@ static int recv_message(peerforge_socket_t sock, const peerforge_session_t *sess
     socklen_t from_len = sizeof(from);
     int len =
         (int)recvfrom(sock, (char *)buf, TUND_MAX_PKT, 0, (struct sockaddr *)&from, &from_len);
+    len = proto_decrypt(buf, len, session->key);
     if (len < TUND_HDR_SIZE) return -1;
-    if (!proto_verify(buf, len, session->key0, session->key1)) return -1;
     if (proto_read_hdr(buf, type, payload_len) < 0) return -1;
     if (TUND_HDR_SIZE + *payload_len > len) return -1;
     return len;
@@ -52,7 +53,7 @@ static void handle_server_keepalive(peerforge_socket_t sock, const peerforge_ses
     uint8_t buf[TUND_MAX_PKT];
     if (!proto_read_keepalive_timestamp(payload, payload_len, &timestamp)) return;
     int len = proto_build_keepalive_ack(buf, timestamp);
-    send_signed(sock, buf, len, session);
+    send_encrypted(sock, buf, len, session);
 }
 
 void peerforge_client_drain(peerforge_client_t *client, const peerforge_session_t *session) {
@@ -74,7 +75,7 @@ int peerforge_register_client(peerforge_client_t *client, int index,
     snprintf(name, sizeof(name), "forge-%03d", index + 1);
 
     int len = proto_build_register(buf, name);
-    if (send_signed(client->sock, buf, len, session) < 0) return -1;
+    if (send_encrypted(client->sock, buf, len, session) < 0) return -1;
 
     uint64_t deadline = peerforge_now_ms() + (uint64_t)session->timeout_ms;
     while (peerforge_now_ms() < deadline) {
@@ -103,7 +104,7 @@ int peerforge_keepalive_round(peerforge_client_t *clients, int count,
         uint8_t buf[TUND_MAX_PKT];
         uint64_t timestamp = peerforge_now_ms();
         int len = proto_build_keepalive(buf, timestamp);
-        if (send_signed(clients[i].sock, buf, len, session) < 0) continue;
+        if (send_encrypted(clients[i].sock, buf, len, session) < 0) continue;
 
         uint64_t deadline = peerforge_now_ms() + (uint64_t)session->timeout_ms;
         while (peerforge_now_ms() < deadline) {
@@ -156,7 +157,7 @@ int peerforge_data_probe(peerforge_client_t *clients, int count, int pairs,
         uint8_t buf[TUND_MAX_PKT];
         build_ipv4_probe(ip_pkt, clients[src_idx].virt_ip, clients[dst_idx].virt_ip);
         int len = proto_build_data(buf, ip_pkt, sizeof(ip_pkt));
-        if (send_signed(clients[src_idx].sock, buf, len, session) < 0) continue;
+        if (send_encrypted(clients[src_idx].sock, buf, len, session) < 0) continue;
 
         uint64_t deadline = peerforge_now_ms() + (uint64_t)session->timeout_ms;
         while (peerforge_now_ms() < deadline) {

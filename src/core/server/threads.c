@@ -60,7 +60,7 @@ void *server_timeout_thread(void *arg) {
 
 void *server_tun_thread(void *arg) {
     server_t *srv = (server_t *)arg;
-    uint8_t pkt_buf[TUND_MAX_PAYLOAD];
+    uint8_t pkt_buf[TUND_MAX_PLAINTEXT];
     uint8_t msg_buf[TUND_MAX_PKT];
 
     while (tund_is_running() && !tund_stop_flag_load(&srv->tun_quit)) {

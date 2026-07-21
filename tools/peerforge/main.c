@@ -13,7 +13,7 @@ static void close_clients(peerforge_client_t *clients, int count) {
 static int run_peerforge(const peerforge_options_t *opts) {
     peerforge_session_t session;
     if (peerforge_resolve_server(opts->server, opts->port, &session.server) < 0) return 1;
-    proto_key_from_passphrase(opts->key, &session.key0, &session.key1);
+    proto_key_from_passphrase(opts->key, session.key);
     session.timeout_ms = opts->timeout_ms;
 
     peerforge_client_t *clients = calloc((size_t)opts->clients, sizeof(*clients));

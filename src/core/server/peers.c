@@ -130,7 +130,7 @@ void server_send_peer_list(server_t *srv, int peer_idx) {
     }
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (srv->peers[i].active && i != peer_idx) {
-            if (offset + (int)sizeof(msg_peer_entry_t) > TUND_MAX_PAYLOAD) break;
+            if (offset + (int)sizeof(msg_peer_entry_t) > TUND_MAX_PLAINTEXT) break;
             msg_peer_entry_t *entry = &entries[count];
             entry->virt_ip = srv->peers[i].virt_ip;
             memset(entry->name, 0, TUND_NAME_LEN);
