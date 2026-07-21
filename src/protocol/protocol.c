@@ -177,8 +177,14 @@ void proto_key_from_passphrase(const char *passphrase, uint8_t key[TUND_KEY_SIZE
 
 int proto_encrypt(uint8_t *buf, int len, const uint8_t key[TUND_KEY_SIZE]) {
     if (len < TUND_HDR_SIZE) return -1;
+    uint8_t type;
+    uint16_t payload_len;
+    if (proto_read_hdr(buf, &type, &payload_len) < 0) return -1;
+
     int plaintext_len = len - TUND_HDR_SIZE;
     if (plaintext_len < 0 || plaintext_len > TUND_MAX_PLAINTEXT) return -1;
+    if (payload_len != (uint16_t)plaintext_len) return -1;
+    if (proto_write_hdr(buf, type, (uint16_t)plaintext_len) < 0) return -1;
 
     uint8_t ciphertext[TUND_MAX_PLAINTEXT];
     uint8_t mac[TUND_AUTH_TAG_SIZE];

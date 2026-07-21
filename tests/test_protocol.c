@@ -91,6 +91,39 @@ static void test_transport_encryption(void) {
     CHECK(proto_decrypt(buf, wire_len, key) < 0);
 }
 
+static void test_transport_encryption_refreshes_header(void) {
+    uint8_t ip_pkt[20];
+    uint8_t plaintext[TUND_MAX_PKT];
+    uint8_t first[TUND_MAX_PKT], second[TUND_MAX_PKT];
+    uint8_t key[TUND_KEY_SIZE];
+    uint64_t first_sequence = 0, second_sequence = 0;
+
+    for (size_t i = 0; i < sizeof(ip_pkt); i++) ip_pkt[i] = (uint8_t)i;
+    ip_pkt[0] = 0x45;
+    proto_key_from_passphrase("a-long-random-key", key);
+
+    int len = proto_build_data(plaintext, ip_pkt, (uint16_t)sizeof(ip_pkt));
+    memcpy(first, plaintext, (size_t)len);
+    memcpy(second, plaintext, (size_t)len);
+
+    int first_wire_len = proto_encrypt(first, len, key);
+    int second_wire_len = proto_encrypt(second, len, key);
+
+    CHECK(first_wire_len == len + TUND_AUTH_TAG_SIZE);
+    CHECK(second_wire_len == len + TUND_AUTH_TAG_SIZE);
+    CHECK(proto_read_sequence(first, &first_sequence));
+    CHECK(proto_read_sequence(second, &second_sequence));
+    CHECK(first_sequence != second_sequence);
+    CHECK(memcmp(first + TUND_NONCE_OFFSET, second + TUND_NONCE_OFFSET, TUND_NONCE_SIZE) != 0);
+    CHECK(memcmp(first + TUND_HDR_SIZE, second + TUND_HDR_SIZE,
+                 (size_t)(first_wire_len - TUND_HDR_SIZE)) != 0);
+
+    CHECK(proto_decrypt(first, first_wire_len, key) == len);
+    CHECK(proto_decrypt(second, second_wire_len, key) == len);
+    CHECK(memcmp(first + TUND_HDR_SIZE, ip_pkt, sizeof(ip_pkt)) == 0);
+    CHECK(memcmp(second + TUND_HDR_SIZE, ip_pkt, sizeof(ip_pkt)) == 0);
+}
+
 static void test_key_derivation(void) {
     uint8_t key[TUND_KEY_SIZE], same_key[TUND_KEY_SIZE], other_key[TUND_KEY_SIZE];
     proto_key_from_passphrase("a-long-random-key", key);
@@ -216,6 +249,7 @@ int main(void) {
     test_siphash_vector();
     test_header_roundtrip();
     test_transport_encryption();
+    test_transport_encryption_refreshes_header();
     test_key_derivation();
     test_siphash_tamper_vector();
     test_builders();

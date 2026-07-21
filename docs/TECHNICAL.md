@@ -63,7 +63,7 @@ Every TunD datagram uses the following 37-byte header followed by an encrypted p
 | 5–12 | sequence | Sender sequence number for replay protection. |
 | 13–36 | nonce | 192-bit XChaCha20-Poly1305 nonce. |
 
-`network.c` encrypts every outgoing payload with Monocypher's XChaCha20-Poly1305 AEAD. The header is authenticated as associated data, so changes to message type, length, sequence or nonce are rejected before message parsing. On receive, `network.c` decrypts the payload in place and restores the header length to plaintext length for the existing packet handlers.
+`network.c` encrypts every outgoing payload with Monocypher's XChaCha20-Poly1305 AEAD. Encryption refreshes the header sequence and nonce immediately before locking the datagram, so fan-out sends never reuse the same nonce. The header is authenticated as associated data, so changes to message type, length, sequence or nonce are rejected before message parsing. On receive, `network.c` decrypts the payload in place and restores the header length to plaintext length for the existing packet handlers.
 
 Clients and servers keep a small sliding window per remote endpoint and drop replayed sequence numbers. All participants must therefore use the same access key and protocol version.
 

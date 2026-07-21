@@ -90,6 +90,7 @@ bool proto_read_sequence(const uint8_t *buf, uint64_t *sequence);
 
 uint64_t proto_siphash24(const uint8_t *in, size_t len, uint64_t k0, uint64_t k1);
 void proto_key_from_passphrase(const char *passphrase, uint8_t key[TUND_KEY_SIZE]);
+/* Refreshes sequence and nonce before encrypting the plaintext payload in place. */
 int proto_encrypt(uint8_t *buf, int len, const uint8_t key[TUND_KEY_SIZE]);
 int proto_decrypt(uint8_t *buf, int len, const uint8_t key[TUND_KEY_SIZE]);
 void proto_replay_reset(proto_replay_window_t *window);
