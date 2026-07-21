@@ -11,8 +11,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     if (RelaunchAsAdministrator()) {
       return EXIT_SUCCESS;
     }
-    ::MessageBox(nullptr, L"Tund GUI requires Administrator privileges.",
-                 L"Tund", MB_OK | MB_ICONERROR);
+    ::MessageBox(nullptr, L"TunD GUI requires Administrator privileges.",
+                 L"TunD", MB_OK | MB_ICONERROR);
     return EXIT_FAILURE;
   }
 
@@ -36,7 +36,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"Tund GUI", origin, size)) {
+  if (!window.Create(L"TunD GUI", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
