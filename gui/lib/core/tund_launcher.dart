@@ -118,7 +118,7 @@ class TundLauncher {
   void stop() {
     final process = _process;
     if (process == null) return;
-    process.kill();
+    if (!_requestGracefulStop(process)) return;
     unawaited(_forceKillIfStillRunning(process));
   }
 
@@ -134,6 +134,30 @@ class TundLauncher {
         .timeout(_stopTimeout, onTimeout: () => false);
     if (!exited && _process == process) {
       process.kill(ProcessSignal.sigkill);
+    }
+  }
+
+  bool _requestGracefulStop(Process process) {
+    try {
+      process.stdin.writeln('stop');
+    } on IOException {
+      process.kill();
+      return false;
+    } on StateError {
+      process.kill();
+      return false;
+    }
+    unawaited(_flushStopCommand(process));
+    return true;
+  }
+
+  Future<void> _flushStopCommand(Process process) async {
+    try {
+      await process.stdin.flush();
+    } on IOException {
+      process.kill();
+    } on StateError {
+      process.kill();
     }
   }
 }

@@ -7,6 +7,7 @@
 
 void win_runtime_init_early(void);
 bool win_runtime_stderr_is_tty(void);
+bool win_runtime_stdin_is_tty(void);
 bool win_runtime_is_admin(void);
 bool win_runtime_relaunch_as_admin(int argc, char *argv[]);
 void win_runtime_enable_tui_console(void);

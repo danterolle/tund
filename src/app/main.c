@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
     if (platform_result == APP_STARTUP_EXIT_ERROR) return 1;
 
     app_setup_signals();
+    app_setup_stdin_control();
 
     if (cfg.mode == MODE_SERVER) {
         if (server_init(&g_server, &cfg) < 0) {

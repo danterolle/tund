@@ -11,6 +11,10 @@ bool app_stderr_is_tty(void) {
     return win_runtime_stderr_is_tty();
 }
 
+bool app_stdin_is_tty(void) {
+    return win_runtime_stdin_is_tty();
+}
+
 app_startup_result_t app_prepare_runtime(int argc, char *argv[], const config_t *cfg) {
     if (!win_runtime_is_admin()) {
         fprintf(stderr, "TunD requires Administrator privileges for the TUN interface.\n");
@@ -34,6 +38,10 @@ void app_init_early(void) {}
 
 bool app_stderr_is_tty(void) {
     return isatty(STDERR_FILENO);
+}
+
+bool app_stdin_is_tty(void) {
+    return isatty(STDIN_FILENO);
 }
 
 app_startup_result_t app_prepare_runtime(int argc, char *argv[], const config_t *cfg) {
@@ -71,3 +79,25 @@ void app_setup_signals(void) {
 }
 
 #endif
+
+static void *stdin_control_thread(void *arg) {
+    (void)arg;
+    char line[32];
+    while (fgets(line, sizeof(line), stdin)) {
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strcmp(line, "stop") == 0 || strcmp(line, "quit") == 0 || strcmp(line, "exit") == 0) {
+            tund_request_stop();
+            break;
+        }
+    }
+    return NULL;
+}
+
+void app_setup_stdin_control(void) {
+    if (app_stdin_is_tty()) return;
+
+    pthread_t tid;
+    if (pthread_create(&tid, NULL, stdin_control_thread, NULL) == 0) {
+        pthread_detach(tid);
+    }
+}

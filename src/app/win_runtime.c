@@ -140,6 +140,12 @@ bool win_runtime_stderr_is_tty(void) {
     return herr != INVALID_HANDLE_VALUE && GetConsoleMode(herr, &mode);
 }
 
+bool win_runtime_stdin_is_tty(void) {
+    DWORD mode = 0;
+    HANDLE hin = GetStdHandle(STD_INPUT_HANDLE);
+    return hin != INVALID_HANDLE_VALUE && GetConsoleMode(hin, &mode);
+}
+
 void win_runtime_enable_tui_console(void) {
     HANDLE hOut = GetStdHandle(STD_ERROR_HANDLE);
     DWORD mode = 0;

@@ -11,7 +11,9 @@ typedef enum {
 
 void app_init_early(void);
 bool app_stderr_is_tty(void);
+bool app_stdin_is_tty(void);
 app_startup_result_t app_prepare_runtime(int argc, char *argv[], const config_t *cfg);
 void app_setup_signals(void);
+void app_setup_stdin_control(void);
 
 #endif /* TUND_PLATFORM_H */
