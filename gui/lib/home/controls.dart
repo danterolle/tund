@@ -116,7 +116,7 @@ class HomeControls extends StatelessWidget {
             const Text('Verbose logs',
                 style: TextStyle(color: TundColors.muted)),
             const Spacer(),
-            const Text('Authenticated, not encrypted',
+            const Text('Encrypted in transit',
                 style: TextStyle(color: TundColors.faint, fontSize: 12)),
           ],
         ),
