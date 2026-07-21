@@ -19,7 +19,7 @@ If ping fails but registration succeeded, ICMP may be blocked by a firewall. Tes
 
 ## Windows notes
 
-- **Administrator privileges**: TunD creates a TUN interface, so Windows may show a UAC prompt on startup. Accept it to continue.
+- **Administrator privileges**: TunD creates a TUN interface, so Windows may show a UAC prompt on startup. Accept it to continue. The GUI requests elevation before it opens. If you use the standalone CLI with `--key-stdin`, run it from an Administrator terminal because stdin cannot be carried through an automatic UAC relaunch.
 - **Wintun**: keep `wintun.dll` next to `tund-cli.exe`. The release zip already bundles both files.
 - **Server firewall**: TunD does not change Windows Firewall automatically. If this machine is the server, allow inbound UDP on port `9909` or clients will not be able to reach it.
 

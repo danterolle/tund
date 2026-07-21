@@ -65,6 +65,8 @@ On Windows:
 .\tund-cli.exe client -s <server_ip> --key-stdin
 ```
 
+Run that command from an Administrator terminal on Windows. The GUI release requests elevation before it opens.
+
 Options:
 
 ```text

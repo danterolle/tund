@@ -14,6 +14,7 @@ The GUI code was built with heavier AI assistance than the C core because Flutte
   - `wintun.dll`
   - `flutter_windows.dll`
   - `data/`
+  The GUI requests Administrator privileges before it opens, so it can start `tund-cli` with `--key-stdin`.
 - **macOS:** run `tund-gui.command` next to `tund-gui.app`; do not run `sudo tund-gui.app`.
 - **Linux:** launch the GUI bundle with the privileges required for TUN setup. You can also run the standalone CLI with `sudo`.
 
