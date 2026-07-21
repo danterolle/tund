@@ -114,8 +114,7 @@ void main() {
         verbose: false,
       );
 
-      expect(config.toArgs(),
-          ['server', '-p', '9909', '-k', 'a-long-random-key', '-t']);
+      expect(config.toArgs(), ['server', '-p', '9909', '--key-stdin', '-t']);
     });
 
     test('builds client arguments with default name and verbose flag', () {
@@ -132,8 +131,7 @@ void main() {
         'client',
         '-p',
         '12345',
-        '-k',
-        'a-long-random-key',
+        '--key-stdin',
         '-t',
         '-s',
         '203.0.113.10',
@@ -154,7 +152,7 @@ void main() {
       );
 
       expect(config.displayArgs(),
-          'client -p 9909 -k ******** -t -s example.test -n "Gaming PC"');
+          'client -p 9909 --key-stdin -t -s example.test -n "Gaming PC"');
     });
   });
 

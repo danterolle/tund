@@ -36,6 +36,7 @@ Please avoid public disclosure until a fix is available or a coordinated disclos
 ## Operational guidance
 
 - Use a long random shared key. Do not rely on a short memorable password.
+- Prefer `--key-file` or `--key-stdin`; `-k <key>` exposes the key in process lists and shell history.
 - Run TunD only with peers and servers you trust.
 - Do not use TunD when you need end-to-end confidentiality from the server.
 - Keep Windows release files together, including the bundled `wintun.dll`.

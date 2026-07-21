@@ -94,9 +94,7 @@ class TundLauncher {
       workingDirectory: exe.parent.path,
       runInShell: false,
     );
-
     _process = process;
-    onStarted?.call();
     _stdout = process.stdout
         .transform(tundProcessOutputDecoder)
         .map(sanitizeProcessOutput)
@@ -105,6 +103,27 @@ class TundLauncher {
         .transform(tundProcessOutputDecoder)
         .map(sanitizeProcessOutput)
         .listen(onLog);
+
+    try {
+      process.stdin.writeln(config.key);
+      await process.stdin.flush();
+    } on IOException {
+      process.kill();
+      throw const TundLaunchException(
+        title: 'Could not send network key',
+        message:
+            'The CLI process exited before the GUI could send the network key.',
+      );
+    } on StateError {
+      process.kill();
+      throw const TundLaunchException(
+        title: 'Could not send network key',
+        message:
+            'The CLI process closed stdin before the GUI could send the network key.',
+      );
+    }
+
+    onStarted?.call();
 
     final exitCode = await process.exitCode;
     await _stdout?.cancel();

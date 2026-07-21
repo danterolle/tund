@@ -21,29 +21,32 @@ The CLI examples below use `./tund-cli`; release binary names may differ. GUI-sp
 Use the same long random key on every endpoint.
 
 ```bash
-openssl rand -base64 24
+openssl rand -base64 24 > tund.key
+chmod 600 tund.key
 ```
 
-The examples below use `<network-key>` as a placeholder for that generated value.
+The examples below use `tund.key`. Prefer `--key-file` or `--key-stdin` so the key does not appear in process lists or shell history.
 
 ## Start the server
 
 On the machine that should act as the hub:
 
 ```bash
-sudo ./tund-cli server -k "<network-key>"
+sudo ./tund-cli server --key-file tund.key
 ```
 
 On Windows:
 
 ```powershell
-.\tund-cli.exe server -k "<network-key>"
+.\tund-cli.exe server --key-file .\tund.key
 ```
 
 Options:
 
 ```text
--k, --key <key>      Shared network key (same on all computers; minimum 12 characters)
+-k, --key <key>      Shared network key (visible in process list)
+--key-file <path>    Read shared network key from a file
+--key-stdin          Read shared network key from the first stdin line
 -p, --port <port>    UDP port (default: 9909)
 -t, --no-tui         Disable terminal UI (live peer dashboard)
 -v, --verbose        Debug logging
@@ -52,13 +55,13 @@ Options:
 ## Connect as a client
 
 ```bash
-sudo ./tund-cli client -s <server_ip> -k "<network-key>"
+sudo ./tund-cli client -s <server_ip> --key-file tund.key
 ```
 
 On Windows:
 
 ```powershell
-.\tund-cli.exe client -s <server_ip> -k "<network-key>"
+.\tund-cli.exe client -s <server_ip> --key-file .\tund.key
 ```
 
 Options:
@@ -67,7 +70,9 @@ Options:
 -s, --server <ip>    Server IP/hostname (required)
 -p, --port <port>    Server port (default: 9909)
 -n, --name <name>    Display name (default: hostname)
--k, --key <key>      Shared network key (same on all computers; minimum 12 characters)
+-k, --key <key>      Shared network key (visible in process list)
+--key-file <path>    Read shared network key from a file
+--key-stdin          Read shared network key from the first stdin line
 -t, --no-tui         Disable terminal UI (live peer dashboard)
 -v, --verbose        Debug logging
 ```
@@ -76,13 +81,13 @@ Options:
 
 ```bash
 # Machine A (server, e.g. IP 203.0.113.10):
-sudo ./tund-cli server -k "<network-key>"
+sudo ./tund-cli server --key-file tund.key
 
 # Machine B (client, behind NAT):
-sudo ./tund-cli client -s 203.0.113.10 -n "Gaming-PC" -k "<network-key>"
+sudo ./tund-cli client -s 203.0.113.10 -n "Gaming-PC" --key-file tund.key
 
 # Machine C (client, behind NAT):
-sudo ./tund-cli client -s 203.0.113.10 -n "Work-Laptop" -k "<network-key>"
+sudo ./tund-cli client -s 203.0.113.10 -n "Work-Laptop" --key-file tund.key
 
 # Now Machine B can ping Machine C:
 ping 10.9.0.3

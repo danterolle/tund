@@ -36,8 +36,7 @@ class TundConfig {
       mode == TundMode.server ? 'server' : 'client',
       '-p',
       port,
-      '-k',
-      key,
+      '--key-stdin',
       '-t',
     ];
 
@@ -54,7 +53,7 @@ class TundConfig {
     final visible = <String>[];
     final args = toArgs();
     for (var i = 0; i < args.length; i++) {
-      final value = i > 0 && args[i - 1] == '-k' ? '********' : args[i];
+      final value = args[i];
       visible.add(value.contains(' ') ? '"$value"' : value);
     }
     return visible.join(' ');

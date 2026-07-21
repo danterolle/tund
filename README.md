@@ -83,16 +83,18 @@ The Flutter GUI is different: I do not know Flutter well. It exists because it w
 On a machine with a public IP:
 
 ```bash
-sudo ./tund-cli server -k "<network-key>"
+openssl rand -base64 24 > tund.key
+chmod 600 tund.key
+sudo ./tund-cli server --key-file tund.key
 ```
 
 On every machine that should join the LAN:
 
 ```bash
-sudo ./tund-cli client -s <server_ip> -k "<network-key>"
+sudo ./tund-cli client -s <server_ip> --key-file tund.key
 ```
 
-Generate a long random key first. For example: `openssl rand -base64 24`. Use the same key everywhere. Desktop releases include a GUI launcher and a CLI. The CLI still requires administrator/root privileges for TUN setup. See the [GUI README](gui/README.md) for details.
+Generate a long random key first and use the same key file everywhere. Desktop releases include a GUI launcher and a CLI. The GUI sends the key through stdin so it does not appear in the process list. The CLI still requires administrator/root privileges for TUN setup. See the [GUI README](gui/README.md) for details.
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). See [Usage](docs/USAGE.md) for full instructions.
 

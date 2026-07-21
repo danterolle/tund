@@ -165,6 +165,7 @@ typedef struct {
     char client_name[TUND_NAME_LEN];
     char access_key[128];
     int log_level;
+    bool key_from_stdin;
     bool tui_mode;
 } config_t;
 

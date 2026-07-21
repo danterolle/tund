@@ -17,6 +17,13 @@ bool app_stdin_is_tty(void) {
 
 app_startup_result_t app_prepare_runtime(int argc, char *argv[], const config_t *cfg) {
     if (!win_runtime_is_admin()) {
+        if (cfg->key_from_stdin) {
+            fprintf(stderr,
+                    "TunD cannot relaunch with Administrator privileges while reading the key from "
+                    "stdin.\n"
+                    "Run from an Administrator terminal, or use --key-file.\n\n");
+            return APP_STARTUP_EXIT_ERROR;
+        }
         fprintf(stderr, "TunD requires Administrator privileges for the TUN interface.\n");
         if (win_runtime_relaunch_as_admin(argc, argv)) return APP_STARTUP_EXIT_OK;
         fprintf(stderr, "Run the same command from an Administrator terminal.\n\n");

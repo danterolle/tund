@@ -39,5 +39,5 @@ windows: $(TARGET_WCON) $(DIST)/wintun.dll
 	@echo ""
 	@echo "  ✓ Deployed to dist/"
 	@echo "  Run on Windows (UAC prompt if needed):"
-	@echo "    dist/tund-cli.exe server -k <key>"
-	@echo "    dist/tund-cli.exe client -s <ip> -k <key>"
+	@echo "    dist/tund-cli.exe server --key-file <key-file>"
+	@echo "    dist/tund-cli.exe client -s <ip> --key-file <key-file>"
