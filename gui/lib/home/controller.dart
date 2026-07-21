@@ -162,17 +162,10 @@ class TundHomeController extends ChangeNotifier {
 
   Future<void> copyClientCommand({
     required Future<void> Function(String text) copyText,
-    required void Function(String message) showError,
     required void Function(String message) showInfo,
   }) async {
-    final value = key.text.trim();
-    if (value.isEmpty) {
-      showError('Enter or generate a network key first.');
-      return;
-    }
-
-    await copyText(buildClientCommand(port: port.text, key: value));
-    showInfo('Client command copied.');
+    await copyText(buildClientCommand(port: port.text));
+    showInfo('Client command copied. Paste the network key when prompted.');
   }
 
   void acceptPrivilegeNotice() {

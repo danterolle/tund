@@ -134,23 +134,13 @@ class HomeControls extends StatelessWidget {
 
   Widget hostSharePanel() {
     return ValueListenableBuilder<TextEditingValue>(
-      valueListenable: networkKey,
-      builder: (context, keyValue, _) {
-        return ValueListenableBuilder<TextEditingValue>(
-          valueListenable: port,
-          builder: (context, portValue, _) {
-            final hasKey = keyValue.text.trim().isNotEmpty;
-            return TundHostSharePanel(
-              command: buildClientCommand(
-                port: portValue.text,
-                key: keyValue.text,
-                maskKey: hasKey,
-              ),
-              canCopy: hasKey,
-              onCopy: () {
-                onCopyClientCommand();
-              },
-            );
+      valueListenable: port,
+      builder: (context, portValue, _) {
+        return TundHostSharePanel(
+          command: buildClientCommand(port: portValue.text),
+          canCopy: true,
+          onCopy: () {
+            onCopyClientCommand();
           },
         );
       },

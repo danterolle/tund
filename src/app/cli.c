@@ -1,9 +1,13 @@
 #include "cli.h"
 
 #include "log.h"
+#include "platform.h"
 
 #include <getopt.h>
 #include <stdlib.h>
+#ifndef _WIN32
+#include <termios.h>
+#endif
 
 typedef enum {
     KEY_SOURCE_NONE,
@@ -33,7 +37,7 @@ static void print_usage(const char *prog, bool show_desc) {
             "  -n, --name <name>    Client display name (default: hostname)\n"
             "  -k, --key <key>      Shared network key (visible in process list)\n"
             "      --key-file <path> Read shared network key from a file\n"
-            "      --key-stdin       Read shared network key from the first stdin line\n"
+            "      --key-stdin       Prompt for the key or read the first stdin line\n"
             "      --json-events     Emit machine-readable JSON events to stdout\n"
             "  -t, --no-tui        Disable terminal UI (live peer dashboard)\n"
             "  -v, --verbose        Enable debug logging\n"
@@ -42,7 +46,7 @@ static void print_usage(const char *prog, bool show_desc) {
             "Examples:\n"
             "  sudo %s server --key-file tund.key\n"
             "  printf 'a-long-random-key\\n' | sudo %s server --key-stdin\n"
-            "  sudo %s client -s 1.2.3.4 -n MyPC --key-file tund.key\n"
+            "  sudo %s client -s 1.2.3.4 -n MyPC --key-stdin\n"
             "  sudo %s server -p 12345 --key-file tund.key\n"
             "\n"
             "Note: Requires root/sudo for TUN interface creation.\n"
@@ -92,7 +96,7 @@ static void trim_line_end(char *value) {
     value[strcspn(value, "\r\n")] = '\0';
 }
 
-static cli_result_t read_key_from_stream(config_t *cfg, FILE *stream, const char *source) {
+static cli_result_t read_key_line(config_t *cfg, FILE *stream, const char *source) {
     char key[sizeof(cfg->access_key) + 2];
     if (!fgets(key, sizeof(key), stream)) {
         fprintf(stderr, "Error: cannot read shared access key from %s.\n", source);
@@ -105,6 +109,42 @@ static cli_result_t read_key_from_stream(config_t *cfg, FILE *stream, const char
     }
     trim_line_end(key);
     return store_access_key(cfg, key);
+}
+
+static cli_result_t read_key_from_terminal(config_t *cfg) {
+    bool hidden = false;
+    fprintf(stderr, "Network key: ");
+    fflush(stderr);
+
+#ifdef _WIN32
+    HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD mode = 0;
+    if (input != INVALID_HANDLE_VALUE && GetConsoleMode(input, &mode)) {
+        hidden = SetConsoleMode(input, mode & ~ENABLE_ECHO_INPUT) != 0;
+    }
+#else
+    struct termios oldt, newt;
+    if (tcgetattr(STDIN_FILENO, &oldt) == 0) {
+        newt = oldt;
+        newt.c_lflag &= ~(tcflag_t)ECHO;
+        hidden = tcsetattr(STDIN_FILENO, TCSANOW, &newt) == 0;
+    }
+#endif
+
+    cli_result_t result = read_key_line(cfg, stdin, "stdin");
+
+#ifdef _WIN32
+    if (hidden) SetConsoleMode(input, mode);
+#else
+    if (hidden) tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+#endif
+    if (hidden) fputc('\n', stderr);
+    return result;
+}
+
+static cli_result_t read_key_from_stream(config_t *cfg, FILE *stream, const char *source) {
+    if (stream == stdin && app_stdin_is_tty()) return read_key_from_terminal(cfg);
+    return read_key_line(cfg, stream, source);
 }
 
 static cli_result_t read_key_from_file(config_t *cfg, const char *path) {

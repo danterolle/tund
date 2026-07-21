@@ -19,6 +19,10 @@ The GUI code was built with heavier AI assistance than the C core because Flutte
 
 The GUI warns about administrator/root privileges before starting `tund-cli`.
 
+## Key sharing
+
+The GUI starts `tund-cli` with `--key-stdin` so the network key is not exposed in the process list. The copied client command also uses `--key-stdin`; clients can paste or type the shared key when the command asks for it. Use `--key-file` manually if you prefer saving the key for repeated sessions.
+
 ## Local build
 
 ```powershell

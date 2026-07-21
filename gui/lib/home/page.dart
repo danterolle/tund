@@ -62,7 +62,6 @@ class _TundHomePageState extends State<TundHomePage> {
   Future<void> copyClientCommand() {
     return controller.copyClientCommand(
       copyText: copyText,
-      showError: showError,
       showInfo: showInfo,
     );
   }

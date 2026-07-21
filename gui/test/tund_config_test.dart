@@ -24,31 +24,27 @@ void main() {
   });
 
   group('client share command', () {
-    test('builds a client command with a quoted key', () {
+    test('builds a client command that asks for the key at runtime', () {
       final command = buildClientCommand(
         port: '12345',
-        key: 'key with spaces',
       );
 
-      expect(command,
-          'tund-cli client -s SERVER_IP -p 12345 -k "key with spaces"');
+      expect(command, 'tund-cli client -s SERVER_IP -p 12345 --key-stdin');
     });
 
-    test('masks the key for display', () {
+    test('supports custom server values', () {
       final command = buildClientCommand(
         port: '9909',
-        key: 'a-long-random-key',
-        maskKey: true,
+        server: '203.0.113.10',
       );
 
-      expect(command, 'tund-cli client -s SERVER_IP -p 9909 -k "********"');
+      expect(command, 'tund-cli client -s 203.0.113.10 -p 9909 --key-stdin');
     });
 
-    test('uses defaults for empty port and key placeholders', () {
-      final command = buildClientCommand(port: '', key: '');
+    test('uses the default port for empty port values', () {
+      final command = buildClientCommand(port: '');
 
-      expect(
-          command, 'tund-cli client -s SERVER_IP -p 9909 -k "<network-key>"');
+      expect(command, 'tund-cli client -s SERVER_IP -p 9909 --key-stdin');
     });
   });
 

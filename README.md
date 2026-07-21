@@ -91,10 +91,10 @@ sudo ./tund-cli server --key-file tund.key
 On every machine that should join the LAN:
 
 ```bash
-sudo ./tund-cli client -s <server_ip> --key-file tund.key
+sudo ./tund-cli client -s <server_ip> --key-stdin
 ```
 
-Generate a long random key first and use the same key file everywhere. Desktop releases include a GUI launcher and a CLI. The GUI sends the key through stdin so it does not appear in the process list. The CLI still requires administrator/root privileges for TUN setup. See the [GUI README](gui/README.md) for details.
+Generate a long random key first and use the same key everywhere. Clients can paste or type it when prompted. The GUI sends the key through stdin so it does not appear in the process list. The CLI still requires administrator/root privileges for TUN setup. See the [GUI README](gui/README.md) for details.
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). See [Usage](docs/USAGE.md) for full instructions.
 

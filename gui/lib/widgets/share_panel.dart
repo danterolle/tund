@@ -68,7 +68,7 @@ class TundHostSharePanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Replace SERVER_IP with this host\'s reachable LAN or public IP.',
+            'Replace SERVER_IP with this host\'s reachable LAN or public IP. Clients paste or type the network key when the command asks for it.',
             style: TextStyle(color: TundColors.faint, fontSize: 12),
           ),
         ],

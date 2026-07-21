@@ -186,7 +186,7 @@ void main() {
 
     expect(find.text('Share with clients'), findsOneWidget);
     expect(
-      find.text('tund-cli client -s SERVER_IP -p 12345 -k "********"'),
+      find.text('tund-cli client -s SERVER_IP -p 12345 --key-stdin'),
       findsOneWidget,
     );
 
@@ -194,9 +194,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(clipboardPayload, {
-      'text': 'tund-cli client -s SERVER_IP -p 12345 -k "a-long-random-key"',
+      'text': 'tund-cli client -s SERVER_IP -p 12345 --key-stdin',
     });
-    expect(find.text('Client command copied.'), findsOneWidget);
+    expect(
+        find.text(
+            'Client command copied. Paste the network key when prompted.'),
+        findsOneWidget);
   });
 
   testWidgets('can copy the host client command while running', (tester) async {

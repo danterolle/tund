@@ -17,7 +17,7 @@ $(TARGET): $(SRCS) $(HDRS)
 	@echo ""
 	@echo "  ✓ Built $(TARGET) for $(UNAME_S)"
 	@echo "  Run with: $(RUN_PREFIX)$(TARGET) server --key-file <key-file>"
-	@echo "         or: $(RUN_PREFIX)$(TARGET) client -s <server_ip> --key-file <key-file>"
+	@echo "         or: $(RUN_PREFIX)$(TARGET) client -s <server_ip> --key-stdin"
 	@echo ""
 
 $(DIST):
