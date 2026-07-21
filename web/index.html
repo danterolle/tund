@@ -102,7 +102,8 @@
         </article>
         <article class="card download-card">
           <h3><i class="ti ti-brand-apple"></i>macOS</h3>
-          <p>Universal Apple Silicon and Intel builds. Choose the GUI launcher or the standalone CLI binary.</p>
+          <p>Universal Apple Silicon and Intel builds. For the GUI, extract the zip and run <code>./tund-gui.command</code> next to <code>tund-gui.app</code>.</p>
+          <p><strong>Do not run <code>sudo tund-gui.app</code></strong>: the <code>.app</code> is a bundle directory, not the executable.</p>
           <a class="button primary" href="https://github.com/danterolle/tund/releases/download/v2.0/tund-gui-darwin-universal.zip">
             <i class="ti ti-download"></i>Download GUI
           </a>
@@ -194,7 +195,7 @@
         </article>
         <article class="card">
           <h3><i class="ti ti-brand-apple"></i>macOS first run</h3>
-          <p>If macOS blocks the unsigned app or binary, clear the quarantine flag once after extracting the release.</p>
+          <p>If macOS blocks the unsigned app or binary, clear the quarantine flag once after extracting the release. Then start the GUI with <code>./tund-gui.command</code>.</p>
           <div class="code-block">
             <div class="code-header">
               <span class="code-title">quarantine</span>
@@ -202,6 +203,14 @@
             </div>
             <pre><span class="cmd">xattr -dr com.apple.quarantine ./tund-gui-darwin-universal</span>
 <span class="cmd">xattr -d com.apple.quarantine ./tund-cli-darwin-universal</span></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-title">launch GUI</span>
+              <button class="copy-btn" data-copy="cd tund-gui-darwin-universal&#10;./tund-gui.command"><i class="ti ti-copy"></i>Copy</button>
+            </div>
+            <pre><span class="cmd">cd tund-gui-darwin-universal</span>
+<span class="cmd">./tund-gui.command</span></pre>
           </div>
         </article>
         <article class="card">
