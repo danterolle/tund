@@ -40,6 +40,9 @@ class TundConfig {
       '-t',
     ];
 
+    if (mode == TundMode.server) {
+      args.add('--json-events');
+    }
     if (mode == TundMode.client) {
       args.addAll(['-s', server, '-n', name.isEmpty ? 'tund-client' : name]);
     }

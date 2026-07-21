@@ -50,6 +50,7 @@ Options:
 -p, --port <port>    UDP port (default: 9909)
 -t, --no-tui         Disable terminal UI (live peer dashboard)
 -v, --verbose        Debug logging
+--json-events        Emit machine-readable peer events to stdout
 ```
 
 ## Connect as a client

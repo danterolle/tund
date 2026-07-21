@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "events.h"
 #include "log.h"
 #include "network.h"
 #include "tun.h"
@@ -44,6 +45,7 @@ void *server_timeout_thread(void *arg) {
             char peer_ip[TUND_IP_STR_LEN];
             LOG_WARN("✦ Peer timed out: %s (%s)", timed_out_peers[i].name,
                      ip_to_str_buf(timed_out_peers[i].virt_ip, peer_ip, sizeof(peer_ip)));
+            app_event_peer_leave(timed_out_peers[i].virt_ip, "timeout");
             uint8_t buf[TUND_MAX_PKT];
             int len = proto_build_peer_leave(buf, timed_out_peers[i].virt_ip);
             server_send_peer_snapshots(srv, leave_peers, leave_count, buf, len, 0);

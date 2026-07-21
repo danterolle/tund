@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class HostPeer {
   const HostPeer({
     required this.name,
@@ -15,7 +17,8 @@ class HostPeerTracker {
 
   List<HostPeer> get peers {
     final values = _peers.values.toList();
-    values.sort((a, b) => a.virtualIp.compareTo(b.virtualIp));
+    values.sort(
+        (a, b) => _ipSortKey(a.virtualIp).compareTo(_ipSortKey(b.virtualIp)));
     return values;
   }
 
@@ -23,31 +26,44 @@ class HostPeerTracker {
     _peers.clear();
   }
 
-  void applyLog(String text) {
-    for (final line in text.split(RegExp(r'\r?\n'))) {
-      final joined = _newPeerPattern.firstMatch(line);
-      if (joined != null) {
-        final peer = HostPeer(
-          name: joined.namedGroup('name')!.trim(),
-          virtualIp: joined.namedGroup('vip')!,
-          endpoint: joined.namedGroup('endpoint')!,
-        );
-        _peers[peer.virtualIp] = peer;
-        continue;
-      }
+  bool applyJsonLine(String line) {
+    final decoded = jsonDecode(line);
+    if (decoded is! Map<String, dynamic>) return false;
 
-      final left = _leftPeerPattern.firstMatch(line);
-      if (left != null) {
-        _peers.remove(left.namedGroup('vip')!);
-      }
+    final event = decoded['event'];
+    final virtualIp = decoded['virtual_ip'];
+    if (virtualIp is! String) return false;
+
+    if (event == 'peer_join') {
+      final name = decoded['name'];
+      final endpoint = decoded['endpoint'];
+      if (name is! String || endpoint is! String) return false;
+      _peers[virtualIp] = HostPeer(
+        name: name,
+        virtualIp: virtualIp,
+        endpoint: endpoint,
+      );
+      return true;
     }
+
+    if (event == 'peer_leave') {
+      _peers.remove(virtualIp);
+      return true;
+    }
+
+    return false;
   }
 }
 
-final _newPeerPattern = RegExp(
-  r'New peer:\s+(?<name>.+?)\s+.+?\s+(?<vip>\d{1,3}(?:\.\d{1,3}){3})\s+\[(?<endpoint>[^\]]+)\]',
-);
+int _ipSortKey(String ip) {
+  final parts = ip.split('.');
+  if (parts.length != 4) return 0;
 
-final _leftPeerPattern = RegExp(
-  r'Peer (?:disconnected|timed out):\s+.+?\((?<vip>\d{1,3}(?:\.\d{1,3}){3})\)',
-);
+  var value = 0;
+  for (final part in parts) {
+    final octet = int.tryParse(part);
+    if (octet == null || octet < 0 || octet > 255) return 0;
+    value = (value << 8) | octet;
+  }
+  return value;
+}

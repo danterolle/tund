@@ -8,7 +8,7 @@
 CROSS_W64   := x86_64-w64-mingw32
 TARGET_WCON := $(DIST)/tund-cli.exe
 WIN_TUN_SRCS := src/tun/windows/tun.c src/tun/windows/config.c src/tun/windows/process.c src/tun/windows/wintun_loader.c
-WIN_APP_SRC := src/app/main.c src/app/cli.c src/app/log.c src/app/platform.c $(WIN_RUNTIME_SRC)
+WIN_APP_SRC := src/app/main.c src/app/cli.c src/app/events.c src/app/log.c src/app/platform.c $(WIN_RUNTIME_SRC)
 WIN_SRCS    := $(WIN_APP_SRC) src/net/network.c $(SERVER_SRC) $(CLIENT_SRC) $(UI_SRC) $(PROTO_SRC) $(WIN_TUN_SRCS)
 WIN_CFLAGS  := -Wall -Wextra -O2 -std=c11 -D_WIN32_WINNT=0x0601 $(INCLUDES)
 WIN_LIBS    := -static-libgcc -static -lws2_32 -liphlpapi -lpthread -luser32 -ladvapi32 -lshell32

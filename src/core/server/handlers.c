@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "events.h"
 #include "log.h"
 #include "network.h"
 
@@ -107,6 +108,7 @@ static void server_handle_register(server_t *srv, const uint8_t *payload, uint16
     char vip_str[TUND_IP_STR_LEN], from_ip[TUND_IP_STR_LEN];
     LOG_INFO("★ New peer: %s → %s [%s:%u]", peer_name, ip_to_str_buf(vip, vip_str, sizeof(vip_str)),
              ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)), ntohs(from->sin_port));
+    app_event_peer_join(peer_name, vip, &peer_addr);
 
     int sent_peer_count = 0;
     len = build_peer_list_from_snapshot(buf, peer_entries, peer_entry_count, &sent_peer_count);
@@ -167,6 +169,7 @@ static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *fr
     uint8_t buf[TUND_MAX_PKT];
     int len = proto_build_peer_leave(buf, vip);
     server_send_peer_snapshots(srv, leave_peers, leave_count, buf, len, 0);
+    app_event_peer_leave(vip, "disconnect");
 }
 
 void server_handle_packet(server_t *srv, uint8_t *buf, int len, const struct sockaddr_in *from) {

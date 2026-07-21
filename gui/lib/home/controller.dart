@@ -69,6 +69,7 @@ class TundHomeController extends ChangeNotifier {
       final exitCode = await launcher.start(
         config,
         appendLog,
+        onJsonEvent: applyJsonEvent,
         onStarted: markRunning,
       );
       completeExit(exitCode);
@@ -208,9 +209,18 @@ class TundHomeController extends ChangeNotifier {
   void appendLog(String text) {
     if (disposed) return;
     log.write(text);
-    if (mode == TundMode.server) {
-      hostPeerTracker.applyLog(text);
-      hostPeers = hostPeerTracker.peers;
+    notifyListeners();
+  }
+
+  void applyJsonEvent(String line) {
+    if (disposed || mode != TundMode.server) return;
+    try {
+      if (hostPeerTracker.applyJsonLine(line)) {
+        hostPeers = hostPeerTracker.peers;
+      }
+    } on FormatException {
+      appendLog('$line\n');
+      return;
     }
     notifyListeners();
   }

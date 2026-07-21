@@ -1,6 +1,6 @@
 THIRD_PARTY_SRC := third_party/monocypher/monocypher.c
 PROTO_SRC := src/protocol/protocol.c $(THIRD_PARTY_SRC)
-APP_SRC  := src/app/main.c src/app/cli.c src/app/log.c src/app/platform.c
+APP_SRC  := src/app/main.c src/app/cli.c src/app/events.c src/app/log.c src/app/platform.c
 WIN_RUNTIME_SRC := src/app/win_runtime.c
 UI_SRC   := src/ui/tui.c src/ui/render.c src/ui/events.c
 CLIENT_SRC := src/core/client/client.c src/core/client/peers.c src/core/client/register.c src/core/client/handlers.c src/core/client/session.c src/core/client/log.c
@@ -11,4 +11,4 @@ ifneq ($(filter MINGW%,$(UNAME_S)),)
 endif
 
 SRCS := $(APP_SRC) src/net/network.c $(SERVER_SRC) $(CLIENT_SRC) $(UI_SRC) $(PROTO_SRC) $(TUN_SRC)
-HDRS := src/app/tund.h src/app/version.h src/app/cli.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h third_party/monocypher/monocypher.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server/server.h src/core/server/internal.h src/core/client/client.h src/core/client/internal.h src/ui/tui.h src/ui/tui_internal.h
+HDRS := src/app/tund.h src/app/version.h src/app/cli.h src/app/events.h src/app/log.h src/app/platform.h src/app/win_runtime.h src/protocol/protocol.h third_party/monocypher/monocypher.h src/tun/tun.h src/tun/windows/internal.h src/net/network.h src/core/server/server.h src/core/server/internal.h src/core/client/client.h src/core/client/internal.h src/ui/tui.h src/ui/tui_internal.h

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'process_output.dart';
@@ -60,6 +61,7 @@ class TundLauncher {
   Future<int> start(
     TundConfig config,
     void Function(String text) onLog, {
+    void Function(String line)? onJsonEvent,
     void Function()? onStarted,
   }) async {
     if (_process != null) {
@@ -95,10 +97,17 @@ class TundLauncher {
       runInShell: false,
     );
     _process = process;
-    _stdout = process.stdout
-        .transform(tundProcessOutputDecoder)
-        .map(sanitizeProcessOutput)
-        .listen(onLog);
+    if (onJsonEvent != null) {
+      _stdout = process.stdout
+          .transform(tundProcessOutputDecoder)
+          .transform(const LineSplitter())
+          .listen(onJsonEvent);
+    } else {
+      _stdout = process.stdout
+          .transform(tundProcessOutputDecoder)
+          .map(sanitizeProcessOutput)
+          .listen(onLog);
+    }
     _stderr = process.stderr
         .transform(tundProcessOutputDecoder)
         .map(sanitizeProcessOutput)

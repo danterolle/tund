@@ -31,7 +31,7 @@ test_protocol_DEPS := src/protocol/protocol.h $(SITEST_HDR)
 
 test_server_peers_SRCS := tests/test_server_peers.c src/core/server/peers.c
 test_server_data_SRCS := tests/test_server_data.c src/core/server/data.c src/core/server/peers.c
-test_server_handlers_SRCS := tests/test_server_handlers.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c
+test_server_handlers_SRCS := tests/test_server_handlers.c src/app/events.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c
 test_client_peers_SRCS := tests/test_client_peers.c src/core/client/peers.c
 test_client_handlers_SRCS := tests/test_client_handlers.c src/core/client/handlers.c src/core/client/peers.c src/core/client/session.c
 

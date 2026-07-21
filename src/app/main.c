@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "events.h"
 #include "log.h"
 #include "platform.h"
 #include "server.h"
@@ -23,6 +24,7 @@ int main(int argc, char *argv[]) {
 
     g_log_level = cfg.log_level;
     g_tui_active = cfg.tui_mode;
+    g_json_events_active = cfg.json_events;
     g_start_time = time(NULL);
     proto_key_from_passphrase(cfg.access_key, g_crypto_key);
 

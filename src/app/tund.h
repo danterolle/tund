@@ -123,6 +123,7 @@ static inline uint64_t now_ms(void) {
 #define TUND_RTT_SMOOTHING_WEIGHT 7 /* EWMA: 7/8 previous, 1/8 latest sample */
 
 extern bool g_tui_active;
+extern bool g_json_events_active;
 extern time_t g_start_time;
 
 typedef atomic_bool tund_stop_flag_t;
@@ -166,6 +167,7 @@ typedef struct {
     char access_key[128];
     int log_level;
     bool key_from_stdin;
+    bool json_events;
     bool tui_mode;
 } config_t;
 

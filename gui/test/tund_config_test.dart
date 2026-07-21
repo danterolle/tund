@@ -114,7 +114,14 @@ void main() {
         verbose: false,
       );
 
-      expect(config.toArgs(), ['server', '-p', '9909', '--key-stdin', '-t']);
+      expect(config.toArgs(), [
+        'server',
+        '-p',
+        '9909',
+        '--key-stdin',
+        '-t',
+        '--json-events',
+      ]);
     });
 
     test('builds client arguments with default name and verbose flag', () {

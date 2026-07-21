@@ -8,7 +8,7 @@ PEERFORGE_WRONG_KEY_PORT ?= 19910
 PEERFORGE_WRONG_KEY := peerforge-wrong-key
 
 TOOL_SRCS := tools/peerforge/main.c tools/peerforge/options.c tools/peerforge/net.c tools/peerforge/client.c
-PEERFORGE_SERVER_SRCS := tools/peerforge/server.c src/net/network.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c $(PROTO_SRC)
+PEERFORGE_SERVER_SRCS := tools/peerforge/server.c src/app/events.c src/net/network.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c $(PROTO_SRC)
 
 tools: $(TOOL_TARGET) $(PEERFORGE_SERVER_TARGET)
 	@echo "  Run with: ./$(TOOL_TARGET) -s 127.0.0.1 -k <key> -n 253"

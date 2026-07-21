@@ -34,6 +34,7 @@ static void print_usage(const char *prog, bool show_desc) {
             "  -k, --key <key>      Shared network key (visible in process list)\n"
             "      --key-file <path> Read shared network key from a file\n"
             "      --key-stdin       Read shared network key from the first stdin line\n"
+            "      --json-events     Emit machine-readable JSON events to stdout\n"
             "  -t, --no-tui        Disable terminal UI (live peer dashboard)\n"
             "  -v, --verbose        Enable debug logging\n"
             "  -h, --help           Show this help\n"
@@ -166,6 +167,7 @@ cli_result_t cli_parse(int argc, char *argv[], config_t *cfg) {
                                         {"key", required_argument, 0, 'k'},
                                         {"key-file", required_argument, 0, 1000},
                                         {"key-stdin", no_argument, 0, 1001},
+                                        {"json-events", no_argument, 0, 1002},
                                         {"no-tui", no_argument, 0, 't'},
                                         {"verbose", no_argument, 0, 'v'},
                                         {"help", no_argument, 0, 'h'},
@@ -213,6 +215,9 @@ cli_result_t cli_parse(int argc, char *argv[], config_t *cfg) {
             cfg->key_from_stdin = true;
             result = read_key_from_stream(cfg, stdin, "stdin");
             if (result != CLI_OK) return result;
+            break;
+        case 1002:
+            cfg->json_events = true;
             break;
         case 't':
             cfg->tui_mode = false;

@@ -2,12 +2,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tund_gui/core/host_peer.dart';
 
 void main() {
-  test('tracks peers from host log events', () {
+  test('tracks peers from JSON events', () {
     final tracker = HostPeerTracker();
 
-    tracker.applyLog(
-      '[16:03:58] [INFO ] ★ New peer: mylaptop → 10.9.0.2 [192.168.1.8:49599]\n'
-      '[16:04:10] [INFO ] ★ New peer: Bridge → 10.9.0.3 [192.168.1.9:49000]\n',
+    expect(
+      tracker.applyJsonLine(
+        '{"event":"peer_join","name":"mylaptop","virtual_ip":"10.9.0.2","endpoint":"192.168.1.8:49599"}',
+      ),
+      isTrue,
+    );
+    expect(
+      tracker.applyJsonLine(
+        '{"event":"peer_join","name":"Bridge","virtual_ip":"10.9.0.3","endpoint":"192.168.1.9:49000"}',
+      ),
+      isTrue,
     );
 
     expect(tracker.peers, hasLength(2));
@@ -15,22 +23,49 @@ void main() {
     expect(tracker.peers[0].virtualIp, '10.9.0.2');
     expect(tracker.peers[0].endpoint, '192.168.1.8:49599');
 
-    tracker.applyLog(
-      '[16:05:00] [INFO ] ✦ Peer disconnected: mylaptop (10.9.0.2)\n',
+    expect(
+      tracker.applyJsonLine(
+        '{"event":"peer_leave","virtual_ip":"10.9.0.2","reason":"disconnect"}',
+      ),
+      isTrue,
     );
 
     expect(tracker.peers, hasLength(1));
     expect(tracker.peers.single.name, 'Bridge');
   });
 
-  test('tracks timed out peers from host log events', () {
+  test('tracks timed out peers from JSON events', () {
     final tracker = HostPeerTracker();
 
-    tracker.applyLog(
-      '[16:03:58] [INFO ] ★ New peer: Bridge → 10.9.0.3 [192.168.1.9:49000]\n'
-      '[16:05:00] [WARN ] ✦ Peer timed out: Bridge (10.9.0.3)\n',
+    tracker.applyJsonLine(
+      '{"event":"peer_join","name":"Bridge","virtual_ip":"10.9.0.3","endpoint":"192.168.1.9:49000"}',
+    );
+    tracker.applyJsonLine(
+      '{"event":"peer_leave","virtual_ip":"10.9.0.3","reason":"timeout"}',
     );
 
     expect(tracker.peers, isEmpty);
+  });
+
+  test('ignores unsupported JSON events', () {
+    final tracker = HostPeerTracker();
+
+    expect(tracker.applyJsonLine('{"event":"unknown","virtual_ip":"10.9.0.2"}'),
+        isFalse);
+    expect(tracker.peers, isEmpty);
+  });
+
+  test('sorts virtual IPs numerically', () {
+    final tracker = HostPeerTracker();
+
+    tracker.applyJsonLine(
+      '{"event":"peer_join","name":"later","virtual_ip":"10.9.0.10","endpoint":"192.168.1.10:49000"}',
+    );
+    tracker.applyJsonLine(
+      '{"event":"peer_join","name":"first","virtual_ip":"10.9.0.2","endpoint":"192.168.1.2:49000"}',
+    );
+
+    expect(
+        tracker.peers.map((peer) => peer.virtualIp), ['10.9.0.2', '10.9.0.10']);
   });
 }
