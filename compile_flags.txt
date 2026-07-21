@@ -13,3 +13,4 @@
 -Isrc/ui
 -Ithird_party/monocypher
 -Itools/sitest
+-Itests/support

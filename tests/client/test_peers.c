@@ -1,5 +1,5 @@
-#include "../src/core/client/internal.h"
-#include "tund_test_support.h"
+#include "../../src/core/client/internal.h"
+#include "test_support.h"
 
 #include <string.h>
 
@@ -7,7 +7,7 @@ static void test_update_peer_lifecycle(void) {
     client_t cli = {0};
     uint32_t vip = htonl(TUND_IP_START);
 
-    tund_test_init_client(&cli);
+    test_init_client(&cli);
     client_update_peer(&cli, vip, "alpha", true);
     CHECK(cli.peer_count == 1);
     CHECK(cli.peers[0].active);
@@ -29,7 +29,7 @@ static void test_update_peer_lifecycle(void) {
 
     client_update_peer(&cli, htonl(TUND_IP_START + 1), "missing", false);
     CHECK(cli.peer_count == 0);
-    tund_test_destroy_client(&cli);
+    test_destroy_client(&cli);
 }
 
 static void test_update_peer_truncates_names(void) {
@@ -39,18 +39,18 @@ static void test_update_peer_truncates_names(void) {
     memset(long_name, 'A', sizeof(long_name) - 1);
     long_name[sizeof(long_name) - 1] = '\0';
 
-    tund_test_init_client(&cli);
+    test_init_client(&cli);
     client_update_peer(&cli, htonl(TUND_IP_START), long_name, true);
     CHECK(cli.peer_count == 1);
     CHECK(strlen(cli.peers[0].name) == TUND_NAME_LEN - 1);
     CHECK(cli.peers[0].name[TUND_NAME_LEN - 1] == '\0');
-    tund_test_destroy_client(&cli);
+    test_destroy_client(&cli);
 }
 
 static void test_update_peer_table_full(void) {
     client_t cli = {0};
 
-    tund_test_init_client(&cli);
+    test_init_client(&cli);
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         cli.peers[i].active = true;
         cli.peers[i].virt_ip = htonl(TUND_IP_START + (uint32_t)i);
@@ -61,7 +61,7 @@ static void test_update_peer_table_full(void) {
     CHECK(cli.peer_count == TUND_MAX_PEERS);
     for (int i = 0; i < TUND_MAX_PEERS; i++)
         CHECK(cli.peers[i].virt_ip == htonl(TUND_IP_START + (uint32_t)i));
-    tund_test_destroy_client(&cli);
+    test_destroy_client(&cli);
 }
 
 static void test_traffic_accounting(void) {
@@ -69,7 +69,7 @@ static void test_traffic_accounting(void) {
     uint32_t first = htonl(TUND_IP_START);
     uint32_t second = htonl(TUND_IP_START + 1);
 
-    tund_test_init_client(&cli);
+    test_init_client(&cli);
     client_update_peer(&cli, first, "alpha", true);
     client_update_peer(&cli, second, "beta", true);
 
@@ -91,7 +91,7 @@ static void test_traffic_accounting(void) {
     client_add_broadcast_traffic(&cli, 100);
     CHECK(cli.peers[0].bytes_out == 234);
     CHECK(cli.peers[1].bytes_out == 100);
-    tund_test_destroy_client(&cli);
+    test_destroy_client(&cli);
 }
 
 int main(void) {

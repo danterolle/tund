@@ -48,7 +48,7 @@ flutter test
 ## Test structure
 
 - `tools/sitest/` contains the generic C test helper library.
-- `tests/tund_test_support.*` contains TunD-specific test stubs and captures.
+- `tests/support/` contains test stubs and captures.
 - `tests/test_*.c` contains unit tests for protocol and core behavior.
 - `make peerforge-check` runs a local UDP integration check without real TUN interfaces.
 
