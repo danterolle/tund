@@ -72,8 +72,13 @@ void *server_tun_thread(void *arg) {
             continue;
         }
 
+        int validation = proto_validate_ipv4_packet(pkt_buf, (uint16_t)n);
+        if (validation != TUND_IPV4_OK) {
+            LOG_DEBUG("Dropped invalid TUN packet: %s", proto_ipv4_validation_error(validation));
+            continue;
+        }
+
         uint32_t dst_ip = proto_get_dst_ip(pkt_buf, (uint16_t)n);
-        if (dst_ip == 0) continue;
 
         uint32_t broadcast_ip = htonl(TUND_SUBNET | ~TUND_NETMASK);
         int msg_len = proto_build_data(msg_buf, pkt_buf, (uint16_t)n);

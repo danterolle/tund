@@ -76,6 +76,26 @@ static void test_data_writes_tun_and_accounts_peer(void) {
     tund_test_destroy_client(&cli);
 }
 
+static void test_invalid_data_is_ignored(void) {
+    client_t cli = {0};
+    uint8_t ip_pkt[20];
+    uint8_t buf[TUND_MAX_PKT];
+    uint32_t peer_ip = htonl(TUND_IP_START + 1);
+
+    tund_test_init_client(&cli);
+    client_update_peer(&cli, peer_ip, "alpha", true);
+    tund_test_build_ipv4_packet(ip_pkt, peer_ip, cli.virt_ip);
+    ip_pkt[0] = 0x65;
+    int len = proto_build_data(buf, ip_pkt, sizeof(ip_pkt));
+    tund_test_reset_io();
+
+    client_handle_server_packet(&cli, buf, len);
+
+    CHECK(tund_test_tun_write_count == 0);
+    CHECK(cli.peers[0].bytes_in == 0);
+    tund_test_destroy_client(&cli);
+}
+
 static void test_replayed_data_is_ignored(void) {
     client_t cli = {0};
     uint8_t ip_pkt[20];
@@ -186,6 +206,7 @@ int main(void) {
     test_peer_list_updates_table();
     test_peer_join_and_leave();
     test_data_writes_tun_and_accounts_peer();
+    test_invalid_data_is_ignored();
     test_replayed_data_is_ignored();
     test_keepalive_replies_with_ack();
     test_keepalive_ack_updates_rtt();

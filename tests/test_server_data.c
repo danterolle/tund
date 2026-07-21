@@ -142,6 +142,12 @@ static void test_unregistered_and_short_packets_drop(void) {
     CHECK(tund_test_send_count == 0);
     CHECK(tund_test_tun_write_count == 0);
     CHECK(srv.peers[0].bytes_in == 0);
+
+    pkt[0] = 0x65;
+    server_handle_data(&srv, pkt, sizeof(pkt), &srv.peers[0].real_addr);
+    CHECK(tund_test_send_count == 0);
+    CHECK(tund_test_tun_write_count == 0);
+    CHECK(srv.peers[0].bytes_in == 0);
     tund_test_destroy_server(&srv);
 }
 

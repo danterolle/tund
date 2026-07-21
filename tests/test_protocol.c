@@ -232,6 +232,60 @@ static void test_dst_ip(void) {
     CHECK(proto_get_dst_ip(ip_pkt, 19) == 0);
 }
 
+static void test_ipv4_validation(void) {
+    uint8_t ip_pkt[24];
+    uint32_t src = htonl(0x0A090002);
+    uint32_t dst = htonl(0x0A090003);
+    uint16_t total = htons(20);
+
+    memset(ip_pkt, 0, sizeof(ip_pkt));
+    ip_pkt[0] = 0x45;
+    memcpy(ip_pkt + 2, &total, sizeof(total));
+    memcpy(ip_pkt + 12, &src, sizeof(src));
+    memcpy(ip_pkt + 16, &dst, sizeof(dst));
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 20) == TUND_IPV4_OK);
+
+    ip_pkt[0] = 0x65;
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 20) == TUND_IPV4_BAD_VERSION);
+    ip_pkt[0] = 0x44;
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 20) == TUND_IPV4_BAD_IHL);
+    ip_pkt[0] = 0x45;
+
+    total = htons(21);
+    memcpy(ip_pkt + 2, &total, sizeof(total));
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 20) == TUND_IPV4_TRUNCATED);
+
+    total = htons(19);
+    memcpy(ip_pkt + 2, &total, sizeof(total));
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 20) == TUND_IPV4_LENGTH_MISMATCH);
+
+    total = htons(20);
+    memcpy(ip_pkt + 2, &total, sizeof(total));
+    uint32_t outside = htonl(0xC0000201);
+    memcpy(ip_pkt + 12, &outside, sizeof(outside));
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 20) == TUND_IPV4_BAD_SRC);
+    memcpy(ip_pkt + 12, &src, sizeof(src));
+
+    memcpy(ip_pkt + 16, &outside, sizeof(outside));
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 20) == TUND_IPV4_BAD_DST);
+
+    uint32_t network = htonl(TUND_SUBNET);
+    memcpy(ip_pkt + 16, &network, sizeof(network));
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 20) == TUND_IPV4_BAD_DST);
+
+    uint32_t broadcast = htonl(TUND_SUBNET | ~TUND_NETMASK);
+    memcpy(ip_pkt + 16, &broadcast, sizeof(broadcast));
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 20) == TUND_IPV4_OK);
+
+    memset(ip_pkt, 0, sizeof(ip_pkt));
+    ip_pkt[0] = 0x46;
+    total = htons(24);
+    memcpy(ip_pkt + 2, &total, sizeof(total));
+    memcpy(ip_pkt + 12, &src, sizeof(src));
+    memcpy(ip_pkt + 16, &dst, sizeof(dst));
+    CHECK(proto_validate_ipv4_packet(ip_pkt, 24) == TUND_IPV4_OK);
+}
+
 static void test_replay_window(void) {
     proto_replay_window_t replay;
     proto_replay_reset(&replay);
@@ -254,6 +308,7 @@ int main(void) {
     test_siphash_tamper_vector();
     test_builders();
     test_dst_ip();
+    test_ipv4_validation();
     test_replay_window();
 
     return sitest_finish("protocol tests");

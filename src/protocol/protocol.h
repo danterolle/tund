@@ -47,6 +47,15 @@
 #define TUND_HDR_BAD_MAGIC   -1
 #define TUND_HDR_BAD_VERSION -2
 
+#define TUND_IPV4_OK              0
+#define TUND_IPV4_TOO_SHORT       -1
+#define TUND_IPV4_BAD_VERSION     -2
+#define TUND_IPV4_BAD_IHL         -3
+#define TUND_IPV4_TRUNCATED       -4
+#define TUND_IPV4_LENGTH_MISMATCH -5
+#define TUND_IPV4_BAD_SRC         -6
+#define TUND_IPV4_BAD_DST         -7
+
 /* Virtual subnet: 10.9.0.0/24 */
 #define TUND_SUBNET    0x0A090000 /* 10.9.0.0 in host byte order */
 #define TUND_NETMASK   0xFFFFFF00 /* /24 */
@@ -109,5 +118,7 @@ int proto_build_peer_leave(uint8_t *buf, uint32_t virt_ip);
 
 uint32_t proto_get_dst_ip(const uint8_t *ip_pkt, uint16_t len);
 uint32_t proto_get_src_ip(const uint8_t *ip_pkt, uint16_t len);
+int proto_validate_ipv4_packet(const uint8_t *ip_pkt, uint16_t len);
+const char *proto_ipv4_validation_error(int code);
 
 #endif /* TUND_PROTOCOL_H */

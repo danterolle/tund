@@ -101,6 +101,10 @@ void client_handle_server_packet(client_t *cli, uint8_t *buf, int len) {
     uint8_t *payload = buf + TUND_HDR_SIZE;
     switch (type) {
     case MSG_DATA:
+        if (proto_validate_ipv4_packet(payload, payload_len) != TUND_IPV4_OK) {
+            LOG_DEBUG("Dropped invalid DATA packet from server");
+            break;
+        }
         client_add_peer_traffic(cli, proto_get_src_ip(payload, payload_len), payload_len, 0);
         tun_write(&cli->tun, payload, payload_len);
         break;

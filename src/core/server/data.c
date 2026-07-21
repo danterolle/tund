@@ -12,14 +12,14 @@ void server_handle_data(server_t *srv, const uint8_t *payload, uint16_t plen,
     bool send_unicast = false;
     bool write_tun = false;
 
-    if (plen < 20) {
-        LOG_DEBUG("DATA packet too short (%u bytes)", plen);
+    int validation = proto_validate_ipv4_packet(payload, plen);
+    if (validation != TUND_IPV4_OK) {
+        LOG_DEBUG("Dropped invalid DATA packet: %s", proto_ipv4_validation_error(validation));
         return;
     }
 
     uint32_t src_ip = proto_get_src_ip(payload, plen);
     uint32_t dst_ip = proto_get_dst_ip(payload, plen);
-    if (src_ip == 0 || dst_ip == 0) return;
 
     pthread_mutex_lock(&srv->peers_lock);
     int sender_idx = server_find_peer_by_addr(srv, from);

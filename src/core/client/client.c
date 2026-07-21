@@ -40,6 +40,12 @@ static void *client_tun_thread(void *arg) {
             if (!tund_is_running() || tund_stop_flag_load(&cli->tun_quit)) break;
             continue;
         }
+        int validation = proto_validate_ipv4_packet(pkt_buf, (uint16_t)n);
+        if (validation != TUND_IPV4_OK) {
+            LOG_DEBUG("Dropped invalid TUN packet: %s", proto_ipv4_validation_error(validation));
+            continue;
+        }
+
         int msg_len = proto_build_data(msg_buf, pkt_buf, (uint16_t)n);
         if (net_send(cli->sockfd, msg_buf, msg_len, &cli->server_addr) < 0) {
             LOG_WARN("Failed to send TUN data to server");

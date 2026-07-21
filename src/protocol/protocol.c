@@ -344,6 +344,10 @@ int proto_build_peer_leave(uint8_t *buf, uint32_t virt_ip) {
     return TUND_HDR_SIZE + 4;
 }
 
+static uint16_t proto_read_u16_be(const uint8_t *p) {
+    return (uint16_t)((p[0] << 8) | p[1]);
+}
+
 uint32_t proto_get_dst_ip(const uint8_t *ip_pkt, uint16_t len) {
     if (len < 20) return 0;
     uint32_t dst;
@@ -356,4 +360,51 @@ uint32_t proto_get_src_ip(const uint8_t *ip_pkt, uint16_t len) {
     uint32_t src;
     memcpy(&src, ip_pkt + 12, 4);
     return src;
+}
+
+int proto_validate_ipv4_packet(const uint8_t *ip_pkt, uint16_t len) {
+    if (len < 20) return TUND_IPV4_TOO_SHORT;
+    if ((ip_pkt[0] >> 4) != 4) return TUND_IPV4_BAD_VERSION;
+
+    uint8_t ihl = (uint8_t)((ip_pkt[0] & 0x0F) * 4);
+    if (ihl < 20) return TUND_IPV4_BAD_IHL;
+    if (len < ihl) return TUND_IPV4_TRUNCATED;
+
+    uint16_t total_len = proto_read_u16_be(ip_pkt + 2);
+    if (total_len < ihl) return TUND_IPV4_LENGTH_MISMATCH;
+    if (total_len > len) return TUND_IPV4_TRUNCATED;
+    if (total_len != len) return TUND_IPV4_LENGTH_MISMATCH;
+
+    uint32_t src = ntohl(proto_get_src_ip(ip_pkt, len));
+    uint32_t dst = ntohl(proto_get_dst_ip(ip_pkt, len));
+    uint32_t broadcast = TUND_SUBNET | ~TUND_NETMASK;
+    if ((src & TUND_NETMASK) != TUND_SUBNET || src == TUND_SUBNET || src == broadcast)
+        return TUND_IPV4_BAD_SRC;
+    if (dst == TUND_SUBNET) return TUND_IPV4_BAD_DST;
+    if (dst != broadcast && (dst & TUND_NETMASK) != TUND_SUBNET) return TUND_IPV4_BAD_DST;
+
+    return TUND_IPV4_OK;
+}
+
+const char *proto_ipv4_validation_error(int code) {
+    switch (code) {
+    case TUND_IPV4_OK:
+        return "ok";
+    case TUND_IPV4_TOO_SHORT:
+        return "too short";
+    case TUND_IPV4_BAD_VERSION:
+        return "not IPv4";
+    case TUND_IPV4_BAD_IHL:
+        return "invalid IPv4 header length";
+    case TUND_IPV4_TRUNCATED:
+        return "truncated IPv4 packet";
+    case TUND_IPV4_LENGTH_MISMATCH:
+        return "IPv4 length mismatch";
+    case TUND_IPV4_BAD_SRC:
+        return "source outside TunD subnet";
+    case TUND_IPV4_BAD_DST:
+        return "destination outside TunD subnet";
+    default:
+        return "invalid IPv4 packet";
+    }
 }

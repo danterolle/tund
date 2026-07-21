@@ -89,6 +89,8 @@ Clients periodically probe the server and display smoothed keepalive RTT in the 
 
 ## Packet forwarding
 
+TunD validates tunneled packets before forwarding them. DATA payloads must be complete IPv4 packets, have a consistent IPv4 header length and total length, use a TunD subnet source address, and target either the TunD subnet or the TunD subnet broadcast address.
+
 ### Client → server
 
 The client TUN thread reads an IPv4 packet. It wraps the packet as `MSG_DATA`, signs the datagram and sends it to the configured server. The server accepts data only if the UDP source endpoint belongs to an active peer.
@@ -123,4 +125,4 @@ The key derivation step is not a password-hardening function. A short human-memo
 
 - **Linux:** requires `/dev/net/tun` and root/CAP_NET_ADMIN.
 - **macOS:** uses an OS-managed `utun` interface configured via `ioctl(SIOCAIFADDR)` and `ioctl(SIOCSIFMTU)`; the subnet route is added through `fork`+`exec(/sbin/route)` — no shell processes are spawned. Run with administrator rights.
-- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. The GUI requests elevation before opening so it can pass the key to `tund-cli` through stdin. The standalone CLI relaunches itself through UAC with the same arguments when possible; `--key-stdin` must already run from an Administrator terminal because stdin cannot be carried through that relaunch. TunD uses `netsh` for adapter IP/MTU configuration. It creates the tunnel route with IP Helper APIs. It then verifies IP address plus route and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.
+- **Windows:** requires Administrator privileges and `wintun.dll` beside the executable. The GUI relaunches through UAC before opening so it can pass the key to `tund-cli` through stdin. The standalone CLI relaunches itself through UAC with the same arguments when possible; `--key-stdin` must already run from an Administrator terminal because stdin cannot be carried through that relaunch. TunD uses `netsh` for adapter IP/MTU configuration. It creates the tunnel route with IP Helper APIs. It then verifies IP address plus route and MTU with IP Helper APIs. It does not modify Windows Firewall automatically.
