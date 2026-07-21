@@ -27,6 +27,29 @@ class TundTheme {
         primary: TundColors.blue,
         surface: TundColors.card,
       ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) return TundColors.faint;
+          if (states.contains(WidgetState.selected)) return TundColors.green;
+          return TundColors.muted;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return TundColors.field.withValues(alpha: 0.38);
+          }
+          if (states.contains(WidgetState.selected)) {
+            return TundColors.green.withValues(alpha: 0.26);
+          }
+          return TundColors.field;
+        }),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return TundColors.green.withValues(alpha: 0.7);
+          }
+          return TundColors.border;
+        }),
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+      ),
     );
   }
 }
