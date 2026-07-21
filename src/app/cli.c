@@ -7,7 +7,7 @@
 
 static void print_usage(const char *prog, bool show_desc) {
     if (show_desc)
-        fprintf(stderr, "TunD - Virtual LAN over UDP. Creates an authenticated\n"
+        fprintf(stderr, "TunD - Virtual LAN over UDP. Creates an encrypted\n"
                         "IPv4 tunnel for LAN gaming with friends.\n"
                         "\n");
     fprintf(stderr,

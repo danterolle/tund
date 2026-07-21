@@ -59,11 +59,11 @@
             </div>
             <div class="fact">
               <i class="ti ti-shield-check"></i>
-              <div><strong>Authenticated</strong><span>Packets are checked with the shared key and replay window.</span></div>
+              <div><strong>Encrypted in transit</strong><span>Datagrams are encrypted with the shared key and replay window.</span></div>
             </div>
             <div class="fact warning">
               <i class="ti ti-alert-triangle"></i>
-              <div><strong>Not encrypted</strong><span>Use TunD with trusted groups. Do not treat it as a privacy tool.</span></div>
+              <div><strong>Not end-to-end</strong><span>The server decrypts packets to route them. Use a trusted host.</span></div>
             </div>
           </div>
         </div>
@@ -169,8 +169,8 @@
       <div class="notice">
         <i class="ti ti-alert-triangle"></i>
         <div>
-          <strong>Authenticated, not encrypted.</strong>
-          <p>TunD rejects packets without the shared key, but packet contents are not confidential. Use it with trusted groups and trusted networks, not as a privacy VPN.</p>
+          <strong>Encrypted in transit, not end-to-end.</strong>
+          <p>TunD encrypts traffic between each endpoint and the server. The server still decrypts packets to route them, so use a trusted host.</p>
         </div>
       </div>
     </section>

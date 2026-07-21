@@ -133,7 +133,7 @@ With a TunD server already running, simulate clients without creating real TUN i
 This covers:
 
 - registration
-- authenticated keepalives
+- encrypted authenticated keepalives
 - optional client-to-client DATA probes
 
 It does not test OS routing or real TUN drivers.

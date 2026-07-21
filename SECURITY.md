@@ -1,10 +1,12 @@
 # Security Policy
 
-TunD authenticates datagrams with a shared key. Packets without the key should not be able to register as peers or inject traffic into the virtual network.
+TunD encrypts and authenticates datagrams with a shared key. Packets without the key should not be able to register as peers or inject traffic into the virtual network.
 
-TunD also rejects replayed sequence numbers within a small sliding window for each known remote endpoint. This is replay protection for TunD datagrams, not traffic confidentiality.
+TunD also rejects replayed sequence numbers within a small sliding window for each known remote endpoint.
 
-TunD does **not** encrypt packet contents. Treat it as a tool for trusted networks and small trusted groups. Do not use it as a privacy VPN. The absence of encryption is a documented limitation, not a vulnerability by itself.
+Traffic is encrypted in transit between each endpoint and the TunD server. It is not end-to-end encrypted against the server itself: the server decrypts packets to route them through the virtual LAN.
+
+Treat TunD as a tool for trusted groups. Do not use it as a general privacy VPN.
 
 ## Reporting a vulnerability
 
@@ -35,6 +37,6 @@ Please avoid public disclosure until a fix is available or a coordinated disclos
 
 - Use a long random shared key.
 - Run TunD only with peers and servers you trust.
-- Do not use TunD on untrusted networks when traffic confidentiality matters.
+- Do not use TunD when you need end-to-end confidentiality from the server.
 - Keep Windows release files together, including the bundled `wintun.dll`.
 - Restrict inbound UDP exposure to the server port you intend to use.

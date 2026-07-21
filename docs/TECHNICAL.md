@@ -17,7 +17,7 @@ It does not transport Ethernet frames, IPv6 or arbitrary multicast discovery.
 | Component | Responsibility |
 |---|---|
 | `src/app/` | Entry point. CLI parsing. Logging. Platform startup. Windows elevation. Common types. Global state. |
-| `src/protocol/` | Datagram framing. Message serialisation. Virtual-network constants. SipHash MAC. |
+| `src/protocol/` | Datagram framing. Message serialisation. Virtual-network constants. Transport encryption. |
 | `src/net/` | UDP sockets. Hostname resolution. Packet authentication. Source-address comparison. |
 | `src/core/` | Core server/client state machines and shared orchestration. |
 | `src/core/server/` | Server peer table. Packet handlers. Timeout/TUN threads. Lifecycle and logging. |
@@ -27,6 +27,7 @@ It does not transport Ethernet frames, IPv6 or arbitrary multicast discovery.
 | `src/tun/darwin/` | macOS `utun` device and interface configuration. |
 | `src/tun/windows/` | Windows Wintun loading. Process helpers. IP/route/MTU configuration. |
 | `src/ui/` | Public TUI API. Rendering helpers. Recent event log. |
+| `third_party/monocypher/` | Vendored Monocypher source used for authenticated encryption. |
 | [`gui/`](../gui/README.md) | Optional Flutter desktop launcher that starts `tund-cli` without reimplementing the tunnel. |
 
 ## Virtual network
@@ -42,7 +43,7 @@ Each endpoint sets the TUN MTU to 1400 bytes. The lower-than-Ethernet MTU reserv
 ## Start-up sequence
 
 1. The user selects server/client and supplies the shared network key.
-2. `main.c` rejects keys shorter than 12 characters and derives the two SipHash key words.
+2. `main.c` rejects keys shorter than 12 characters and derives the Monocypher transport key.
 3. A server binds UDP port 9909 by default, opens a TUN device and assigns `10.9.0.1/24`.
 4. A client resolves the server, binds an ephemeral UDP port and sends `MSG_REGISTER`.
 5. The server allocates an unused `10.9.0.x` address and replies with `MSG_ASSIGN`.
@@ -51,18 +52,20 @@ Each endpoint sets the TUN MTU to 1400 bytes. The lower-than-Ethernet MTU reserv
 
 ## Datagram format
 
-Every TunD datagram uses the following 21-byte header followed by a payload:
+Every TunD datagram uses the following 37-byte header followed by an encrypted payload and a 16-byte authentication tag:
 
 | Bytes | Field | Description |
 |---:|---|---|
 | 0 | magic | Fixed value `0xA9`. |
 | 1 | version | Protocol version. |
 | 2 | type | Message type. |
-| 3–4 | length | Big-endian payload length. |
+| 3–4 | length | Big-endian encrypted payload length, including the authentication tag, on the wire. |
 | 5–12 | sequence | Sender sequence number for replay protection. |
-| 13–20 | tag | 64-bit SipHash integrity tag. |
+| 13–36 | nonce | 192-bit XChaCha20-Poly1305 nonce. |
 
-The tag covers stable header fields plus sequence number and payload. `network.c` signs every outgoing packet and drops any incoming packet with an invalid tag before message parsing. Clients and servers keep a small sliding window per remote endpoint and drop replayed sequence numbers. All participants must therefore use the same access key and protocol version.
+`network.c` encrypts every outgoing payload with Monocypher's XChaCha20-Poly1305 AEAD. The header is authenticated as associated data, so changes to message type, length, sequence or nonce are rejected before message parsing. On receive, `network.c` decrypts the payload in place and restores the header length to plaintext length for the existing packet handlers.
+
+Clients and servers keep a small sliding window per remote endpoint and drop replayed sequence numbers. All participants must therefore use the same access key and protocol version.
 
 Message types:
 
@@ -108,9 +111,11 @@ On shutdown, TunD sets stop flags and sends disconnect notifications where possi
 
 ## Security model
 
-The shared key authenticates datagrams and prevents unauthorised endpoints without the key from registering or injecting packets. TunD also rejects replayed sequence numbers within a small sliding window for each known remote endpoint. It does **not** encrypt packet contents. Use a long random key and only trusted networks/servers.
+The shared key encrypts and authenticates TunD datagrams. Endpoints without the key should not be able to register, inject traffic or read packets in transit.
 
-Do not describe TunD as a confidential VPN until it uses a reviewed authenticated-encryption transport.
+TunD also rejects replayed sequence numbers within a small sliding window for each known remote endpoint.
+
+Transport encryption is not end-to-end encryption against the server. The server decrypts packets to route them through the virtual LAN. Use a long random key and a trusted server.
 
 ## Platform notes
 

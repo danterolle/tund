@@ -4,8 +4,8 @@ Thanks for helping improve TunD. Keep changes small and aligned with the project
 
 ## Project boundaries
 
-- TunD is not a privacy VPN. Do not describe it as confidential until it has reviewed authenticated encryption.
-- Replay protection exists for TunD datagrams, but packet contents are still not encrypted.
+- TunD is not a general privacy VPN. Transport encryption exists, but traffic is not end-to-end encrypted against the server.
+- Replay protection exists for TunD datagrams.
 - The C core should stay dependency-light and close to the OS networking/TUN APIs.
 - Platform-specific behavior should remain explicit and documented.
 
@@ -40,7 +40,7 @@ flutter test
 
 ## Documentation and website
 
-- Keep the security model wording consistent. TunD datagrams are authenticated and replay-protected. Packet contents are not encrypted.
+- Keep the security model wording consistent. TunD datagrams are encrypted in transit and replay-protected. Traffic is not end-to-end encrypted against the server.
 - Website sources live in `web/` and are published by the `Pages` workflow as the GitHub Pages site root.
 - Release steps are documented in [`docs/RELEASE.md`](docs/RELEASE.md).
 

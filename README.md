@@ -16,7 +16,7 @@ Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge
 
 It is self-hosted and cross-platform. The C core stays dependency-light: Linux and macOS use system networking APIs, while Windows uses Wintun for TUN support.
 
-> **Scope:** TunD is for trusted LAN-party groups. It authenticates TunD datagrams and rejects replayed datagrams, but it does **not** encrypt packet contents.
+> **Scope:** TunD encrypts traffic in transit between each endpoint and the TunD server. It is not end-to-end against the server itself.
 
 <p align="center">
   <img src="web/assets/gui-preview.png" width="760" alt="TunD desktop GUI running on Windows">
@@ -42,7 +42,7 @@ TunD is deliberately narrower: a small self-hosted LAN-party tool with a fixed v
 
 A wrapper around another networking tool would still need to build most of that product workflow: simple hosting, peer assignment, routing setup, platform permissions and game-focused guidance around a tool designed for a broader purpose.
 
-Do not use TunD when you need confidential traffic.
+Do not use TunD when you need end-to-end confidentiality from the relay server.
 
 ### Why C?
 
@@ -104,7 +104,7 @@ Pre-built binaries are available on the [releases page](https://github.com/dante
 - **Flutter desktop GUI** — optional launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
 - **Single CLI binary** — server and client modes in one program
 - **IPv4 broadcast support** — useful for LAN-style discovery in compatible games
-- **Authenticated membership** — packets without the shared network key are discarded; replayed TunD datagrams are rejected
+- **Encrypted transport** — datagrams are encrypted in transit; replayed TunD datagrams are rejected
 
 ## Game compatibility
 
@@ -116,7 +116,7 @@ It is not an Ethernet bridge. Games may need direct IP entry when they require u
 - IPv6
 - multicast discovery
 
-The shared key authenticates packets but does **not** encrypt traffic. TunD is not a production VPN — it is a weekend project for trusted networks, not a privacy tool. Do not use on untrusted networks or untrusted servers.
+Traffic is encrypted in transit between each endpoint and the TunD server. The server still decrypts packets to route them, so TunD is not end-to-end encrypted against the host.
 
 Artemis setup is straightforward. Start the server first. Connect every station with the same key. Use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
 
