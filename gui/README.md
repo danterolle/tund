@@ -24,6 +24,10 @@ The GUI warns about administrator/root privileges before starting `tund-cli`.
 
 The GUI starts `tund-cli` with `--key-stdin` so the network key is not exposed in the process list. The copied client command also uses `--key-stdin`; clients can paste or type the shared key when the command asks for it. Use `--key-file` manually if you prefer saving the key for repeated sessions.
 
+## Bundled font
+
+The GUI bundles Space Grotesk under the SIL Open Font License 1.1. The license text is included in `assets/fonts/OFL-SpaceGrotesk.txt`.
+
 ## Local build
 
 ```powershell

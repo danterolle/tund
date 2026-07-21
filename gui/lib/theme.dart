@@ -21,7 +21,7 @@ class TundTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      fontFamily: 'Segoe UI',
+      fontFamily: 'Space Grotesk',
       scaffoldBackgroundColor: TundColors.bg,
       colorScheme: const ColorScheme.dark(
         primary: TundColors.blue,
