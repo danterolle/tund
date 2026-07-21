@@ -114,6 +114,7 @@ class TundHomeController extends ChangeNotifier {
       output: log.toString(),
     );
     stopRequested = false;
+    clearNetworkKey();
     notifyListeners();
     appendLog(
       stoppedByUser
@@ -127,6 +128,7 @@ class TundHomeController extends ChangeNotifier {
     status = GuiStatus.failed;
     stopRequested = false;
     guidedError = GuidedError(title: title, message: message);
+    clearNetworkKey();
     notifyListeners();
   }
 
@@ -157,7 +159,7 @@ class TundHomeController extends ChangeNotifier {
     }
 
     await copyText(value);
-    showInfo('Network key copied.');
+    showInfo('Network key copied. Clear your clipboard after sharing it.');
   }
 
   Future<void> copyClientCommand({
@@ -181,6 +183,11 @@ class TundHomeController extends ChangeNotifier {
   void toggleKeyVisibility() {
     showKey = !showKey;
     notifyListeners();
+  }
+
+  void clearNetworkKey() {
+    key.clear();
+    showKey = false;
   }
 
   void setVerbose(bool value) {

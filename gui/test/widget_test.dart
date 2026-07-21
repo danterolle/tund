@@ -48,6 +48,18 @@ void main() {
     expect(error?.title, 'Wintun is missing or unavailable');
   });
 
+  test('clears the network key after TunD exits', () {
+    final controller = TundHomeController();
+    addTearDown(controller.dispose);
+    controller.key.text = 'a-long-random-key';
+    controller.showKey = true;
+
+    controller.completeExit(0);
+
+    expect(controller.key.text, isEmpty);
+    expect(controller.showKey, isFalse);
+  });
+
   testWidgets('shows the privileges notice on startup', (tester) async {
     await tester.pumpWidget(const TundApp());
     await tester.pumpAndSettle();
@@ -160,7 +172,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(clipboardPayload, {'text': 'a-long-random-key'});
-    expect(find.text('Network key copied.'), findsOneWidget);
+    expect(
+      find.text('Network key copied. Clear your clipboard after sharing it.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows and copies the host client command', (tester) async {

@@ -195,4 +195,9 @@ static inline void tund_request_stop(void) {
     tund_stop_flag_store(&g_running, false);
 }
 
+static inline void tund_wipe_secret(void *data, size_t len) {
+    volatile unsigned char *p = (volatile unsigned char *)data;
+    while (len-- > 0) *p++ = 0;
+}
+
 #endif /* TUND_H */

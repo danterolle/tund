@@ -108,7 +108,9 @@ static cli_result_t read_key_line(config_t *cfg, FILE *stream, const char *sourc
         return CLI_EXIT_ERROR;
     }
     trim_line_end(key);
-    return store_access_key(cfg, key);
+    cli_result_t result = store_access_key(cfg, key);
+    tund_wipe_secret(key, sizeof(key));
+    return result;
 }
 
 static cli_result_t read_key_from_terminal(config_t *cfg) {
