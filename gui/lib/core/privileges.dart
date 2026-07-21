@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 String privilegeMessage() {
   if (Platform.isWindows) {
-    return 'TunD needs Administrator privileges to create the virtual network adapter. The Windows GUI requests elevation before it opens so the network key can still be sent safely through stdin.';
+    return 'TunD needs Administrator privileges to create the virtual network adapter. The Windows GUI relaunches through UAC before it opens so the network key can still be sent safely through stdin.';
   }
   if (Platform.isMacOS) {
     return 'TunD needs administrator privileges to create and configure the TUN interface. On macOS release builds, use tund-gui.command next to tund-gui.app.';
