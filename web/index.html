@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TunD - virtual LAN for LAN-party games</title>
-<meta name="description" content="TunD creates a small self-hosted virtual IPv4 LAN for remote LAN-party sessions and direct-IP multiplayer.">
+<meta name="description" content="TunD creates a small self-hosted virtual IPv4 LAN for LAN-party sessions and direct-IP multiplayer.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,27 +14,29 @@
       <div>
         <div class="brand">
           <svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect x="0" y="0" width="140" height="140" rx="24" fill="#1e2327" stroke="#333a40" stroke-width="1"/>
-            <g transform="translate(70,70)">
-              <line x1="0" y1="0" x2="0" y2="-42" stroke="#85B7EB" stroke-width="4"/>
-              <line x1="0" y1="0" x2="40" y2="-13" stroke="#85B7EB" stroke-width="4"/>
-              <line x1="0" y1="0" x2="25" y2="34" stroke="#85B7EB" stroke-width="4"/>
-              <line x1="0" y1="0" x2="-25" y2="34" stroke="#85B7EB" stroke-width="4"/>
-              <line x1="0" y1="0" x2="-40" y2="-13" stroke="#85B7EB" stroke-width="4"/>
-              <circle cx="0" cy="0" r="14" fill="#378ADD"/>
-              <circle cx="0" cy="-42" r="8" fill="#85B7EB"/>
-              <circle cx="40" cy="-13" r="8" fill="#85B7EB"/>
-              <circle cx="25" cy="34" r="8" fill="#85B7EB"/>
-              <circle cx="-25" cy="34" r="8" fill="#85B7EB"/>
-              <circle cx="-40" cy="-13" r="8" fill="#85B7EB"/>
-            </g>
+            <defs>
+              <linearGradient id="logo-background" x1="16" y1="12" x2="126" y2="130" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#172330"/>
+                <stop offset="1" stop-color="#0b1117"/>
+              </linearGradient>
+              <linearGradient id="logo-tunnel" x1="33" y1="35" x2="106" y2="105" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#9cc9f4"/>
+                <stop offset=".48" stop-color="#4be4ff"/>
+                <stop offset="1" stop-color="#378add"/>
+              </linearGradient>
+            </defs>
+            <rect x="8" y="8" width="124" height="124" rx="30" fill="url(#logo-background)" stroke="#2f4050" stroke-width="1.5"/>
+            <path d="M35 41H105" fill="none" stroke="url(#logo-tunnel)" stroke-width="15" stroke-linecap="round"/>
+            <path d="M70 41V102" fill="none" stroke="url(#logo-tunnel)" stroke-width="15" stroke-linecap="round"/>
+            <path d="M46 91C56 84 63 81 70 81C77 81 84 84 94 91" fill="none" stroke="#0f171f" stroke-width="14" stroke-linecap="round"/>
+            <path d="M46 91C56 84 63 81 70 81C77 81 84 84 94 91" fill="none" stroke="#85b7eb" stroke-width="8" stroke-linecap="round"/>
           </svg>
           <h1>TunD</h1>
         </div>
         <span class="badge"><i class="ti ti-rocket"></i>Release v2.0</span>
-        <h2>A small virtual LAN for remote LAN-party games.</h2>
+        <h2>A small virtual LAN for LAN-party games.</h2>
         <p class="hero-copy">
-          TunD creates a self-hosted IPv4 tunnel for games like Artemis and direct-IP multiplayer. Use the desktop GUI when you want a launcher, or the CLI when you want one binary and a terminal.
+          TunD creates a self-hosted virtual IPv4 LAN for games like Artemis and direct-IP multiplayer. Use the desktop GUI when you want a launcher, or the CLI when you want one binary and a terminal.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#downloads"><i class="ti ti-download"></i>Download v2.0</a>

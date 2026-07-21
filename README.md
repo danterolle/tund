@@ -12,7 +12,7 @@
 
 # TunD
 
-Does one thing: create a virtual LAN. Designed for remote LAN-party sessions, unreliable physical LANs and direct-IP multiplayer with friends.
+TunD does one thing: it creates a virtual LAN. Built for LAN-party sessions, unreliable physical LANs and direct-IP multiplayer with friends.
 
 It is self-hosted and cross-platform. The C core stays dependency-light: Linux and macOS use system networking APIs, while Windows uses Wintun for TUN support.
 
@@ -38,7 +38,7 @@ It is self-hosted and cross-platform. The C core stays dependency-light: Linux a
 
 Those are better choices for general secure networking, especially when confidentiality or production-grade trust matters.
 
-TunD is deliberately narrower: a small self-hosted LAN-party tool with a fixed virtual IPv4 subnet, automatic peer assignment and enough broadcast support for LAN-style games.
+TunD is deliberately narrower: a small, self-hosted virtual LAN tool with a fixed virtual IPv4 subnet, automatic peer assignment and enough broadcast support for LAN-style games.
 
 A wrapper around another networking tool would still need to build most of that product workflow: simple hosting, peer assignment, routing setup, platform permissions and game-focused guidance around a tool designed for a broader purpose.
 
@@ -80,7 +80,7 @@ The Flutter GUI is different: I do not know Flutter well. It exists because it w
 
 ## Quick start
 
-On a machine with a public IP:
+On the machine that should host the virtual LAN:
 
 ```bash
 openssl rand -base64 24 > tund.key
