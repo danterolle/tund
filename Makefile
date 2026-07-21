@@ -29,6 +29,7 @@ verify:
 	$(MAKE) test
 	$(MAKE) tools
 	$(MAKE) peerforge-check
+	$(MAKE) peerforge-wrong-key-check
 	$(MAKE) sanitize
 	$(MAKE) all
 	$(MAKE) windows

@@ -24,6 +24,7 @@ jobs:
       - run: make test
       - run: make tools
       - run: make peerforge-check
+      - run: make peerforge-wrong-key-check
       - run: make sanitize
       - name: Build GUI
         run: |
@@ -60,6 +61,7 @@ jobs:
       - run: make test
       - run: make tools
       - run: make peerforge-check
+      - run: make peerforge-wrong-key-check
       - run: make sanitize
       - run: make macos-universal
       - name: Build GUI
