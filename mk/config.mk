@@ -1,7 +1,7 @@
 CC       := cc
 AR       := ar
 CFLAGS   := -Wall -Wextra -O2 -std=c11
-INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/core/client -Isrc/core/server -Isrc/tun -Isrc/ui
+INCLUDES := -Isrc/app -Isrc/protocol -Isrc/net -Isrc/core -Isrc/core/client -Isrc/core/server -Isrc/tun -Isrc/ui -Ithird_party/monocypher
 TEST_INCLUDES := $(INCLUDES) -Itools/sitest
 LDFLAGS  := -pthread
 TARGET   := tund-cli

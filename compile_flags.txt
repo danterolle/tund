@@ -11,4 +11,5 @@
 -Isrc/core/server
 -Isrc/tun
 -Isrc/ui
+-Ithird_party/monocypher
 -Itools/sitest

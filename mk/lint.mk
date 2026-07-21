@@ -1,6 +1,6 @@
 .PHONY: lint lint-c
 
-LINT_C_SRCS := $(sort \
+LINT_C_SRCS := $(filter-out $(THIRD_PARTY_SRC),$(sort \
 	$(SRCS) \
 	$(TEST_PROTOCOL_SRCS) \
 	$(TEST_SERVER_PEERS_SRCS) \
@@ -11,7 +11,7 @@ LINT_C_SRCS := $(sort \
 	$(SITEST_SRC) \
 	$(TUND_TEST_SUPPORT_SRCS) \
 	$(TOOL_SRCS) \
-	$(PEERFORGE_SERVER_SRCS))
+	$(PEERFORGE_SERVER_SRCS)))
 
 lint:
 	tools/lint.sh $(CFLAGS) $(TEST_INCLUDES) -- $(LINT_C_SRCS)
