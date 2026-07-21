@@ -16,6 +16,7 @@ Run the smallest check that covers your change:
 ```bash
 make test
 make peerforge-check
+make peerforge-wrong-key-check
 make sanitize
 make tools
 make all

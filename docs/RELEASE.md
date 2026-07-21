@@ -13,7 +13,7 @@ Update every versioned surface in one commit:
 Use a commit like:
 
 ```text
-chore: release 1.18
+chore: release X.Y
 ```
 
 ## Validation
@@ -27,6 +27,7 @@ make test
 make sanitize
 make tools
 make peerforge-check
+make peerforge-wrong-key-check
 make all
 ```
 
@@ -49,9 +50,9 @@ make windows
 Create and push the release tag:
 
 ```bash
-git tag -a v1.18 -m "v1.18"
+git tag -a vX.Y -m "vX.Y"
 git push origin main
-git push origin v1.18
+git push origin vX.Y
 ```
 
 The `Build & Release` workflow builds release assets when a `v*` tag is pushed.

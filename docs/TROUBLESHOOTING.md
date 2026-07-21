@@ -5,6 +5,7 @@
 - TunD listens on UDP port `9909` by default. Allow inbound UDP on the server firewall; clients normally need only outbound UDP.
 - The virtual subnet is fixed at `10.9.0.0/24`. Do not use TunD on a host already routing that subnet through a real LAN or another VPN.
 - All participants must run the same TunD protocol version: encrypted framing is not compatible with older builds.
+- If every machine can already reach the game host on the same physical LAN, TunD may be unnecessary.
 
 ## Connectivity checks
 

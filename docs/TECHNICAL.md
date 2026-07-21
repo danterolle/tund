@@ -2,7 +2,7 @@
 
 ## Purpose and scope
 
-TunD is a self-hosted hub-and-spoke virtual IPv4 LAN. It creates a local Layer-3 TUN interface on every participant and relays IP packets through one UDP server. It is intended for small trusted groups and IPv4 games such as Artemis Space Ship Simulator.
+TunD is a self-hosted hub-and-spoke virtual IPv4 LAN. It creates a local Layer-3 TUN interface on every participant and relays IP packets through one UDP server. It is intended for small trusted groups, remote LAN-party sessions and IPv4 games such as Artemis Space Ship Simulator.
 
 TunD is deliberately not:
 
@@ -116,6 +116,8 @@ The shared key encrypts and authenticates TunD datagrams. Endpoints without the 
 TunD also rejects replayed sequence numbers within a small sliding window for each known remote endpoint.
 
 Transport encryption is not end-to-end encryption against the server. The server decrypts packets to route them through the virtual LAN. Use a long random key and a trusted server.
+
+The key derivation step is not a password-hardening function. A short human-memorable password is weaker than a generated random key.
 
 ## Platform notes
 

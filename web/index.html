@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TunD - virtual LAN for LAN-party games</title>
-<meta name="description" content="TunD creates a small self-hosted virtual IPv4 LAN for trusted LAN-party games and direct-IP multiplayer.">
+<meta name="description" content="TunD creates a small self-hosted virtual IPv4 LAN for remote LAN-party sessions and direct-IP multiplayer.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -32,7 +32,7 @@
           <h1>TunD</h1>
         </div>
         <span class="badge"><i class="ti ti-rocket"></i>Release v2.0</span>
-        <h2>A small virtual LAN for trusted LAN-party games.</h2>
+        <h2>A small virtual LAN for remote LAN-party games.</h2>
         <p class="hero-copy">
           TunD creates a self-hosted IPv4 tunnel for games like Artemis and direct-IP multiplayer. Use the desktop GUI when you want a launcher, or the CLI when you want one binary and a terminal.
         </p>
@@ -132,18 +132,18 @@
         <div class="code-block">
           <div class="code-header">
             <span class="code-title"><i class="ti ti-server"></i>Host</span>
-            <button class="copy-btn" data-copy="sudo ./tund-cli server -k &quot;a-long-random-key&quot;"><i class="ti ti-copy"></i>Copy</button>
+            <button class="copy-btn" data-copy="sudo ./tund-cli server -k &quot;&lt;network-key&gt;&quot;"><i class="ti ti-copy"></i>Copy</button>
           </div>
           <pre><span class="comment"># on the machine that should host the virtual LAN</span>
-<span class="cmd">sudo ./tund-cli server</span> -k <span class="str">"a-long-random-key"</span></pre>
+<span class="cmd">sudo ./tund-cli server</span> -k <span class="str">"&lt;network-key&gt;"</span></pre>
         </div>
         <div class="code-block">
           <div class="code-header">
             <span class="code-title"><i class="ti ti-device-gamepad-2"></i>Join</span>
-            <button class="copy-btn" data-copy="sudo ./tund-cli client -s &lt;server_ip&gt; -k &quot;a-long-random-key&quot;"><i class="ti ti-copy"></i>Copy</button>
+            <button class="copy-btn" data-copy="sudo ./tund-cli client -s &lt;server_ip&gt; -k &quot;&lt;network-key&gt;&quot;"><i class="ti ti-copy"></i>Copy</button>
           </div>
           <pre><span class="comment"># on every machine that should join</span>
-<span class="cmd">sudo ./tund-cli client</span> -s &lt;server_ip&gt; -k <span class="str">"a-long-random-key"</span></pre>
+<span class="cmd">sudo ./tund-cli client</span> -s &lt;server_ip&gt; -k <span class="str">"&lt;network-key&gt;"</span></pre>
         </div>
       </div>
     </section>

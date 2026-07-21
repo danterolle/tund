@@ -12,11 +12,11 @@
 
 # TunD
 
-Does one thing: create a virtual LAN. Designed for Artemis (the Spaceship Bridge Simulator) LAN parties and direct-IP multiplayer with friends.
+Does one thing: create a virtual LAN. Designed for remote LAN-party sessions, unreliable physical LANs and direct-IP multiplayer with friends.
 
 It is self-hosted and cross-platform. The C core stays dependency-light: Linux and macOS use system networking APIs, while Windows uses Wintun for TUN support.
 
-> **Scope:** TunD encrypts traffic in transit between each endpoint and the TunD server. It is not end-to-end against the server itself.
+> **Scope:** TunD encrypts traffic in transit between each endpoint and the TunD server. It is not end-to-end against the server itself. Use a long random shared key.
 
 <p align="center">
   <img src="web/assets/gui-preview.png" width="760" alt="TunD desktop GUI running on Windows">
@@ -83,16 +83,16 @@ The Flutter GUI is different: I do not know Flutter well. It exists because it w
 On a machine with a public IP:
 
 ```bash
-sudo ./tund-cli server -k "a-long-random-key"
+sudo ./tund-cli server -k "<network-key>"
 ```
 
 On every machine that should join the LAN:
 
 ```bash
-sudo ./tund-cli client -s <server_ip> -k "a-long-random-key"
+sudo ./tund-cli client -s <server_ip> -k "<network-key>"
 ```
 
-Use the same key everywhere. Desktop releases include a GUI launcher and a CLI. The CLI still requires administrator/root privileges for TUN setup. See the [GUI README](gui/README.md) for details.
+Generate a long random key first. For example: `openssl rand -base64 24`. Use the same key everywhere. Desktop releases include a GUI launcher and a CLI. The CLI still requires administrator/root privileges for TUN setup. See the [GUI README](gui/README.md) for details.
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). See [Usage](docs/USAGE.md) for full instructions.
 
@@ -119,6 +119,8 @@ It is not an Ethernet bridge. Games may need direct IP entry when they require u
 Traffic is encrypted in transit between each endpoint and the TunD server. The server still decrypts packets to route them, so TunD is not end-to-end encrypted against the host.
 
 Artemis setup is straightforward. Start the server first. Connect every station with the same key. Use the assigned `10.9.0.x` addresses where the game asks for a host address. Verify first with `ping 10.9.0.1` from each client. If automatic discovery does not appear, prefer entering the host IP manually.
+
+If every machine is already on the same physical LAN and can reach the game host directly, you probably do not need TunD.
 
 ## Documentation
 

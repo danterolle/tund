@@ -16,18 +16,28 @@ Release assets include desktop GUI bundles and standalone CLI binaries:
 
 The CLI examples below use `./tund-cli`; release binary names may differ. GUI-specific notes are in the [GUI README](../gui/README.md).
 
+## Choose a network key
+
+Use the same long random key on every endpoint.
+
+```bash
+openssl rand -base64 24
+```
+
+The examples below use `<network-key>` as a placeholder for that generated value.
+
 ## Start the server
 
 On the machine that should act as the hub:
 
 ```bash
-sudo ./tund-cli server -k "a-long-random-key"
+sudo ./tund-cli server -k "<network-key>"
 ```
 
 On Windows:
 
 ```powershell
-.\tund-cli.exe server -k "a-long-random-key"
+.\tund-cli.exe server -k "<network-key>"
 ```
 
 Options:
@@ -42,13 +52,13 @@ Options:
 ## Connect as a client
 
 ```bash
-sudo ./tund-cli client -s <server_ip> -k "a-long-random-key"
+sudo ./tund-cli client -s <server_ip> -k "<network-key>"
 ```
 
 On Windows:
 
 ```powershell
-.\tund-cli.exe client -s <server_ip> -k "a-long-random-key"
+.\tund-cli.exe client -s <server_ip> -k "<network-key>"
 ```
 
 Options:
@@ -66,13 +76,13 @@ Options:
 
 ```bash
 # Machine A (server, e.g. IP 203.0.113.10):
-sudo ./tund-cli server -k "a-long-random-key"
+sudo ./tund-cli server -k "<network-key>"
 
 # Machine B (client, behind NAT):
-sudo ./tund-cli client -s 203.0.113.10 -n "Gaming-PC" -k "a-long-random-key"
+sudo ./tund-cli client -s 203.0.113.10 -n "Gaming-PC" -k "<network-key>"
 
 # Machine C (client, behind NAT):
-sudo ./tund-cli client -s 203.0.113.10 -n "Work-Laptop" -k "a-long-random-key"
+sudo ./tund-cli client -s 203.0.113.10 -n "Work-Laptop" -k "<network-key>"
 
 # Now Machine B can ping Machine C:
 ping 10.9.0.3
@@ -106,6 +116,7 @@ This runs the full local verification set:
 - C linting
 - unit tests
 - Peerforge UDP integration check
+- Peerforge wrong-key rejection check
 - sanitizer tests
 - native build
 - Windows cross-build
@@ -127,7 +138,7 @@ make peerforge-check
 With a TunD server already running, simulate clients without creating real TUN interfaces:
 
 ```bash
-./dist/peerforge -s 127.0.0.1 -k "a-long-random-key" -n 253 -K 1 -d 32
+./dist/peerforge -s 127.0.0.1 -k "<network-key>" -n 253 -K 1 -d 32
 ```
 
 This covers:
@@ -135,6 +146,7 @@ This covers:
 - registration
 - encrypted authenticated keepalives
 - optional client-to-client DATA probes
+- rejection of clients using the wrong key through `make peerforge-wrong-key-check`
 
 It does not test OS routing or real TUN drivers.
 
@@ -168,3 +180,5 @@ Text typed on one side should appear on the other. With two clients connected, r
 4. Permit UDP 9909 in the server firewall.
 5. Confirm `ping 10.9.0.1` from each client, then ping another assigned client address.
 6. For games whose discovery does not cross the tunnel, enter the virtual host address manually.
+
+If all participants are already on the same physical LAN and can reach each other directly, TunD may be unnecessary.
