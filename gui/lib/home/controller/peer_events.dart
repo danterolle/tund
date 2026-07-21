@@ -1,4 +1,4 @@
-part of 'controller.dart';
+part of 'home_controller.dart';
 
 void _applyJsonEvent(TundHomeController controller, String line) {
   if (controller.disposed || controller.mode != TundMode.server) return;

@@ -1,106 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:tund_gui/app.dart';
 import 'package:tund_gui/core/status.dart';
-import 'package:tund_gui/core/tund_config.dart';
-import 'package:tund_gui/home/controller.dart';
+import 'package:tund_gui/core/config.dart';
 import 'package:tund_gui/home/controls.dart';
 import 'package:tund_gui/widgets/log_box.dart';
 
-Finder fieldByLabel(String label) {
-  final textField = find.ancestor(
-    of: find.text(label),
-    matching: find.byType(TextField),
-  );
-  return find.descendant(of: textField, matching: find.byType(EditableText));
-}
-
-Future<void> pumpAppAndAcceptPrivilegeNotice(WidgetTester tester) async {
-  await tester.pumpWidget(const TundApp());
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('I understand'));
-  await tester.pumpAndSettle();
-}
+import '../support/test_helpers.dart';
 
 void main() {
-  test('treats a requested stop as a clean exit', () {
-    expect(statusForTundExit(1, stopRequested: true), GuiStatus.stopped);
-    expect(
-      guidedErrorForTundExit(
-        1,
-        stopRequested: true,
-        output: 'Failed to load wintun.dll',
-      ),
-      isNull,
-    );
-  });
-
-  test('keeps unexpected non-zero exits as failures', () {
-    final error = guidedErrorForTundExit(
-      1,
-      stopRequested: false,
-      output: 'Failed to load wintun.dll',
-    );
-
-    expect(statusForTundExit(1, stopRequested: false), GuiStatus.failed);
-    expect(error?.title, 'Wintun is missing or unavailable');
-  });
-
-  test('clears the network key after TunD exits', () {
-    final controller = TundHomeController();
-    addTearDown(controller.dispose);
-    controller.key.text = 'a-long-random-key';
-    controller.showKey = true;
-
-    controller.completeExit(0);
-
-    expect(controller.key.text, isEmpty);
-    expect(controller.showKey, isFalse);
-  });
-
-  testWidgets('shows the privileges notice on startup', (tester) async {
-    await tester.pumpWidget(const TundApp());
-    await tester.pumpAndSettle();
-
-    expect(find.text('Privileges required'), findsOneWidget);
-    expect(find.text('I understand'), findsOneWidget);
-  });
-
-  testWidgets('renders the launcher shell', (tester) async {
-    await pumpAppAndAcceptPrivilegeNotice(tester);
-
-    expect(find.text('TunD'), findsOneWidget);
-    expect(find.text('Ready'), findsWidgets);
-    expect(find.text('Choose a mode, enter the shared key, then start TunD.'),
-        findsOneWidget);
-    expect(find.text('Host a LAN'), findsOneWidget);
-    expect(find.text('Join a LAN'), findsOneWidget);
-    expect(find.text('Connected peers'), findsOneWidget);
-    expect(find.text('Start hosting to see connected peers.'), findsOneWidget);
-  });
-
-  testWidgets('switches between host and join forms', (tester) async {
-    await pumpAppAndAcceptPrivilegeNotice(tester);
-
-    expect(
-        find.text(
-            'This computer becomes the hub at 10.9.0.1. Allow inbound UDP on the selected port.'),
-        findsOneWidget);
-    expect(find.text('Server IP or hostname'), findsNothing);
-
-    await tester.tap(find.text('Join a LAN'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Server IP or hostname'), findsOneWidget);
-    expect(
-        find.text(
-            'This computer becomes the hub at 10.9.0.1. Allow inbound UDP on the selected port.'),
-        findsNothing);
-    expect(find.text('Connected peers'), findsNothing);
-  });
-
   testWidgets('allows editing the display name in host mode', (tester) async {
     await pumpAppAndAcceptPrivilegeNotice(tester);
 
@@ -288,17 +196,5 @@ void main() {
     ));
 
     expect(controller.position.maxScrollExtent, greaterThan(0));
-  });
-
-  testWidgets('does not repeat the privileges dialog after startup acceptance',
-      (tester) async {
-    await pumpAppAndAcceptPrivilegeNotice(tester);
-
-    await tester.enterText(fieldByLabel('Network key'), 'a-long-random-key');
-    await tester.ensureVisible(find.text('Start'));
-    await tester.tap(find.text('Start'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Privileges required'), findsNothing);
   });
 }

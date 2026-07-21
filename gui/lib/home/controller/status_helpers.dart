@@ -1,4 +1,4 @@
-part of 'controller.dart';
+part of 'home_controller.dart';
 
 GuiStatus statusForTundExit(int exitCode, {required bool stopRequested}) {
   if (stopRequested || exitCode == 0) return GuiStatus.stopped;

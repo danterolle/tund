@@ -1,4 +1,4 @@
-part of 'controller.dart';
+part of 'home_controller.dart';
 
 Future<void> _startTund(
   TundHomeController controller, {

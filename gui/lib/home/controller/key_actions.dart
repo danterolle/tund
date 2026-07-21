@@ -1,4 +1,4 @@
-part of 'controller.dart';
+part of 'home_controller.dart';
 
 void _generateKey(TundHomeController controller) {
   controller.key.text = generateNetworkKey();

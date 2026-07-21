@@ -7,8 +7,8 @@ import '../../core/host_peer.dart';
 import '../../core/key_helpers.dart';
 import '../../core/share_command.dart';
 import '../../core/status.dart';
-import '../../core/tund_config.dart';
-import '../../core/tund_launcher.dart';
+import '../../core/config.dart';
+import '../../core/launcher/launcher.dart';
 
 part 'key_actions.dart';
 part 'lifecycle.dart';

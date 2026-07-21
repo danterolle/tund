@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../core/privileges.dart';
 import '../theme.dart';
-import 'controller.dart';
+import 'controller/home_controller.dart';
 import 'layout.dart';
 
 class TundHomePage extends StatefulWidget {

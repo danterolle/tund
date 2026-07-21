@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../core/privileges.dart';
-import '../core/tund_config.dart';
+import '../core/config.dart';
 import '../widgets/widgets.dart';
-import 'controller.dart';
+import 'controller/home_controller.dart';
 import 'controls.dart';
 
 class TundHomeLayout extends StatelessWidget {
