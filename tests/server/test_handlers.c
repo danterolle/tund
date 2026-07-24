@@ -175,7 +175,7 @@ static void test_invalid_packets_do_not_register_peer(void) {
     server_handle_packet(&srv, buf, len, &addr);
     CHECK(srv.peer_count == 0);
 
-    len = proto_build_register(buf, "alpha");
+    CHECK(proto_build_register(buf, "alpha") > 0);
     server_handle_packet(&srv, buf, TUND_HDR_SIZE - 1, &addr);
     CHECK(srv.peer_count == 0);
     test_destroy_server(&srv);

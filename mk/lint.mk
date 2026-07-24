@@ -1,13 +1,10 @@
 .PHONY: lint lint-c
 
+LINT_TEST_SRCS := $(foreach test_name,$(TEST_NAMES),$(test_$(test_name)_SRCS))
+
 LINT_C_SRCS := $(filter-out $(THIRD_PARTY_SRC),$(sort \
 	$(SRCS) \
-	$(TEST_PROTOCOL_SRCS) \
-	$(TEST_SERVER_PEERS_SRCS) \
-	$(TEST_SERVER_DATA_SRCS) \
-	$(TEST_SERVER_HANDLERS_SRCS) \
-	$(TEST_CLIENT_PEERS_SRCS) \
-	$(TEST_CLIENT_HANDLERS_SRCS) \
+	$(LINT_TEST_SRCS) \
 	$(SITEST_SRC) \
 	$(TEST_SUPPORT_SRCS) \
 	$(TOOL_SRCS) \
