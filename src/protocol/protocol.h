@@ -41,6 +41,7 @@
 #define TUND_MAX_PAYLOAD      (TUND_MAX_PLAINTEXT + TUND_AUTH_TAG_SIZE)
 #define TUND_MAX_PKT          (TUND_HDR_SIZE + TUND_MAX_PAYLOAD)
 #define TUND_NAME_LEN         32
+#define TUND_PEER_ENTRY_SIZE  (4 + TUND_NAME_LEN + 1)
 #define TUND_TUN_MTU          1400 /* Leave room for UDP encapsulation */
 
 #define TUND_HDR_OK          0
@@ -83,12 +84,6 @@ enum {
 };
 
 typedef struct {
-    uint32_t virt_ip; /* network byte order */
-    char name[TUND_NAME_LEN];
-    uint8_t status; /* 1 = online, 0 = offline */
-} __attribute__((packed)) msg_peer_entry_t;
-
-typedef struct {
     uint64_t highest;
     uint64_t seen;
 } proto_replay_window_t;
@@ -112,6 +107,11 @@ int proto_build_keepalive(uint8_t *buf, uint64_t timestamp);
 int proto_build_keepalive_ack(uint8_t *buf, uint64_t timestamp);
 bool proto_read_keepalive_timestamp(const uint8_t *payload, uint16_t payload_len,
                                     uint64_t *timestamp);
+bool proto_write_peer_entry(uint8_t *payload, size_t payload_size, uint32_t virt_ip,
+                            const char *name, bool online);
+bool proto_read_peer_entry(const uint8_t *payload, uint16_t payload_len, int index,
+                           uint32_t *virt_ip, char name[TUND_NAME_LEN], bool *online);
+int proto_peer_entry_count(uint16_t payload_len);
 int proto_build_disconnect(uint8_t *buf);
 int proto_build_peer_join(uint8_t *buf, uint32_t virt_ip, const char *name);
 int proto_build_peer_leave(uint8_t *buf, uint32_t virt_ip);

@@ -69,10 +69,15 @@ static void test_second_register_sends_peer_list_and_join(void) {
     CHECK(test_send_count == 3);
     CHECK(test_sends[0].type == MSG_ASSIGN);
     CHECK(test_sends[1].type == MSG_PEER_LIST);
-    CHECK(test_sends[1].payload_len == sizeof(msg_peer_entry_t));
-    const msg_peer_entry_t *entry = (const msg_peer_entry_t *)(test_sends[1].buf + TUND_HDR_SIZE);
-    CHECK(entry->virt_ip == htonl(TUND_IP_START));
-    CHECK(strcmp(entry->name, "alpha") == 0);
+    CHECK(test_sends[1].payload_len == TUND_PEER_ENTRY_SIZE);
+    uint32_t entry_ip = 0;
+    char entry_name[TUND_NAME_LEN];
+    bool entry_online = false;
+    CHECK(proto_read_peer_entry(test_sends[1].buf + TUND_HDR_SIZE, test_sends[1].payload_len, 0,
+                                &entry_ip, entry_name, &entry_online));
+    CHECK(entry_ip == htonl(TUND_IP_START));
+    CHECK(strcmp(entry_name, "alpha") == 0);
+    CHECK(entry_online);
     CHECK(test_sends[2].type == MSG_PEER_JOIN);
     CHECK(test_sends[2].dest.sin_addr.s_addr == first.sin_addr.s_addr);
     CHECK(test_sends[2].dest.sin_port == first.sin_port);

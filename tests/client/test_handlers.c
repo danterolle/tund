@@ -4,17 +4,12 @@
 #include <string.h>
 
 static void build_peer_list(uint8_t *buf) {
-    msg_peer_entry_t entries[2];
-    memset(entries, 0, sizeof(entries));
-    entries[0].virt_ip = htonl(TUND_IP_START + 1);
-    snprintf(entries[0].name, sizeof(entries[0].name), "alpha");
-    entries[0].status = 1;
-    entries[1].virt_ip = htonl(TUND_IP_START + 2);
-    snprintf(entries[1].name, sizeof(entries[1].name), "beta");
-    entries[1].status = 1;
-
-    proto_write_hdr(buf, MSG_PEER_LIST, sizeof(entries));
-    memcpy(buf + TUND_HDR_SIZE, entries, sizeof(entries));
+    uint8_t *payload = buf + TUND_HDR_SIZE;
+    CHECK(proto_write_peer_entry(payload, TUND_PEER_ENTRY_SIZE, htonl(TUND_IP_START + 1), "alpha",
+                                 true));
+    CHECK(proto_write_peer_entry(payload + TUND_PEER_ENTRY_SIZE, TUND_PEER_ENTRY_SIZE,
+                                 htonl(TUND_IP_START + 2), "beta", true));
+    proto_write_hdr(buf, MSG_PEER_LIST, 2 * TUND_PEER_ENTRY_SIZE);
 }
 
 static void test_peer_list_updates_table(void) {
@@ -23,7 +18,7 @@ static void test_peer_list_updates_table(void) {
 
     test_init_client(&cli);
     build_peer_list(buf);
-    client_handle_server_packet(&cli, buf, TUND_HDR_SIZE + 2 * (int)sizeof(msg_peer_entry_t));
+    client_handle_server_packet(&cli, buf, TUND_HDR_SIZE + 2 * TUND_PEER_ENTRY_SIZE);
 
     CHECK(cli.peer_count == 2);
     CHECK(cli.peers[0].active);

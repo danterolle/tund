@@ -232,6 +232,32 @@ static void test_dst_ip(void) {
     CHECK(proto_get_dst_ip(ip_pkt, 19) == 0);
 }
 
+static void test_peer_entry_wire_helpers(void) {
+    uint8_t payload[TUND_PEER_ENTRY_SIZE * 2 + 1];
+    uint32_t expected_ip = htonl(TUND_IP_START + 1);
+    uint32_t got_ip = 0;
+    char got_name[TUND_NAME_LEN];
+    bool got_online = false;
+
+    memset(payload, 0xCC, sizeof(payload));
+    CHECK(TUND_PEER_ENTRY_SIZE == 37);
+    CHECK(proto_write_peer_entry(payload, TUND_PEER_ENTRY_SIZE, expected_ip, "alpha", true));
+    CHECK(memcmp(payload, &expected_ip, sizeof(expected_ip)) == 0);
+    CHECK(memcmp(payload + 4, "alpha", 5) == 0);
+    CHECK(payload[TUND_PEER_ENTRY_SIZE - 1] == 1);
+
+    CHECK(proto_read_peer_entry(payload, TUND_PEER_ENTRY_SIZE, 0, &got_ip, got_name, &got_online));
+    CHECK(got_ip == expected_ip);
+    CHECK(strcmp(got_name, "alpha") == 0);
+    CHECK(got_online);
+    CHECK(proto_peer_entry_count((uint16_t)sizeof(payload)) == 2);
+
+    CHECK(!proto_write_peer_entry(payload, TUND_PEER_ENTRY_SIZE - 1, expected_ip, "alpha", true));
+    CHECK(!proto_read_peer_entry(payload, TUND_PEER_ENTRY_SIZE - 1, 0, &got_ip, got_name,
+                                 &got_online));
+    CHECK(!proto_read_peer_entry(payload, TUND_PEER_ENTRY_SIZE, 1, &got_ip, got_name, &got_online));
+}
+
 static void test_ipv4_validation(void) {
     uint8_t ip_pkt[24];
     uint32_t src = htonl(0x0A090002);
@@ -308,6 +334,7 @@ int main(void) {
     test_siphash_tamper_vector();
     test_builders();
     test_dst_ip();
+    test_peer_entry_wire_helpers();
     test_ipv4_validation();
     test_replay_window();
 

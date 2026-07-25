@@ -114,13 +114,11 @@ void server_broadcast(server_t *srv, uint8_t *buf, int len, int exclude_idx, uin
 
 void server_send_peer_list(server_t *srv, int peer_idx) {
     uint8_t buf[TUND_MAX_PKT];
-    msg_peer_entry_t entries[TUND_MAX_PEERS];
     server_peer_snapshot_t target;
     uint8_t *payload = buf + TUND_HDR_SIZE;
     int offset = 0, count = 0;
     bool has_target = false;
 
-    memset(entries, 0, sizeof(entries));
     memset(&target, 0, sizeof(target));
 
     pthread_mutex_lock(&srv->peers_lock);
@@ -130,13 +128,10 @@ void server_send_peer_list(server_t *srv, int peer_idx) {
     }
     for (int i = 0; i < TUND_MAX_PEERS; i++) {
         if (srv->peers[i].active && i != peer_idx) {
-            if (offset + (int)sizeof(msg_peer_entry_t) > TUND_MAX_PLAINTEXT) break;
-            msg_peer_entry_t *entry = &entries[count];
-            entry->virt_ip = srv->peers[i].virt_ip;
-            memset(entry->name, 0, TUND_NAME_LEN);
-            strncpy(entry->name, srv->peers[i].name, TUND_NAME_LEN - 1);
-            entry->status = 1;
-            offset += (int)sizeof(msg_peer_entry_t);
+            if (!proto_write_peer_entry(payload + offset, TUND_MAX_PLAINTEXT - (size_t)offset,
+                                        srv->peers[i].virt_ip, srv->peers[i].name, true))
+                break;
+            offset += TUND_PEER_ENTRY_SIZE;
             count++;
         }
     }
@@ -144,8 +139,6 @@ void server_send_peer_list(server_t *srv, int peer_idx) {
 
     if (!has_target) return;
 
-    for (int i = 0; i < count; i++)
-        memcpy(payload + i * (int)sizeof(msg_peer_entry_t), &entries[i], sizeof(entries[i]));
     proto_write_hdr(buf, MSG_PEER_LIST, (uint16_t)offset);
     if (net_send(srv->sockfd, buf, TUND_HDR_SIZE + offset, &target.real_addr) < 0)
         LOG_WARN("Failed to send peer list to %s", target.name);

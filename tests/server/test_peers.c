@@ -87,16 +87,22 @@ static void test_peer_list_payload(void) {
     CHECK(test_send_count == 1);
     CHECK(proto_read_hdr(test_sends[0].buf, &type, &payload_len) == 0);
     CHECK(type == MSG_PEER_LIST);
-    CHECK(payload_len == 2 * sizeof(msg_peer_entry_t));
+    CHECK(payload_len == 2 * TUND_PEER_ENTRY_SIZE);
     CHECK(test_sends[0].len == TUND_HDR_SIZE + (int)payload_len);
 
-    const msg_peer_entry_t *entries = (const msg_peer_entry_t *)(test_sends[0].buf + TUND_HDR_SIZE);
-    CHECK(entries[0].virt_ip == htonl(TUND_IP_START + 1));
-    CHECK(strcmp(entries[0].name, "alpha") == 0);
-    CHECK(entries[0].status == 1);
-    CHECK(entries[1].virt_ip == htonl(TUND_IP_START + 2));
-    CHECK(strcmp(entries[1].name, "beta") == 0);
-    CHECK(entries[1].status == 1);
+    uint32_t entry_ip = 0;
+    char entry_name[TUND_NAME_LEN];
+    bool entry_online = false;
+    CHECK(proto_read_peer_entry(test_sends[0].buf + TUND_HDR_SIZE, payload_len, 0, &entry_ip,
+                                entry_name, &entry_online));
+    CHECK(entry_ip == htonl(TUND_IP_START + 1));
+    CHECK(strcmp(entry_name, "alpha") == 0);
+    CHECK(entry_online);
+    CHECK(proto_read_peer_entry(test_sends[0].buf + TUND_HDR_SIZE, payload_len, 1, &entry_ip,
+                                entry_name, &entry_online));
+    CHECK(entry_ip == htonl(TUND_IP_START + 2));
+    CHECK(strcmp(entry_name, "beta") == 0);
+    CHECK(entry_online);
     test_destroy_server(&srv);
 }
 

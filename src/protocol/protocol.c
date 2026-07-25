@@ -22,6 +22,10 @@ static uint64_t proto_next_sequence(void);
 static bool proto_random_bytes(uint8_t *buf, size_t len);
 static void proto_write_payload_len(uint8_t *buf, uint16_t payload_len);
 
+#define TUND_PEER_ENTRY_IP_OFFSET     0
+#define TUND_PEER_ENTRY_NAME_OFFSET   4
+#define TUND_PEER_ENTRY_STATUS_OFFSET (TUND_PEER_ENTRY_NAME_OFFSET + TUND_NAME_LEN)
+
 #ifndef _WIN32
 static int proto_random_fd(void);
 static pthread_mutex_t g_proto_random_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -320,6 +324,39 @@ bool proto_read_keepalive_timestamp(const uint8_t *payload, uint16_t payload_len
     for (int i = 0; i < 8; i++) value = (value << 8) | payload[i];
     *timestamp = value;
     return true;
+}
+
+bool proto_write_peer_entry(uint8_t *payload, size_t payload_size, uint32_t virt_ip,
+                            const char *name, bool online) {
+    if (payload_size < TUND_PEER_ENTRY_SIZE) return false;
+
+    memcpy(payload + TUND_PEER_ENTRY_IP_OFFSET, &virt_ip, 4);
+    memset(payload + TUND_PEER_ENTRY_NAME_OFFSET, 0, TUND_NAME_LEN);
+    if (name) {
+        size_t name_len = strlen(name);
+        if (name_len >= TUND_NAME_LEN) name_len = TUND_NAME_LEN - 1;
+        memcpy(payload + TUND_PEER_ENTRY_NAME_OFFSET, name, name_len);
+    }
+    payload[TUND_PEER_ENTRY_STATUS_OFFSET] = online ? 1 : 0;
+    return true;
+}
+
+bool proto_read_peer_entry(const uint8_t *payload, uint16_t payload_len, int index,
+                           uint32_t *virt_ip, char name[TUND_NAME_LEN], bool *online) {
+    if (index < 0) return false;
+    size_t offset = (size_t)index * TUND_PEER_ENTRY_SIZE;
+    if (offset + TUND_PEER_ENTRY_SIZE > payload_len) return false;
+
+    memcpy(virt_ip, payload + offset + TUND_PEER_ENTRY_IP_OFFSET, 4);
+    memset(name, 0, TUND_NAME_LEN);
+    memcpy(name, payload + offset + TUND_PEER_ENTRY_NAME_OFFSET, TUND_NAME_LEN);
+    name[TUND_NAME_LEN - 1] = '\0';
+    *online = payload[offset + TUND_PEER_ENTRY_STATUS_OFFSET] != 0;
+    return true;
+}
+
+int proto_peer_entry_count(uint16_t payload_len) {
+    return payload_len / TUND_PEER_ENTRY_SIZE;
 }
 
 int proto_build_disconnect(uint8_t *buf) {
