@@ -18,6 +18,7 @@ SAN_TEST_SUPPORT_OBJS := $(addprefix $(DIST)/test-obj-sanitize/,$(TEST_SUPPORT_S
 
 TEST_NAMES := \
 	protocol \
+	cli \
 	server_peers \
 	server_data \
 	server_handlers \
@@ -28,6 +29,11 @@ test_protocol_SRCS := tests/protocol/test_protocol.c $(PROTO_SRC)
 test_protocol_LIBS := $(SITEST_LIB)
 test_protocol_SAN_LIBS := $(SAN_SITEST_LIB)
 test_protocol_DEPS := src/protocol/protocol.h $(SITEST_HDR)
+
+test_cli_SRCS := tests/app/test_cli.c src/app/cli.c
+test_cli_LIBS := $(SITEST_LIB)
+test_cli_SAN_LIBS := $(SAN_SITEST_LIB)
+test_cli_DEPS := src/app/cli.h src/app/log.h $(SITEST_HDR)
 
 test_server_peers_SRCS := tests/server/test_peers.c src/core/server/peers.c
 test_server_data_SRCS := tests/server/test_data.c src/core/server/data.c src/core/server/peers.c
