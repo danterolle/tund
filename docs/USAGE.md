@@ -129,6 +129,12 @@ This runs the full local verification set:
 - native build
 - Windows cross-build
 
+For GUI changes, run:
+
+```bash
+make gui-check
+```
+
 ### Peerforge diagnostic tool
 
 Build Peerforge, the UDP client simulator:

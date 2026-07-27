@@ -4,6 +4,7 @@ include mk/config.mk
 include mk/sources.mk
 include mk/tests.mk
 include mk/tools.mk
+include mk/gui.mk
 include mk/release.mk
 include mk/lint.mk
 include mk/format.mk

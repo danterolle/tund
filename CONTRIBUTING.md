@@ -33,10 +33,7 @@ make verify
 For GUI changes:
 
 ```bash
-cd gui
-flutter pub get
-flutter analyze
-flutter test
+make gui-check
 ```
 
 ## Documentation and website

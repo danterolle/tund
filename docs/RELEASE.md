@@ -34,9 +34,7 @@ make all
 For GUI changes, run:
 
 ```bash
-cd gui
-flutter analyze
-flutter test
+make gui-check
 ```
 
 If available locally, also run the Windows cross-build:
