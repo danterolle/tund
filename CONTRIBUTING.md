@@ -36,6 +36,8 @@ For GUI changes:
 make gui-check
 ```
 
+If Flutter reports generated GUI files with wrong permissions, restore ownership of `gui/build` or `gui/*/Flutter/ephemeral`, then run `make gui-clean`.
+
 ## Documentation and website
 
 - Keep the security model wording consistent. TunD datagrams are encrypted in transit and replay-protected. Traffic is not end-to-end encrypted against the server.
