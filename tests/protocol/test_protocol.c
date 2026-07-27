@@ -18,8 +18,11 @@ static void test_siphash_vector(void) {
 
 static void test_header_roundtrip(void) {
     uint8_t buf[TUND_MAX_PKT];
+    uint8_t next_buf[TUND_MAX_PKT];
     uint8_t type = 0;
     uint16_t payload_len = 0;
+    uint64_t sequence = 0;
+    uint64_t next_sequence = 0;
 
     memset(buf, 0xCC, sizeof(buf));
     CHECK(proto_write_hdr(buf, MSG_DATA, 0x0123) == TUND_HDR_SIZE);
@@ -28,9 +31,11 @@ static void test_header_roundtrip(void) {
     CHECK(buf[2] == MSG_DATA);
     CHECK(buf[3] == 0x01);
     CHECK(buf[4] == 0x23);
-    uint64_t sequence = 0;
     CHECK(proto_read_sequence(buf, &sequence));
     CHECK(sequence > 0);
+    CHECK(proto_write_hdr(next_buf, MSG_DATA, 0) == TUND_HDR_SIZE);
+    CHECK(proto_read_sequence(next_buf, &next_sequence));
+    CHECK(next_sequence == sequence + 1);
 
     bool nonce_has_data = false;
     for (int i = 0; i < TUND_NONCE_SIZE; i++)

@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -18,7 +17,7 @@ BOOLEAN NTAPI SystemFunction036(PVOID random_buffer, ULONG random_buffer_length)
 #include <unistd.h>
 #endif
 
-static uint64_t proto_next_sequence(void);
+static bool proto_next_sequence(uint64_t *sequence);
 static bool proto_random_bytes(uint8_t *buf, size_t len);
 static void proto_write_payload_len(uint8_t *buf, uint16_t payload_len);
 
@@ -38,7 +37,8 @@ int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_len) {
     buf[1] = TUND_PROTOCOL_VERSION;
     buf[2] = type;
     proto_write_payload_len(buf, payload_len);
-    uint64_t sequence = proto_next_sequence();
+    uint64_t sequence = 0;
+    if (!proto_next_sequence(&sequence)) return -1;
     for (int i = 7; i >= 0; i--) {
         buf[TUND_SEQUENCE_OFFSET + i] = (uint8_t)(sequence & 0xFF);
         sequence >>= 8;
@@ -54,22 +54,33 @@ static void proto_write_payload_len(uint8_t *buf, uint16_t payload_len) {
 
 static atomic_uint_fast64_t g_proto_next_sequence = ATOMIC_VAR_INIT(0);
 
-static uint64_t proto_initial_sequence(void) {
-    uint64_t now = (uint64_t)time(NULL);
-    uint64_t addr = (uint64_t)(uintptr_t)&g_proto_next_sequence;
-    uint64_t seed = (now << 32) ^ (addr & 0xFFFFFFFFULL);
-    return seed == 0 ? 1 : seed;
+static bool proto_initial_sequence(uint_fast64_t *sequence) {
+    uint64_t seed = 0;
+    if (!proto_random_bytes((uint8_t *)&seed, sizeof(seed))) return false;
+
+    seed &= (UINT64_MAX >> 1);
+    if (seed == 0) seed = 1;
+    *sequence = (uint_fast64_t)seed;
+    return true;
 }
 
-static uint64_t proto_next_sequence(void) {
+static bool proto_next_sequence(uint64_t *sequence) {
     uint_fast64_t current = atomic_load_explicit(&g_proto_next_sequence, memory_order_relaxed);
-    if (current == 0) {
+    while (current == 0) {
+        uint_fast64_t initial = 0;
+        if (!proto_initial_sequence(&initial)) return false;
+
         uint_fast64_t expected = 0;
-        atomic_compare_exchange_strong_explicit(&g_proto_next_sequence, &expected,
-                                                (uint_fast64_t)proto_initial_sequence(),
-                                                memory_order_relaxed, memory_order_relaxed);
+        if (atomic_compare_exchange_strong_explicit(&g_proto_next_sequence, &expected, initial,
+                                                    memory_order_relaxed, memory_order_relaxed))
+            break;
+        current = expected;
     }
-    return (uint64_t)atomic_fetch_add_explicit(&g_proto_next_sequence, 1, memory_order_relaxed) + 1;
+
+    uint_fast64_t next = atomic_fetch_add_explicit(&g_proto_next_sequence, 1, memory_order_relaxed);
+    if (next == 0) return false;
+    *sequence = (uint64_t)next;
+    return true;
 }
 
 #ifndef _WIN32
