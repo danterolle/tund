@@ -164,10 +164,6 @@ static cli_result_t validate_config(const char *prog, config_t *cfg) {
     if (cfg->mode == MODE_CLIENT && cfg->server_ip[0] == '\0') {
         fprintf(stderr, "Error: Client mode requires -s <server_ip>\n\n");
         print_usage(prog, false);
-#ifdef _WIN32
-        MessageBoxA(NULL, "Client mode requires a server IP address.\nFill in the Server IP field.",
-                    "TunD - Error", MB_OK | MB_ICONERROR);
-#endif
         return CLI_EXIT_ERROR;
     }
 
@@ -178,12 +174,6 @@ static cli_result_t validate_config(const char *prog, config_t *cfg) {
     if (strlen(cfg->access_key) < 12) {
         fprintf(stderr, "Error: a shared access key of at least 12 characters is required (-k, "
                         "--key-file, or --key-stdin).\n");
-#ifdef _WIN32
-        MessageBoxA(NULL,
-                    "A shared network key of at least 12 characters is required.\nEnter it in the "
-                    "Network key field.",
-                    "TunD - Error", MB_OK | MB_ICONERROR);
-#endif
         return CLI_EXIT_ERROR;
     }
     return CLI_OK;

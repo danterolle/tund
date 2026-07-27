@@ -147,7 +147,6 @@ static void test_rejects_too_long_key(void) {
     CHECK(parse_quiet(ARG_COUNT(argv), argv, &cfg) == CLI_EXIT_ERROR);
 }
 
-#ifndef _WIN32
 static void test_rejects_short_key(void) {
     config_t cfg;
     char *argv[] = {"tund-cli", "server", "-k", "short"};
@@ -158,10 +157,8 @@ static void test_rejects_short_key(void) {
 static void test_client_requires_server(void) {
     config_t cfg;
     char *argv[] = {"tund-cli", "client", "-k", "a-long-random-key"};
-
     CHECK(parse_quiet(ARG_COUNT(argv), argv, &cfg) == CLI_EXIT_ERROR);
 }
-#endif
 
 static void test_help_exits_ok(void) {
     config_t cfg;
@@ -177,10 +174,8 @@ int main(void) {
     test_rejects_invalid_port();
     test_rejects_duplicate_key_sources();
     test_rejects_too_long_key();
-#ifndef _WIN32
     test_rejects_short_key();
     test_client_requires_server();
-#endif
     test_help_exits_ok();
 
     return sitest_finish("CLI parsing tests");
