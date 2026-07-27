@@ -28,11 +28,9 @@ jobs:
       - run: make sanitize
       - name: Build GUI
         run: |
-          cd gui
           flutter config --enable-linux-desktop
-          flutter pub get
-          flutter analyze
-          flutter test
+          make gui-check
+          cd gui
           flutter build linux --release
           cp ../tund-cli build/linux/x64/release/bundle/tund-cli
           tar -C build/linux/x64/release/bundle -czf ../tund-gui-linux-x86_64.tar.gz .
@@ -66,11 +64,9 @@ jobs:
       - run: make macos-universal
       - name: Build GUI
         run: |
-          cd gui
           flutter config --enable-macos-desktop
-          flutter pub get
-          flutter analyze
-          flutter test
+          make gui-check
+          cd gui
           flutter build macos --release
           cp ../dist/tund-cli-darwin-universal build/macos/Build/Products/Release/tund-gui.app/Contents/MacOS/tund-cli
           rm -rf ../tund-gui-darwin-universal
@@ -117,11 +113,9 @@ jobs:
       - name: Build GUI
         shell: pwsh
         run: |
-          cd gui
           flutter config --enable-windows-desktop
-          flutter pub get
-          flutter analyze
-          flutter test
+          C:\msys64\usr\bin\make.exe gui-check
+          cd gui
           flutter build windows --release
       - name: Download wintun.dll
         shell: msys2 {0}
