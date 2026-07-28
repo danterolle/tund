@@ -99,6 +99,7 @@ jobs:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
+          path-type: inherit
           update: true
           install: >-
             mingw-w64-x86_64-gcc
@@ -110,11 +111,13 @@ jobs:
       - run: ./tund-cli.exe --help
       - run: make test
       - run: make tools
+      - name: Enable Windows desktop
+        shell: pwsh
+        run: flutter config --enable-windows-desktop
+      - run: make gui-check
       - name: Build GUI
         shell: pwsh
         run: |
-          flutter config --enable-windows-desktop
-          C:\msys64\usr\bin\make.exe gui-check
           cd gui
           flutter build windows --release
       - name: Download wintun.dll
