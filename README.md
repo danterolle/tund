@@ -98,6 +98,9 @@ Generate a long random key first and use the same key everywhere. Clients can pa
 
 Pre-built binaries are available on the [releases page](https://github.com/danterolle/tund/releases). See [Usage](docs/USAGE.md) for full instructions.
 
+> **Version compatibility:** TunD 3.0 uses protocol version 5 and cannot connect to 2.x. Upgrade
+> the server and every client together.
+
 ## Features
 
 - **Zero registration** — no accounts or external service
@@ -131,6 +134,7 @@ If every machine is already on the same physical LAN and can reach the game host
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Technical documentation](docs/TECHNICAL.md)
 - [Release checklist](docs/RELEASE.md)
+- [Changelog](CHANGELOG.md)
 - [GUI README](gui/README.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)

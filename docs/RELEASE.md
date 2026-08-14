@@ -9,6 +9,7 @@ Update every versioned surface in one commit:
 - `src/app/version.h`
 - `gui/pubspec.yaml`
 - `web/index.html` release badge and download links
+- `CHANGELOG.md` release notes and compatibility guidance
 
 Use a commit like:
 
