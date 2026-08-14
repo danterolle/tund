@@ -77,6 +77,7 @@ sudo firewall-cmd --reload
 | Symptom | Likely cause |
 |---|---|
 | Client times out during registration | Wrong server address; blocked UDP port; server not running; firewall issue |
+| Client repeatedly attempts to reconnect | Server stopped responding; server restarted; UDP path interrupted |
 | Authentication failure | Shared key mismatch or incompatible protocol version |
 | Route/subnet error | Another VPN or LAN already uses `10.9.0.0/24` |
 | Ping fails but peer is connected | ICMP blocked by host firewall |

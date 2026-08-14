@@ -106,6 +106,7 @@ Pre-built binaries are available on the [releases page](https://github.com/dante
 - **Flutter desktop GUI** — optional launcher for non-terminal users, documented in [`gui/README.md`](gui/README.md)
 - **Single CLI binary** — server and client modes in one program
 - **IPv4 broadcast support** — useful for LAN-style discovery in compatible games
+- **Automatic reconnect** — clients recreate the tunnel after temporary server interruptions
 - **Encrypted transport** — datagrams are encrypted in transit; replayed TunD datagrams are rejected
 
 ## Game compatibility

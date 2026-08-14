@@ -61,6 +61,10 @@ int tun_open(tun_device_t *dev) {
 void tun_close(tun_device_t *dev) {
     if (dev->session) wintun_end_session((WINTUN_SESSION_HANDLE)dev->session);
     if (dev->adapter) wintun_close_adapter((WINTUN_ADAPTER_HANDLE)dev->adapter);
+    dev->session = NULL;
+    dev->adapter = NULL;
+    dev->read_event = NULL;
+    dev->has_luid = false;
     LOG_INFO("TUN interface closed: %s", dev->ifname);
 }
 

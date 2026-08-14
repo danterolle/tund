@@ -3,7 +3,7 @@ PROTO_SRC := src/protocol/protocol.c src/protocol/peer_list.c $(THIRD_PARTY_SRC)
 APP_SRC  := src/app/main.c src/app/cli.c src/app/events.c src/app/log.c src/app/platform.c
 WIN_RUNTIME_SRC := src/app/win_runtime.c
 UI_SRC   := src/ui/tui.c src/ui/render.c src/ui/events.c
-CLIENT_SRC := src/core/client/client.c src/core/client/peers.c src/core/client/peer_list.c src/core/client/register.c src/core/client/handlers.c src/core/client/session.c src/core/client/log.c
+CLIENT_SRC := src/core/client/client.c src/core/client/tunnel.c src/core/client/reconnect.c src/core/client/peers.c src/core/client/peer_list.c src/core/client/register.c src/core/client/handlers.c src/core/client/session.c src/core/client/log.c
 SERVER_SRC := src/core/server/server.c src/core/server/peers.c src/core/server/peer_list.c src/core/server/handlers.c src/core/server/data.c src/core/server/keepalive.c src/core/server/threads.c src/core/server/log.c
 
 ifneq ($(filter MINGW%,$(UNAME_S)),)

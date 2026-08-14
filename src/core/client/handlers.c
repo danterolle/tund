@@ -113,7 +113,7 @@ void client_handle_server_packet(client_t *cli, uint8_t *buf, int len) {
         break;
     case MSG_DISCONNECT:
         LOG_WARN("Server disconnected!");
-        tund_request_stop();
+        client_set_connected(cli, false);
         break;
     default:
         LOG_DEBUG("Unknown message type 0x%02X", type);

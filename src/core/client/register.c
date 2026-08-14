@@ -18,7 +18,7 @@ static int handle_assign(client_t *cli, const uint8_t *payload, uint16_t len) {
     return 1;
 }
 
-static void log_registration_failure(bool auth, bool mismatch, bool bad, bool reply) {
+static void log_registration_failure(bool auth, bool mismatch, bool bad, bool reply, int attempts) {
     if (mismatch)
         LOG_ERROR("Registration failed: server protocol is not compatible with this client.");
     else if (auth)
@@ -29,20 +29,25 @@ static void log_registration_failure(bool auth, bool mismatch, bool bad, bool re
     else if (!reply)
         LOG_ERROR("Registration timed out after %d attempts; check server address, UDP port, and "
                   "firewall.",
-                  TUND_REGISTER_RETRIES);
+                  attempts);
     else
-        LOG_ERROR("Registration failed after %d attempts", TUND_REGISTER_RETRIES);
+        LOG_ERROR("Registration failed after %d attempts", attempts);
 }
 
-int client_register(client_t *cli) {
+static bool is_runtime_message(uint8_t type) {
+    return type == MSG_DATA || type == MSG_KEEPALIVE || type == MSG_KEEPALIVE_ACK ||
+           type == MSG_PEER_JOIN || type == MSG_PEER_LEAVE || type == MSG_DISCONNECT;
+}
+
+client_registration_result_t client_register(client_t *cli, int attempts) {
     uint8_t buf[TUND_MAX_PKT];
     struct sockaddr_in from;
     bool auth = false, mismatch = false, bad = false, reply = false;
 
-    for (int attempt = 0; attempt < TUND_REGISTER_RETRIES; attempt++) {
-        LOG_INFO("Registering with server (attempt %d/%d)...", attempt + 1, TUND_REGISTER_RETRIES);
+    for (int attempt = 0; attempt < attempts; attempt++) {
+        LOG_INFO("Registering with server (attempt %d/%d)...", attempt + 1, attempts);
         int len = proto_build_register(buf, cli->name);
-        if (net_send(cli->sockfd, buf, len, &cli->server_addr) < 0) return -1;
+        if (net_send(cli->sockfd, buf, len, &cli->server_addr) < 0) return CLIENT_REGISTER_RETRY;
 
         bool attempt_reply = false;
         uint64_t deadline = now_ms() + TUND_REGISTER_TIMEOUT * 1000;
@@ -53,7 +58,7 @@ int client_register(client_t *cli) {
             int ret = platform_poll_one(cli->sockfd, timeout_ms);
             if (ret < 0) {
                 LOG_ERROR("poll() failed: %s", sock_errstr(SOCK_Error()));
-                return -1;
+                return CLIENT_REGISTER_RETRY;
             }
             if (ret == 0) break;
 
@@ -98,7 +103,11 @@ int client_register(client_t *cli) {
                 continue;
             }
             if (type == MSG_ASSIGN && handle_assign(cli, buf + TUND_HDR_SIZE, payload_len))
-                return 0;
+                return CLIENT_REGISTER_OK;
+            if (is_runtime_message(type)) {
+                LOG_DEBUG("Ignored message type 0x%02X while registering", type);
+                continue;
+            }
 
             bad = true;
             LOG_WARN("Server sent an unexpected handshake message type 0x%02X.", type);
@@ -111,6 +120,6 @@ int client_register(client_t *cli) {
         }
     }
 
-    log_registration_failure(auth, mismatch, bad, reply);
-    return -1;
+    log_registration_failure(auth, mismatch, bad, reply, attempts);
+    return CLIENT_REGISTER_RETRY;
 }

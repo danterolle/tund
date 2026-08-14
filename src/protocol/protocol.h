@@ -77,7 +77,9 @@
 #define TUND_SERVER_TIMEOUT           30 /* seconds */
 #define TUND_REGISTER_TIMEOUT         5  /* seconds — wait for ASSIGN */
 #define TUND_REGISTER_RETRIES         3
-#define TUND_PEER_LIST_RETRY_INTERVAL 3 /* seconds */
+#define TUND_PEER_LIST_RETRY_INTERVAL 3  /* seconds */
+#define TUND_RECONNECT_INITIAL_DELAY  1  /* seconds */
+#define TUND_RECONNECT_MAX_DELAY      30 /* seconds */
 
 enum {
     MSG_REGISTER = 0x01,          /* Client → Server : name (max 32B)        */

@@ -21,7 +21,7 @@ It does not transport Ethernet frames, IPv6 or arbitrary multicast discovery.
 | `src/net/` | UDP sockets. Hostname resolution. Packet authentication. Source-address comparison. |
 | `src/core/` | Core server/client state machines and shared orchestration. |
 | `src/core/server/` | Server peer table. Packet handlers. Timeout/TUN threads. Lifecycle and logging. |
-| `src/core/client/` | Client registration. Peer table. Server message handlers. Logging. Tunnel lifecycle. |
+| `src/core/client/` | Client registration and reconnect. Peer table. Server message handlers. Logging. Tunnel lifecycle. |
 | `src/tun/` | Cross-platform TUN API. Linux/macOS/Windows platform implementations. |
 | `src/tun/linux/` | Linux `/dev/net/tun` implementation. |
 | `src/tun/darwin/` | macOS `utun` device and interface configuration. |
@@ -96,6 +96,11 @@ an authenticated `PEER_LIST_REQUEST`; the server answers with a fresh snapshot.
 
 Clients periodically probe the server and display smoothed keepalive RTT in the TUI. The server also probes each active peer. It updates `last_seen` and records smoothed per-peer keepalive RTT for the peer table. TunD uses a simple EWMA: `7/8` previous value and `1/8` latest sample. This hides scheduler spikes while still following real changes. It is an application-level health metric, not an ICMP ping measurement.
 
+If the server stops responding or sends `DISCONNECT`, the client pauses tunnel traffic and closes
+its TUN interface. It then retries registration indefinitely with exponential backoff from one to
+30 seconds. After registration succeeds, it recreates the TUN interface with the newly assigned
+address, clears stale peer state and resumes traffic without restarting the process.
+
 ## Packet forwarding
 
 TunD validates tunneled packets before forwarding them. DATA payloads must be complete IPv4 packets, have a consistent IPv4 header length and total length, use a TunD subnet source address, and target either the TunD subnet or the TunD subnet broadcast address.
@@ -116,7 +121,7 @@ Clients accept traffic only when its UDP source address equals the configured se
 
 ## Concurrency and shutdown
 
-The server has a timeout thread and a TUN-reader thread. Each client has a keepalive thread and a TUN-reader thread. Peer-table access is protected by a mutex. UI state for the TUI is copied under the same peer lock.
+The server has a timeout thread and a TUN-reader thread. Each client has a keepalive thread and a TUN-reader thread. The client stops and recreates its TUN-reader thread around automatic reconnects. Peer-table access is protected by a mutex. UI state for the TUI is copied under the same peer lock.
 
 On shutdown, TunD sets stop flags and sends disconnect notifications where possible. It closes the TUN before joining its reader thread. Linux and macOS TUN reads are guarded by short `poll()` timeouts. Ctrl+C remains responsive even when closing the descriptor does not immediately unblock a read. Windows waits on Wintun's read event with a bounded timeout.
 

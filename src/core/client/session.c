@@ -13,3 +13,11 @@ bool client_server_timed_out(const client_t *cli, time_t now) {
     uint_fast64_t current = (uint_fast64_t)now;
     return current > last && current - last > TUND_SERVER_TIMEOUT;
 }
+
+bool client_is_connected(client_t *cli) {
+    return tund_stop_flag_load(&cli->connected);
+}
+
+void client_set_connected(client_t *cli, bool connected) {
+    tund_stop_flag_store(&cli->connected, connected);
+}

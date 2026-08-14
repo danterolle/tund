@@ -141,7 +141,7 @@ static void test_server_packet_refreshes_timeout(void) {
     test_destroy_client(&cli);
 }
 
-static void test_disconnect_requests_stop(void) {
+static void test_disconnect_marks_client_offline(void) {
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
 
@@ -151,7 +151,8 @@ static void test_disconnect_requests_stop(void) {
 
     client_handle_server_packet(&cli, buf, len);
 
-    CHECK(!tund_is_running());
+    CHECK(tund_is_running());
+    CHECK(!client_is_connected(&cli));
     test_destroy_client(&cli);
 }
 
@@ -178,7 +179,7 @@ int main(void) {
     test_keepalive_replies_with_ack();
     test_keepalive_ack_updates_rtt();
     test_server_packet_refreshes_timeout();
-    test_disconnect_requests_stop();
+    test_disconnect_marks_client_offline();
     test_truncated_packet_is_ignored();
 
     return sitest_finish("client handler tests");
