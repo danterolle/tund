@@ -11,6 +11,8 @@ typedef struct {
     uint16_t total_entries;
     uint16_t received_entries;
     uint64_t received_pages;
+    uint64_t retry_at_ms;
+    bool complete;
 } client_peer_list_state_t;
 
 typedef struct {

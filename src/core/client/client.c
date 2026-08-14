@@ -149,6 +149,7 @@ void client_run(client_t *cli) {
         int ret = net_poll_peers(cli->sockfd, cli->peers, TUND_MAX_PEERS, &cli->peers_lock,
                                  tui_peers, &npeers);
         if (ret < 0) break;
+        client_request_peer_list_if_due(cli, now_ms());
         if (ret == 0) {
             if (g_tui_active)
                 tui_render_client(server_ip_str, ntohs(cli->server_addr.sin_port), cli->tun.ifname,

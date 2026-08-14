@@ -71,6 +71,29 @@ static void test_keepalive_ack_updates_rtt(void) {
     test_destroy_server(&srv);
 }
 
+static void test_peer_list_request_sends_fresh_snapshot(void) {
+    server_t srv = {0};
+    struct sockaddr_in first = test_addr(0xC0000201, 10001);
+    struct sockaddr_in second = test_addr(0xC0000202, 10002);
+    uint8_t buf[TUND_MAX_PKT];
+
+    test_init_server(&srv);
+    register_peer(&srv, &first, "alpha");
+    register_peer(&srv, &second, "beta");
+    test_reset_io();
+
+    int len = proto_build_peer_list_request(buf);
+    server_handle_packet(&srv, buf, len, &first);
+
+    CHECK(test_send_count == 1);
+    CHECK(test_sends[0].type == MSG_PEER_LIST);
+    proto_peer_list_page_t page;
+    CHECK(proto_read_peer_list_page(test_sends[0].buf + TUND_HDR_SIZE, test_sends[0].payload_len,
+                                    &page));
+    CHECK(page.total_entries == 1);
+    test_destroy_server(&srv);
+}
+
 static void test_replayed_data_is_ignored(void) {
     server_t srv = {0};
     struct sockaddr_in first = test_addr(0xC0000201, 10001);
@@ -115,6 +138,7 @@ int main(void) {
     test_disconnect_marks_peer_inactive_and_broadcasts_leave();
     test_keepalive_replies_with_ack();
     test_keepalive_ack_updates_rtt();
+    test_peer_list_request_sends_fresh_snapshot();
     test_replayed_data_is_ignored();
     test_invalid_packets_do_not_register_peer();
 

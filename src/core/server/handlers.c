@@ -112,6 +112,19 @@ static bool server_accept_registered_sequence(server_t *srv, const struct sockad
     return accepted;
 }
 
+static void server_handle_peer_list_request(server_t *srv, const struct sockaddr_in *from,
+                                            uint16_t payload_len) {
+    if (payload_len != 0) {
+        LOG_DEBUG("Dropped invalid peer list request");
+        return;
+    }
+
+    pthread_mutex_lock(&srv->peers_lock);
+    int peer_idx = server_find_peer_by_addr(srv, from);
+    pthread_mutex_unlock(&srv->peers_lock);
+    if (peer_idx >= 0) server_send_peer_list(srv, peer_idx);
+}
+
 static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *from) {
     server_peer_snapshot_t leave_peers[TUND_MAX_PEERS];
     int leave_count;
@@ -169,6 +182,9 @@ void server_handle_packet(server_t *srv, uint8_t *buf, int len, const struct soc
         break;
     case MSG_KEEPALIVE_ACK:
         server_handle_keepalive_ack(srv, payload, payload_len, from);
+        break;
+    case MSG_PEER_LIST_REQUEST:
+        server_handle_peer_list_request(srv, from, payload_len);
         break;
     case MSG_DISCONNECT:
         server_handle_disconnect(srv, from);

@@ -72,22 +72,24 @@
 #define TUND_IP_END    0x0A0900FE /* 10.9.0.254 — last client IP */
 
 /* Timing */
-#define TUND_KEEPALIVE_INTERVAL 10 /* seconds */
-#define TUND_PEER_TIMEOUT       30 /* seconds */
-#define TUND_SERVER_TIMEOUT     30 /* seconds */
-#define TUND_REGISTER_TIMEOUT   5  /* seconds — wait for ASSIGN */
-#define TUND_REGISTER_RETRIES   3
+#define TUND_KEEPALIVE_INTERVAL       10 /* seconds */
+#define TUND_PEER_TIMEOUT             30 /* seconds */
+#define TUND_SERVER_TIMEOUT           30 /* seconds */
+#define TUND_REGISTER_TIMEOUT         5  /* seconds — wait for ASSIGN */
+#define TUND_REGISTER_RETRIES         3
+#define TUND_PEER_LIST_RETRY_INTERVAL 3 /* seconds */
 
 enum {
-    MSG_REGISTER = 0x01,      /* Client → Server : name (max 32B)        */
-    MSG_ASSIGN = 0x02,        /* Server → Client : ip(4) mask(4) mtu(2)  */
-    MSG_PEER_LIST = 0x03,     /* Server → Client : page + N × peer_info  */
-    MSG_DATA = 0x04,          /* Bidirectional   : raw IP packet          */
-    MSG_KEEPALIVE = 0x05,     /* Bidirectional   : timestamp (8B)         */
-    MSG_DISCONNECT = 0x06,    /* Client → Server : (empty)               */
-    MSG_PEER_JOIN = 0x07,     /* Server → Client : ip(4) + name(32)      */
-    MSG_PEER_LEAVE = 0x08,    /* Server → Client : ip(4)                 */
-    MSG_KEEPALIVE_ACK = 0x09, /* Bidirectional   : echoed timestamp (8B) */
+    MSG_REGISTER = 0x01,          /* Client → Server : name (max 32B)        */
+    MSG_ASSIGN = 0x02,            /* Server → Client : ip(4) mask(4) mtu(2)  */
+    MSG_PEER_LIST = 0x03,         /* Server → Client : page + N × peer_info  */
+    MSG_DATA = 0x04,              /* Bidirectional   : raw IP packet          */
+    MSG_KEEPALIVE = 0x05,         /* Bidirectional   : timestamp (8B)         */
+    MSG_DISCONNECT = 0x06,        /* Client → Server : (empty)               */
+    MSG_PEER_JOIN = 0x07,         /* Server → Client : ip(4) + name(32)      */
+    MSG_PEER_LEAVE = 0x08,        /* Server → Client : ip(4)                 */
+    MSG_KEEPALIVE_ACK = 0x09,     /* Bidirectional   : echoed timestamp (8B) */
+    MSG_PEER_LIST_REQUEST = 0x0A, /* Client → Server : (empty)           */
 };
 
 typedef struct {
@@ -134,6 +136,7 @@ int proto_build_peer_list_page(uint8_t *buf, uint32_t snapshot_id, uint16_t page
                                uint16_t total_entries);
 bool proto_read_peer_list_page(const uint8_t *payload, uint16_t payload_len,
                                proto_peer_list_page_t *page);
+int proto_build_peer_list_request(uint8_t *buf);
 int proto_build_disconnect(uint8_t *buf);
 int proto_build_peer_join(uint8_t *buf, uint32_t virt_ip, const char *name);
 int proto_build_peer_leave(uint8_t *buf, uint32_t virt_ip);

@@ -1,5 +1,6 @@
 #include "internal.h"
 #include "log.h"
+#include "network.h"
 
 _Static_assert(TUND_PEER_LIST_MAX_PAGES <= 64, "peer list page bitmap is too small");
 
@@ -20,6 +21,8 @@ static void start_peer_list_snapshot(client_t *cli, const proto_peer_list_page_t
     cli->peer_list.total_entries = page->total_entries;
     cli->peer_list.received_entries = 0;
     cli->peer_list.received_pages = 0;
+    cli->peer_list.retry_at_ms = now_ms() + TUND_PEER_LIST_RETRY_INTERVAL * 1000;
+    cli->peer_list.complete = false;
 }
 
 void client_handle_peer_list_page(client_t *cli, const uint8_t *payload, uint16_t payload_len) {
@@ -54,8 +57,25 @@ void client_handle_peer_list_page(client_t *cli, const uint8_t *payload, uint16_
 
     uint64_t complete_mask = (1ULL << state->page_count) - 1;
     if (state->received_pages == complete_mask && state->received_entries == state->total_entries) {
-        LOG_INFO("Received peer list: %u peer(s) in %u page(s)", state->total_entries,
-                 state->page_count);
+        state->complete = true;
+        LOG_INFO("Received peer list: %u peer(s) in %u page(s)", (unsigned int)state->total_entries,
+                 (unsigned int)state->page_count);
         if (!g_tui_active && state->total_entries > 0) client_log_peers(cli);
     }
+}
+
+void client_request_peer_list_if_due(client_t *cli, uint64_t now) {
+    client_peer_list_state_t *state = &cli->peer_list;
+    if (state->complete || now < state->retry_at_ms) return;
+
+    uint8_t buf[TUND_MAX_PKT];
+    int len = proto_build_peer_list_request(buf);
+    if (len < 0) {
+        LOG_ERROR("Failed to build peer list request");
+    } else if (net_send(cli->sockfd, buf, len, &cli->server_addr) < 0) {
+        LOG_WARN("Peer list request failed");
+    } else {
+        LOG_DEBUG("Requested a fresh peer list snapshot");
+    }
+    state->retry_at_ms = now + TUND_PEER_LIST_RETRY_INTERVAL * 1000;
 }

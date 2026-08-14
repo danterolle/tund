@@ -80,3 +80,8 @@ bool proto_read_peer_list_page(const uint8_t *payload, uint16_t payload_len,
     page->entries = payload + TUND_PEER_LIST_PAGE_HEADER_SIZE;
     return true;
 }
+
+int proto_build_peer_list_request(uint8_t *buf) {
+    if (proto_write_hdr(buf, MSG_PEER_LIST_REQUEST, 0) < 0) return -1;
+    return TUND_HDR_SIZE;
+}

@@ -80,13 +80,15 @@ Message types:
 | `DISCONNECT` | Client to server |
 | `PEER_JOIN` | Server to client |
 | `PEER_LEAVE` | Server to client |
+| `PEER_LIST_REQUEST` | Client to server |
 
 `PEER_LIST` is paginated so a newly connected client can receive all other peers without
 creating an oversized UDP datagram. Each payload starts with a big-endian 32-bit snapshot ID,
 followed by three big-endian 16-bit values: the zero-based page index, page count and total peer
 count. Up to 37 fixed-size peer entries follow. A full 253-peer table therefore needs at most
 seven pages. Clients accept pages in any order, ignore duplicates and restart incomplete assembly
-when a newer snapshot arrives.
+when a newer snapshot arrives. Until a complete snapshot is received, a client periodically sends
+an authenticated `PEER_LIST_REQUEST`; the server answers with a fresh snapshot.
 
 ## Keepalive and RTT
 

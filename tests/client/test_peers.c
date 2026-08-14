@@ -124,12 +124,33 @@ static void test_maximum_peer_list(void) {
     test_destroy_client(&cli);
 }
 
+static void test_incomplete_peer_list_requests_retry(void) {
+    client_t cli = {0};
+    uint64_t now = 1000;
+
+    test_init_client(&cli);
+    test_reset_io();
+    client_request_peer_list_if_due(&cli, now);
+
+    CHECK(test_send_count == 1);
+    CHECK(test_sends[0].type == MSG_PEER_LIST_REQUEST);
+    CHECK(test_sends[0].payload_len == 0);
+
+    client_request_peer_list_if_due(&cli, now + 1);
+    CHECK(test_send_count == 1);
+    cli.peer_list.complete = true;
+    client_request_peer_list_if_due(&cli, now + TUND_PEER_LIST_RETRY_INTERVAL * 1000);
+    CHECK(test_send_count == 1);
+    test_destroy_client(&cli);
+}
+
 int main(void) {
     test_update_peer_lifecycle();
     test_update_peer_truncates_names();
     test_update_peer_table_full();
     test_traffic_accounting();
     test_maximum_peer_list();
+    test_incomplete_peer_list_requests_retry();
 
     return sitest_finish("client peer tests");
 }
