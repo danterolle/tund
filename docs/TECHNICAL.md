@@ -52,7 +52,7 @@ Each endpoint sets the TUN MTU to 1400 bytes. The lower-than-Ethernet MTU reserv
 
 ## Datagram format
 
-Every TunD datagram uses the following 37-byte header followed by an encrypted payload and a 16-byte authentication tag:
+Every TunD datagram uses the following 45-byte header followed by an encrypted payload and a 16-byte authentication tag:
 
 | Bytes | Field | Description |
 |---:|---|---|
@@ -60,12 +60,16 @@ Every TunD datagram uses the following 37-byte header followed by an encrypted p
 | 1 | version | Protocol version. |
 | 2 | type | Message type. |
 | 3–4 | length | Big-endian encrypted payload length, including the authentication tag, on the wire. |
-| 5–12 | sequence | Sender sequence number for replay protection. |
-| 13–36 | nonce | 192-bit XChaCha20-Poly1305 nonce. |
+| 5–12 | session | Random identifier generated once per sender process. |
+| 13–20 | sequence | Sender sequence number for replay protection. |
+| 21–44 | nonce | 192-bit XChaCha20-Poly1305 nonce. |
 
-`network.c` encrypts every outgoing payload with Monocypher's XChaCha20-Poly1305 AEAD. Encryption refreshes the header sequence and nonce immediately before locking the datagram, so fan-out sends never reuse the same nonce. The header is authenticated as associated data, so changes to message type, length, sequence or nonce are rejected before message parsing. On receive, `network.c` decrypts the payload in place and restores the header length to plaintext length for the existing packet handlers.
+`network.c` encrypts every outgoing payload with Monocypher's XChaCha20-Poly1305 AEAD. Encryption refreshes the header sequence and nonce immediately before locking the datagram, so fan-out sends never reuse the same nonce. The header is authenticated as associated data, so changes to message type, length, session, sequence or nonce are rejected before message parsing. On receive, `network.c` decrypts the payload in place and restores the header length to plaintext length for the existing packet handlers.
 
-Clients and servers keep a small sliding window per remote endpoint and drop replayed sequence numbers. All participants must therefore use the same access key and protocol version.
+Clients and servers keep a small sliding window per remote endpoint and sender session. A packet
+from another session cannot advance or poison the active replay window. An authenticated
+`REGISTER` establishes a restarted client's new session; `ASSIGN` establishes the server session
+for a connecting client. All participants must use the same access key and protocol version.
 
 Message types:
 

@@ -78,9 +78,9 @@ void client_handle_server_packet(client_t *cli, uint8_t *buf, int len) {
     }
     if (TUND_HDR_SIZE + payload_len > len) return;
 
-    uint64_t sequence = 0;
-    if (!proto_read_sequence(buf, &sequence) ||
-        !proto_replay_accept(&cli->server_replay, sequence)) {
+    uint64_t session_id = 0, sequence = 0;
+    if (!proto_read_session(buf, &session_id) || !proto_read_sequence(buf, &sequence) ||
+        !proto_replay_accept(&cli->server_replay, session_id, sequence)) {
         LOG_DEBUG("Dropped replayed packet from server");
         return;
     }

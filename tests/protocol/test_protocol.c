@@ -21,6 +21,8 @@ static void test_header_roundtrip(void) {
     uint8_t next_buf[TUND_MAX_PKT];
     uint8_t type = 0;
     uint16_t payload_len = 0;
+    uint64_t session_id = 0;
+    uint64_t next_session_id = 0;
     uint64_t sequence = 0;
     uint64_t next_sequence = 0;
 
@@ -31,9 +33,13 @@ static void test_header_roundtrip(void) {
     CHECK(buf[2] == MSG_DATA);
     CHECK(buf[3] == 0x01);
     CHECK(buf[4] == 0x23);
+    CHECK(proto_read_session(buf, &session_id));
+    CHECK(session_id > 0);
     CHECK(proto_read_sequence(buf, &sequence));
     CHECK(sequence > 0);
     CHECK(proto_write_hdr(next_buf, MSG_DATA, 0) == TUND_HDR_SIZE);
+    CHECK(proto_read_session(next_buf, &next_session_id));
+    CHECK(next_session_id == session_id);
     CHECK(proto_read_sequence(next_buf, &next_sequence));
     CHECK(next_sequence == sequence + 1);
 
@@ -78,6 +84,11 @@ static void test_transport_encryption(void) {
     len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
     wire_len = proto_encrypt(buf, len, key);
     buf[1] ^= 0x01;
+    CHECK(proto_decrypt(buf, wire_len, key) < 0);
+
+    len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
+    wire_len = proto_encrypt(buf, len, key);
+    buf[TUND_SESSION_OFFSET + 7] ^= 0x01;
     CHECK(proto_decrypt(buf, wire_len, key) < 0);
 
     len = proto_build_data(buf, ip_pkt, (uint16_t)sizeof(ip_pkt));
@@ -320,14 +331,15 @@ static void test_ipv4_validation(void) {
 static void test_replay_window(void) {
     proto_replay_window_t replay;
     proto_replay_reset(&replay);
-
-    CHECK(proto_replay_accept(&replay, 100));
-    CHECK(!proto_replay_accept(&replay, 100));
-    CHECK(proto_replay_accept(&replay, 99));
-    CHECK(!proto_replay_accept(&replay, 99));
-    CHECK(proto_replay_accept(&replay, 120));
-    CHECK(!proto_replay_accept(&replay, 55));
-    CHECK(!proto_replay_accept(&replay, 0));
+    CHECK(proto_replay_accept(&replay, 10, 100));
+    CHECK(!proto_replay_accept(&replay, 10, 100));
+    CHECK(proto_replay_accept(&replay, 10, 99));
+    CHECK(!proto_replay_accept(&replay, 10, 99));
+    CHECK(proto_replay_accept(&replay, 10, 120));
+    CHECK(!proto_replay_accept(&replay, 10, 55));
+    CHECK(!proto_replay_accept(&replay, 11, 121));
+    CHECK(!proto_replay_accept(&replay, 10, 0));
+    CHECK(!proto_replay_accept(&replay, 0, 121));
 }
 
 int main(void) {

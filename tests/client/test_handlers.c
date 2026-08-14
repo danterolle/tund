@@ -78,6 +78,9 @@ static void test_replayed_data_is_ignored(void) {
 
     client_handle_server_packet(&cli, buf, len);
     client_handle_server_packet(&cli, buf, len);
+    len = proto_build_data(buf, ip_pkt, sizeof(ip_pkt));
+    buf[TUND_SESSION_OFFSET + TUND_SESSION_SIZE - 1] ^= 0x01;
+    client_handle_server_packet(&cli, buf, len);
 
     CHECK(test_tun_write_count == 1);
     CHECK(cli.peers[0].bytes_in == sizeof(ip_pkt));

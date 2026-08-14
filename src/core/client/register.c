@@ -92,25 +92,25 @@ client_registration_result_t client_register(client_t *cli, int attempts) {
                 break;
             }
 
-            uint64_t sequence = 0;
-            if (!proto_read_sequence(buf, &sequence) ||
-                !proto_replay_accept(&cli->server_replay, sequence)) {
-                LOG_DEBUG("Dropped replayed handshake reply");
-                continue;
-            }
-            if (type == MSG_PEER_LIST) {
-                client_handle_peer_list_page(cli, buf + TUND_HDR_SIZE, payload_len);
-                continue;
-            }
-            if (type == MSG_ASSIGN && handle_assign(cli, buf + TUND_HDR_SIZE, payload_len))
-                return CLIENT_REGISTER_OK;
-            if (is_runtime_message(type)) {
+            if (type == MSG_PEER_LIST || is_runtime_message(type)) {
                 LOG_DEBUG("Ignored message type 0x%02X while registering", type);
                 continue;
             }
+            if (type != MSG_ASSIGN) {
+                bad = true;
+                LOG_WARN("Server sent an unexpected handshake message type 0x%02X.", type);
+                break;
+            }
 
+            uint64_t session_id = 0, sequence = 0;
+            if (!proto_read_session(buf, &session_id) || !proto_read_sequence(buf, &sequence) ||
+                !proto_replay_accept(&cli->server_replay, session_id, sequence)) {
+                LOG_DEBUG("Dropped replayed handshake reply");
+                continue;
+            }
+            if (handle_assign(cli, buf + TUND_HDR_SIZE, payload_len)) return CLIENT_REGISTER_OK;
             bad = true;
-            LOG_WARN("Server sent an unexpected handshake message type 0x%02X.", type);
+            LOG_WARN("Server sent an invalid assignment.");
             break;
         }
 

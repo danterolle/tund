@@ -4,7 +4,8 @@
 #include "network.h"
 
 static void server_handle_register(server_t *srv, const uint8_t *payload, uint16_t plen,
-                                   const struct sockaddr_in *from, uint64_t sequence) {
+                                   const struct sockaddr_in *from, uint64_t session_id,
+                                   uint64_t sequence) {
     uint32_t vip = 0;
     char peer_name[TUND_NAME_LEN] = "";
     struct sockaddr_in peer_addr;
@@ -18,7 +19,9 @@ static void server_handle_register(server_t *srv, const uint8_t *payload, uint16
     pthread_mutex_lock(&srv->peers_lock);
     int idx = server_find_peer_by_addr(srv, from);
     if (idx >= 0) {
-        if (!proto_replay_accept(&srv->peers[idx].replay, sequence)) {
+        if (srv->peers[idx].replay.session_id != session_id)
+            proto_replay_reset(&srv->peers[idx].replay);
+        if (!proto_replay_accept(&srv->peers[idx].replay, session_id, sequence)) {
             snprintf(peer_name, sizeof(peer_name), "%s", srv->peers[idx].name);
             pthread_mutex_unlock(&srv->peers_lock);
             LOG_DEBUG("Dropped replayed REGISTER from %s", peer_name);
@@ -45,7 +48,7 @@ static void server_handle_register(server_t *srv, const uint8_t *payload, uint16
         p->bytes_in = p->bytes_out = p->rtt_ms = 0;
         p->has_rtt = false;
         proto_replay_reset(&p->replay);
-        proto_replay_accept(&p->replay, sequence);
+        proto_replay_accept(&p->replay, session_id, sequence);
         memset(p->name, 0, TUND_NAME_LEN);
         if (plen > 0)
             memcpy(p->name, payload,
@@ -94,7 +97,7 @@ static void server_handle_register(server_t *srv, const uint8_t *payload, uint16
 }
 
 static bool server_accept_registered_sequence(server_t *srv, const struct sockaddr_in *from,
-                                              uint64_t sequence) {
+                                              uint64_t session_id, uint64_t sequence) {
     char peer_name[TUND_NAME_LEN] = "";
     bool known = false;
     bool accepted = true;
@@ -103,26 +106,13 @@ static bool server_accept_registered_sequence(server_t *srv, const struct sockad
     int idx = server_find_peer_by_addr(srv, from);
     if (idx >= 0) {
         known = true;
-        accepted = proto_replay_accept(&srv->peers[idx].replay, sequence);
+        accepted = proto_replay_accept(&srv->peers[idx].replay, session_id, sequence);
         snprintf(peer_name, sizeof(peer_name), "%s", srv->peers[idx].name);
     }
     pthread_mutex_unlock(&srv->peers_lock);
 
     if (known && !accepted) LOG_DEBUG("Dropped replayed packet from %s", peer_name);
     return accepted;
-}
-
-static void server_handle_peer_list_request(server_t *srv, const struct sockaddr_in *from,
-                                            uint16_t payload_len) {
-    if (payload_len != 0) {
-        LOG_DEBUG("Dropped invalid peer list request");
-        return;
-    }
-
-    pthread_mutex_lock(&srv->peers_lock);
-    int peer_idx = server_find_peer_by_addr(srv, from);
-    pthread_mutex_unlock(&srv->peers_lock);
-    if (peer_idx >= 0) server_send_peer_list(srv, peer_idx);
 }
 
 static void server_handle_disconnect(server_t *srv, const struct sockaddr_in *from) {
@@ -158,8 +148,10 @@ void server_handle_packet(server_t *srv, uint8_t *buf, int len, const struct soc
     uint8_t type;
     uint16_t payload_len;
     int hdr = proto_read_hdr(buf, &type, &payload_len);
+    uint64_t session_id = 0;
     uint64_t sequence = 0;
-    if (hdr < 0 || TUND_HDR_SIZE + payload_len > len || !proto_read_sequence(buf, &sequence)) {
+    if (hdr < 0 || TUND_HDR_SIZE + payload_len > len || !proto_read_session(buf, &session_id) ||
+        !proto_read_sequence(buf, &sequence)) {
         char from_ip[TUND_IP_STR_LEN];
         LOG_DEBUG("Invalid packet from %s:%u",
                   ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)),
@@ -167,12 +159,13 @@ void server_handle_packet(server_t *srv, uint8_t *buf, int len, const struct soc
         return;
     }
 
-    if (type != MSG_REGISTER && !server_accept_registered_sequence(srv, from, sequence)) return;
+    if (type != MSG_REGISTER && !server_accept_registered_sequence(srv, from, session_id, sequence))
+        return;
 
     uint8_t *payload = buf + TUND_HDR_SIZE;
     switch (type) {
     case MSG_REGISTER:
-        server_handle_register(srv, payload, payload_len, from, sequence);
+        server_handle_register(srv, payload, payload_len, from, session_id, sequence);
         break;
     case MSG_DATA:
         server_handle_data(srv, payload, payload_len, from);

@@ -117,6 +117,30 @@ static void test_replayed_data_is_ignored(void) {
     test_destroy_server(&srv);
 }
 
+static void test_new_session_requires_registration(void) {
+    server_t srv = {0};
+    struct sockaddr_in addr = test_addr(0xC0000201, 10001);
+    uint8_t buf[TUND_MAX_PKT];
+
+    test_init_server(&srv);
+    register_peer(&srv, &addr, "alpha");
+    uint64_t initial_session = srv.peers[0].replay.session_id;
+
+    test_reset_io();
+    int len = proto_build_keepalive(buf, 1);
+    buf[TUND_SESSION_OFFSET + TUND_SESSION_SIZE - 1] ^= 0x01;
+    server_handle_packet(&srv, buf, len, &addr);
+    CHECK(test_send_count == 0);
+    CHECK(srv.peers[0].replay.session_id == initial_session);
+
+    len = proto_build_register(buf, "alpha");
+    buf[TUND_SESSION_OFFSET + TUND_SESSION_SIZE - 1] ^= 0x01;
+    server_handle_packet(&srv, buf, len, &addr);
+    CHECK(test_send_count == 2);
+    CHECK(srv.peers[0].replay.session_id != initial_session);
+    test_destroy_server(&srv);
+}
+
 static void test_invalid_packets_do_not_register_peer(void) {
     server_t srv = {0};
     struct sockaddr_in addr = test_addr(0xC0000201, 10001);
@@ -140,6 +164,7 @@ int main(void) {
     test_keepalive_ack_updates_rtt();
     test_peer_list_request_sends_fresh_snapshot();
     test_replayed_data_is_ignored();
+    test_new_session_requires_registration();
     test_invalid_packets_do_not_register_peer();
 
     return sitest_finish("server handler tests");

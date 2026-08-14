@@ -67,3 +67,16 @@ void server_send_peer_list(server_t *srv, int peer_idx) {
     LOG_DEBUG("Sent peer list (%d peers, %d/%u pages) to %s", entry_count, sent_pages,
               (unsigned int)page_count, target.name);
 }
+
+void server_handle_peer_list_request(server_t *srv, const struct sockaddr_in *from,
+                                     uint16_t payload_len) {
+    if (payload_len != 0) {
+        LOG_DEBUG("Dropped invalid peer list request");
+        return;
+    }
+
+    pthread_mutex_lock(&srv->peers_lock);
+    int peer_idx = server_find_peer_by_addr(srv, from);
+    pthread_mutex_unlock(&srv->peers_lock);
+    if (peer_idx >= 0) server_send_peer_list(srv, peer_idx);
+}

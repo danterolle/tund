@@ -18,8 +18,10 @@ BOOLEAN NTAPI SystemFunction036(PVOID random_buffer, ULONG random_buffer_length)
 #endif
 
 static bool proto_next_sequence(uint64_t *sequence);
+static bool proto_process_session(uint64_t *session_id);
 static bool proto_random_bytes(uint8_t *buf, size_t len);
 static void proto_write_payload_len(uint8_t *buf, uint16_t payload_len);
+static void proto_write_u64_be(uint8_t *buf, uint64_t value);
 
 #define TUND_PEER_ENTRY_IP_OFFSET     0
 #define TUND_PEER_ENTRY_NAME_OFFSET   4
@@ -37,12 +39,12 @@ int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_len) {
     buf[1] = TUND_PROTOCOL_VERSION;
     buf[2] = type;
     proto_write_payload_len(buf, payload_len);
+    uint64_t session_id = 0;
+    if (!proto_process_session(&session_id)) return -1;
+    proto_write_u64_be(buf + TUND_SESSION_OFFSET, session_id);
     uint64_t sequence = 0;
     if (!proto_next_sequence(&sequence)) return -1;
-    for (int i = 7; i >= 0; i--) {
-        buf[TUND_SEQUENCE_OFFSET + i] = (uint8_t)(sequence & 0xFF);
-        sequence >>= 8;
-    }
+    proto_write_u64_be(buf + TUND_SEQUENCE_OFFSET, sequence);
     if (!proto_random_bytes(buf + TUND_NONCE_OFFSET, TUND_NONCE_SIZE)) return -1;
     return TUND_HDR_SIZE;
 }
@@ -52,7 +54,33 @@ static void proto_write_payload_len(uint8_t *buf, uint16_t payload_len) {
     buf[4] = (uint8_t)(payload_len & 0xFF);
 }
 
+static void proto_write_u64_be(uint8_t *buf, uint64_t value) {
+    for (int i = 7; i >= 0; i--) {
+        buf[i] = (uint8_t)(value & 0xFF);
+        value >>= 8;
+    }
+}
+
+static atomic_uint_fast64_t g_proto_session_id = ATOMIC_VAR_INIT(0);
 static atomic_uint_fast64_t g_proto_next_sequence = ATOMIC_VAR_INIT(0);
+
+static bool proto_process_session(uint64_t *session_id) {
+    uint_fast64_t current = atomic_load_explicit(&g_proto_session_id, memory_order_relaxed);
+    while (current == 0) {
+        uint64_t seed = 0;
+        if (!proto_random_bytes((uint8_t *)&seed, sizeof(seed))) return false;
+        if (seed == 0) seed = 1;
+
+        uint_fast64_t expected = 0;
+        if (atomic_compare_exchange_strong_explicit(&g_proto_session_id, &expected, seed,
+                                                    memory_order_relaxed, memory_order_relaxed))
+            current = seed;
+        else
+            current = expected;
+    }
+    *session_id = (uint64_t)current;
+    return true;
+}
 
 static bool proto_initial_sequence(uint_fast64_t *sequence) {
     uint64_t seed = 0;
@@ -253,13 +281,25 @@ bool proto_read_sequence(const uint8_t *buf, uint64_t *sequence) {
     return true;
 }
 
+bool proto_read_session(const uint8_t *buf, uint64_t *session_id) {
+    uint64_t value = proto_load64_be(buf + TUND_SESSION_OFFSET);
+    if (value == 0) return false;
+    *session_id = value;
+    return true;
+}
+
 void proto_replay_reset(proto_replay_window_t *window) {
+    window->session_id = 0;
     window->highest = 0;
     window->seen = 0;
 }
 
-bool proto_replay_accept(proto_replay_window_t *window, uint64_t sequence) {
-    if (sequence == 0) return false;
+bool proto_replay_accept(proto_replay_window_t *window, uint64_t session_id, uint64_t sequence) {
+    if (session_id == 0 || sequence == 0) return false;
+    if (window->session_id == 0)
+        window->session_id = session_id;
+    else if (window->session_id != session_id)
+        return false;
 
     if (window->highest == 0) {
         window->highest = sequence;

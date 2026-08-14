@@ -25,6 +25,8 @@ void server_send_peer_snapshots(server_t *srv, const server_peer_snapshot_t *pee
                                 uint8_t *buf, int len, uint64_t bytes_out);
 void server_broadcast(server_t *srv, uint8_t *buf, int len, int exclude_idx, uint64_t bytes_out);
 void server_send_peer_list(server_t *srv, int peer_idx);
+void server_handle_peer_list_request(server_t *srv, const struct sockaddr_in *from,
+                                     uint16_t payload_len);
 void server_handle_data(server_t *srv, const uint8_t *payload, uint16_t plen,
                         const struct sockaddr_in *from);
 void server_handle_keepalive(server_t *srv, const uint8_t *payload, uint16_t plen,
