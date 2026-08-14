@@ -4,6 +4,7 @@
 #include "client.h"
 
 void client_update_peer(client_t *cli, uint32_t vip, const char *name, bool online);
+void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint16_t payload_len);
 void client_add_peer_traffic(client_t *cli, uint32_t vip, uint64_t bytes_in, uint64_t bytes_out);
 void client_add_broadcast_traffic(client_t *cli, uint64_t bytes_out);
 void client_log_peers(client_t *cli);

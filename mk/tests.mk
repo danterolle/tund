@@ -35,11 +35,11 @@ test_cli_LIBS := $(SITEST_LIB)
 test_cli_SAN_LIBS := $(SAN_SITEST_LIB)
 test_cli_DEPS := src/app/cli.h src/app/log.h $(SITEST_HDR)
 
-test_server_peers_SRCS := tests/server/test_peers.c src/core/server/peers.c
+test_server_peers_SRCS := tests/server/test_peers.c src/core/server/peers.c src/core/server/peer_list.c
 test_server_data_SRCS := tests/server/test_data.c src/core/server/data.c src/core/server/peers.c
-test_server_handlers_SRCS := tests/server/test_handlers.c src/app/events.c src/core/server/handlers.c src/core/server/peers.c src/core/server/data.c src/core/server/keepalive.c
+test_server_handlers_SRCS := tests/server/test_handlers.c src/app/events.c src/core/server/handlers.c src/core/server/peers.c src/core/server/peer_list.c src/core/server/data.c src/core/server/keepalive.c
 test_client_peers_SRCS := tests/client/test_peers.c src/core/client/peers.c
-test_client_handlers_SRCS := tests/client/test_handlers.c src/core/client/handlers.c src/core/client/peers.c src/core/client/session.c
+test_client_handlers_SRCS := tests/client/test_handlers.c src/core/client/handlers.c src/core/client/peer_list.c src/core/client/peers.c src/core/client/session.c
 
 TEST_TARGETS := $(addprefix $(DIST)/test_,$(addsuffix $(EXEEXT),$(TEST_NAMES)))
 SAN_TEST_TARGETS := $(addprefix $(DIST)/test_,$(addsuffix _sanitize$(EXEEXT),$(TEST_NAMES)))

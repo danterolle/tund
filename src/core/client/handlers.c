@@ -25,20 +25,6 @@ static void client_handle_keepalive_ack(client_t *cli, const uint8_t *payload, u
     LOG_DEBUG("Server keepalive RTT: %llums", (unsigned long long)cli->server_rtt_ms);
 }
 
-static void client_handle_peer_list(client_t *cli, const uint8_t *payload, uint16_t plen) {
-    int count = proto_peer_entry_count(plen);
-    if (!g_tui_active) LOG_INFO("Received peer list: %d peer(s)", count);
-
-    for (int i = 0; i < count; i++) {
-        uint32_t virt_ip = 0;
-        char name[TUND_NAME_LEN];
-        bool online = false;
-        if (!proto_read_peer_entry(payload, plen, i, &virt_ip, name, &online)) break;
-        client_update_peer(cli, virt_ip, name, online);
-    }
-    if (!g_tui_active && count > 0) client_log_peers(cli);
-}
-
 static void client_handle_peer_join(client_t *cli, const uint8_t *payload, uint16_t plen) {
     if (plen < 4 + TUND_NAME_LEN) return;
 

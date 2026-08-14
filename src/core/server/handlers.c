@@ -1,40 +1,18 @@
-#include "internal.h"
 #include "events.h"
+#include "internal.h"
 #include "log.h"
 #include "network.h"
-
-static int build_peer_list_from_snapshot(uint8_t *buf, const server_peer_snapshot_t *entries,
-                                         int entry_count, int *sent_count) {
-    uint8_t *payload = buf + TUND_HDR_SIZE;
-    int offset = 0;
-    int count = 0;
-
-    for (int i = 0; i < entry_count; i++) {
-        if (!proto_write_peer_entry(payload + offset, TUND_MAX_PLAINTEXT - (size_t)offset,
-                                    entries[i].virt_ip, entries[i].name, true))
-            break;
-        offset += TUND_PEER_ENTRY_SIZE;
-        count++;
-    }
-
-    *sent_count = count;
-    proto_write_hdr(buf, MSG_PEER_LIST, (uint16_t)offset);
-    return TUND_HDR_SIZE + offset;
-}
 
 static void server_handle_register(server_t *srv, const uint8_t *payload, uint16_t plen,
                                    const struct sockaddr_in *from, uint64_t sequence) {
     uint32_t vip = 0;
     char peer_name[TUND_NAME_LEN] = "";
     struct sockaddr_in peer_addr;
-    server_peer_snapshot_t peer_entries[TUND_MAX_PEERS];
     struct sockaddr_in join_dests[TUND_MAX_PEERS];
-    int peer_entry_count = 0;
     int join_dest_count = 0;
     bool reconnect = false;
 
     memset(&peer_addr, 0, sizeof(peer_addr));
-    memset(peer_entries, 0, sizeof(peer_entries));
     memset(join_dests, 0, sizeof(join_dests));
 
     pthread_mutex_lock(&srv->peers_lock);
@@ -84,7 +62,6 @@ static void server_handle_register(server_t *srv, const uint8_t *payload, uint16
         for (int i = 0; i < TUND_MAX_PEERS; i++) {
             if (!srv->peers[i].active || i == idx) continue;
 
-            server_snapshot_peer_locked(&srv->peers[i], i, &peer_entries[peer_entry_count++]);
             memcpy(&join_dests[join_dest_count++], &srv->peers[i].real_addr, sizeof(join_dests[0]));
         }
     }
@@ -106,12 +83,7 @@ static void server_handle_register(server_t *srv, const uint8_t *payload, uint16
              ip_to_str_buf(from->sin_addr.s_addr, from_ip, sizeof(from_ip)), ntohs(from->sin_port));
     app_event_peer_join(peer_name, vip, &peer_addr);
 
-    int sent_peer_count = 0;
-    len = build_peer_list_from_snapshot(buf, peer_entries, peer_entry_count, &sent_peer_count);
-    if (net_send(srv->sockfd, buf, len, &peer_addr) < 0)
-        LOG_WARN("Failed to send peer list to %s", peer_name);
-    else
-        LOG_DEBUG("Sent peer list (%d peers) to %s", sent_peer_count, peer_name);
+    server_send_peer_list(srv, idx);
 
     len = proto_build_peer_join(buf, vip, peer_name);
     for (int i = 0; i < join_dest_count; i++) {
