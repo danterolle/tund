@@ -3,33 +3,6 @@
 
 #include <string.h>
 
-static void build_peer_list(uint8_t *buf) {
-    uint8_t *payload = buf + TUND_HDR_SIZE;
-    CHECK(proto_write_peer_entry(payload, TUND_PEER_ENTRY_SIZE, htonl(TUND_IP_START + 1), "alpha",
-                                 true));
-    CHECK(proto_write_peer_entry(payload + TUND_PEER_ENTRY_SIZE, TUND_PEER_ENTRY_SIZE,
-                                 htonl(TUND_IP_START + 2), "beta", true));
-    proto_write_hdr(buf, MSG_PEER_LIST, 2 * TUND_PEER_ENTRY_SIZE);
-}
-
-static void test_peer_list_updates_table(void) {
-    client_t cli = {0};
-    uint8_t buf[TUND_MAX_PKT];
-
-    test_init_client(&cli);
-    build_peer_list(buf);
-    client_handle_server_packet(&cli, buf, TUND_HDR_SIZE + 2 * TUND_PEER_ENTRY_SIZE);
-
-    CHECK(cli.peer_count == 2);
-    CHECK(cli.peers[0].active);
-    CHECK(cli.peers[0].virt_ip == htonl(TUND_IP_START + 1));
-    CHECK(strcmp(cli.peers[0].name, "alpha") == 0);
-    CHECK(cli.peers[1].active);
-    CHECK(cli.peers[1].virt_ip == htonl(TUND_IP_START + 2));
-    CHECK(strcmp(cli.peers[1].name, "beta") == 0);
-    test_destroy_client(&cli);
-}
-
 static void test_peer_join_and_leave(void) {
     client_t cli = {0};
     uint8_t buf[TUND_MAX_PKT];
@@ -187,7 +160,7 @@ static void test_truncated_packet_is_ignored(void) {
     uint8_t buf[TUND_MAX_PKT];
 
     test_init_client(&cli);
-    build_peer_list(buf);
+    CHECK(proto_build_keepalive(buf, 1) > 0);
     test_reset_io();
     client_handle_server_packet(&cli, buf, TUND_HDR_SIZE + 1);
 
@@ -198,7 +171,6 @@ static void test_truncated_packet_is_ignored(void) {
 }
 
 int main(void) {
-    test_peer_list_updates_table();
     test_peer_join_and_leave();
     test_data_writes_tun_and_accounts_peer();
     test_invalid_data_is_ignored();

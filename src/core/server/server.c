@@ -9,6 +9,7 @@ int server_init(server_t *srv, const config_t *cfg) {
     memset(&srv->tun, 0, sizeof(srv->tun));
     memset(srv->peers, 0, sizeof(srv->peers));
     srv->peer_count = 0;
+    srv->peer_list_generation = 0;
     srv->port = cfg->port;
     srv->timeout_started = false;
     srv->tun_started = false;

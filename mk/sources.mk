@@ -1,5 +1,5 @@
 THIRD_PARTY_SRC := third_party/monocypher/monocypher.c
-PROTO_SRC := src/protocol/protocol.c $(THIRD_PARTY_SRC)
+PROTO_SRC := src/protocol/protocol.c src/protocol/peer_list.c $(THIRD_PARTY_SRC)
 APP_SRC  := src/app/main.c src/app/cli.c src/app/events.c src/app/log.c src/app/platform.c
 WIN_RUNTIME_SRC := src/app/win_runtime.c
 UI_SRC   := src/ui/tui.c src/ui/render.c src/ui/events.c

@@ -27,22 +27,29 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define TUND_MAGIC            0xA9
-#define TUND_PROTOCOL_VERSION 4
-#define TUND_PORT             9909
-#define TUND_SEQUENCE_SIZE    8
-#define TUND_NONCE_SIZE       24
-#define TUND_AUTH_TAG_SIZE    16
-#define TUND_KEY_SIZE         32
-#define TUND_SEQUENCE_OFFSET  5
-#define TUND_NONCE_OFFSET     (TUND_SEQUENCE_OFFSET + TUND_SEQUENCE_SIZE)
-#define TUND_HDR_SIZE         (TUND_NONCE_OFFSET + TUND_NONCE_SIZE)
-#define TUND_MAX_PLAINTEXT    1600 /* MTU 1500 + some headroom */
-#define TUND_MAX_PAYLOAD      (TUND_MAX_PLAINTEXT + TUND_AUTH_TAG_SIZE)
-#define TUND_MAX_PKT          (TUND_HDR_SIZE + TUND_MAX_PAYLOAD)
-#define TUND_NAME_LEN         32
-#define TUND_PEER_ENTRY_SIZE  (4 + TUND_NAME_LEN + 1)
-#define TUND_TUN_MTU          1400 /* Leave room for UDP encapsulation */
+#define TUND_MAGIC                      0xA9
+#define TUND_PROTOCOL_VERSION           5
+#define TUND_PORT                       9909
+#define TUND_SEQUENCE_SIZE              8
+#define TUND_NONCE_SIZE                 24
+#define TUND_AUTH_TAG_SIZE              16
+#define TUND_KEY_SIZE                   32
+#define TUND_SEQUENCE_OFFSET            5
+#define TUND_NONCE_OFFSET               (TUND_SEQUENCE_OFFSET + TUND_SEQUENCE_SIZE)
+#define TUND_HDR_SIZE                   (TUND_NONCE_OFFSET + TUND_NONCE_SIZE)
+#define TUND_MAX_PLAINTEXT              1600 /* MTU 1500 + some headroom */
+#define TUND_MAX_PAYLOAD                (TUND_MAX_PLAINTEXT + TUND_AUTH_TAG_SIZE)
+#define TUND_MAX_PKT                    (TUND_HDR_SIZE + TUND_MAX_PAYLOAD)
+#define TUND_NAME_LEN                   32
+#define TUND_MAX_PEERS                  253 /* 10.9.0.2 .. 10.9.0.254 */
+#define TUND_PEER_ENTRY_SIZE            (4 + TUND_NAME_LEN + 1)
+#define TUND_TUN_MTU                    1400 /* Leave room for UDP encapsulation */
+#define TUND_PEER_LIST_PAGE_HEADER_SIZE 10
+/* Keep peer-list datagrams within the tunneled-packet plaintext budget. */
+#define TUND_PEER_LIST_PAGE_ENTRIES                                                                \
+    ((TUND_TUN_MTU - TUND_PEER_LIST_PAGE_HEADER_SIZE) / TUND_PEER_ENTRY_SIZE)
+#define TUND_PEER_LIST_MAX_PAGES                                                                   \
+    ((TUND_MAX_PEERS + TUND_PEER_LIST_PAGE_ENTRIES - 1) / TUND_PEER_LIST_PAGE_ENTRIES)
 
 #define TUND_HDR_OK          0
 #define TUND_HDR_BAD_MAGIC   -1
@@ -74,7 +81,7 @@
 enum {
     MSG_REGISTER = 0x01,      /* Client → Server : name (max 32B)        */
     MSG_ASSIGN = 0x02,        /* Server → Client : ip(4) mask(4) mtu(2)  */
-    MSG_PEER_LIST = 0x03,     /* Server → Client : N × peer_info         */
+    MSG_PEER_LIST = 0x03,     /* Server → Client : page + N × peer_info  */
     MSG_DATA = 0x04,          /* Bidirectional   : raw IP packet          */
     MSG_KEEPALIVE = 0x05,     /* Bidirectional   : timestamp (8B)         */
     MSG_DISCONNECT = 0x06,    /* Client → Server : (empty)               */
@@ -87,6 +94,15 @@ typedef struct {
     uint64_t highest;
     uint64_t seen;
 } proto_replay_window_t;
+
+typedef struct {
+    uint32_t snapshot_id;
+    uint16_t page_index;
+    uint16_t page_count;
+    uint16_t total_entries;
+    uint16_t entry_count;
+    const uint8_t *entries;
+} proto_peer_list_page_t;
 
 int proto_write_hdr(uint8_t *buf, uint8_t type, uint16_t payload_len);
 int proto_read_hdr(const uint8_t *buf, uint8_t *type, uint16_t *payload_len);
@@ -112,6 +128,12 @@ bool proto_write_peer_entry(uint8_t *payload, size_t payload_size, uint32_t virt
 bool proto_read_peer_entry(const uint8_t *payload, uint16_t payload_len, int index,
                            uint32_t *virt_ip, char name[TUND_NAME_LEN], bool *online);
 int proto_peer_entry_count(uint16_t payload_len);
+uint16_t proto_peer_list_page_count(uint16_t total_entries);
+uint16_t proto_peer_list_page_entry_count(uint16_t total_entries, uint16_t page_index);
+int proto_build_peer_list_page(uint8_t *buf, uint32_t snapshot_id, uint16_t page_index,
+                               uint16_t total_entries);
+bool proto_read_peer_list_page(const uint8_t *payload, uint16_t payload_len,
+                               proto_peer_list_page_t *page);
 int proto_build_disconnect(uint8_t *buf);
 int proto_build_peer_join(uint8_t *buf, uint32_t virt_ip, const char *name);
 int proto_build_peer_leave(uint8_t *buf, uint32_t virt_ip);

@@ -5,6 +5,15 @@
 #include "tun.h"
 
 typedef struct {
+    bool initialized;
+    uint32_t snapshot_id;
+    uint16_t page_count;
+    uint16_t total_entries;
+    uint16_t received_entries;
+    uint64_t received_pages;
+} client_peer_list_state_t;
+
+typedef struct {
     socket_t sockfd;                /* UDP socket */
     tun_device_t tun;               /* Virtual interface */
     struct sockaddr_in server_addr; /* Server's real UDP address */
@@ -17,9 +26,10 @@ typedef struct {
     char name[TUND_NAME_LEN];     /* Display name */
     peer_t peers[TUND_MAX_PEERS]; /* Known peers */
     int peer_count;               /* Active peer count */
-    pthread_mutex_t peers_lock;   /* Thread safety */
-    pthread_t ka_tid;             /* Keepalive thread handle */
-    pthread_t tun_tid;            /* TUN reader thread handle */
+    client_peer_list_state_t peer_list;
+    pthread_mutex_t peers_lock; /* Thread safety */
+    pthread_t ka_tid;           /* Keepalive thread handle */
+    pthread_t tun_tid;          /* TUN reader thread handle */
     bool ka_started;
     bool tun_started;
     tund_stop_flag_t ka_quit;  /* Signal keepalive thread to stop */

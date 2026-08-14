@@ -9,10 +9,11 @@ typedef struct {
     tun_device_t tun;             /* Server's TUN interface */
     peer_t peers[TUND_MAX_PEERS]; /* Peer table */
     int peer_count;               /* Active peers */
-    uint16_t port;                /* Listen port */
-    pthread_mutex_t peers_lock;   /* Thread safety for peer table */
-    pthread_t timeout_tid;        /* Timeout checker thread handle */
-    pthread_t tun_tid;            /* TUN reader thread handle */
+    uint32_t peer_list_generation;
+    uint16_t port;              /* Listen port */
+    pthread_mutex_t peers_lock; /* Thread safety for peer table */
+    pthread_t timeout_tid;      /* Timeout checker thread handle */
+    pthread_t tun_tid;          /* TUN reader thread handle */
     bool timeout_started;
     bool tun_started;
     tund_stop_flag_t timeout_quit; /* Signal timeout thread to stop */

@@ -81,6 +81,13 @@ Message types:
 | `PEER_JOIN` | Server to client |
 | `PEER_LEAVE` | Server to client |
 
+`PEER_LIST` is paginated so a newly connected client can receive all other peers without
+creating an oversized UDP datagram. Each payload starts with a big-endian 32-bit snapshot ID,
+followed by three big-endian 16-bit values: the zero-based page index, page count and total peer
+count. Up to 37 fixed-size peer entries follow. A full 253-peer table therefore needs at most
+seven pages. Clients accept pages in any order, ignore duplicates and restart incomplete assembly
+when a newer snapshot arrives.
+
 ## Keepalive and RTT
 
 `KEEPALIVE` carries the sender's monotonic millisecond timestamp. The receiver replies with `KEEPALIVE_ACK` containing the same timestamp. The original sender compares it with its current monotonic time to estimate RTT.

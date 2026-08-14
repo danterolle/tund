@@ -97,7 +97,7 @@ void client_handle_server_packet(client_t *cli, uint8_t *buf, int len) {
         tun_write(&cli->tun, payload, payload_len);
         break;
     case MSG_PEER_LIST:
-        client_handle_peer_list(cli, payload, payload_len);
+        client_handle_peer_list_page(cli, payload, payload_len);
         break;
     case MSG_PEER_JOIN:
         client_handle_peer_join(cli, payload, payload_len);

@@ -117,15 +117,12 @@ static inline uint64_t now_ms(void) {
 #endif
 
 #include "protocol.h"
-
-#define TUND_MAX_PEERS            253 /* 10.9.0.2 .. 10.9.0.254 */
 #define TUND_IP_STR_LEN           INET_ADDRSTRLEN
 #define TUND_RTT_SMOOTHING_WEIGHT 7 /* EWMA: 7/8 previous, 1/8 latest sample */
 
 extern bool g_tui_active;
 extern bool g_json_events_active;
 extern time_t g_start_time;
-
 typedef atomic_bool tund_stop_flag_t;
 
 /* Stop flags only request loop termination; they do not publish thread data. */

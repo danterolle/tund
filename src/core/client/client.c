@@ -74,6 +74,7 @@ int client_init(client_t *cli, const config_t *cfg) {
     memset(cli->name, 0, sizeof(cli->name));
     memset(cli->peers, 0, sizeof(cli->peers));
     cli->peer_count = 0;
+    memset(&cli->peer_list, 0, sizeof(cli->peer_list));
     cli->ka_started = false;
     cli->tun_started = false;
     tund_stop_flag_init(&cli->ka_quit, false);

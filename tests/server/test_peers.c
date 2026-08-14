@@ -71,38 +71,38 @@ static void test_broadcast_updates_recipients(void) {
     test_destroy_server(&srv);
 }
 
-static void test_peer_list_payload(void) {
+static void test_full_peer_list_is_paginated(void) {
     server_t srv = {0};
-    uint8_t type = 0;
-    uint16_t payload_len = 0;
+    int expected_entries = TUND_MAX_PEERS - 1;
+    int received_entries = 0;
 
     test_init_server(&srv);
-    test_set_server_peer(&srv, 0, TUND_IP_START, 0xC0000201, 10001, "target");
-    test_set_server_peer(&srv, 1, TUND_IP_START + 1, 0xC0000202, 10002, "alpha");
-    test_set_server_peer(&srv, 2, TUND_IP_START + 2, 0xC0000203, 10003, "beta");
+    for (int i = 0; i < TUND_MAX_PEERS; i++)
+        test_set_server_peer(&srv, i, TUND_IP_START + (uint32_t)i, 0xC0000201 + (uint32_t)i,
+                             (uint16_t)(10001 + i), "peer");
 
     test_reset_io();
     server_send_peer_list(&srv, 0);
 
-    CHECK(test_send_count == 1);
-    CHECK(proto_read_hdr(test_sends[0].buf, &type, &payload_len) == 0);
-    CHECK(type == MSG_PEER_LIST);
-    CHECK(payload_len == 2 * TUND_PEER_ENTRY_SIZE);
-    CHECK(test_sends[0].len == TUND_HDR_SIZE + (int)payload_len);
+    CHECK(test_send_count == proto_peer_list_page_count((uint16_t)expected_entries));
+    for (int i = 0; i < test_send_count; i++) {
+        proto_peer_list_page_t page;
+        CHECK(proto_read_peer_list_page(test_sends[i].buf + TUND_HDR_SIZE,
+                                        test_sends[i].payload_len, &page));
+        CHECK(page.page_index == i);
+        CHECK(page.total_entries == expected_entries);
+        CHECK(test_sends[i].dest.sin_port == srv.peers[0].real_addr.sin_port);
 
-    uint32_t entry_ip = 0;
-    char entry_name[TUND_NAME_LEN];
-    bool entry_online = false;
-    CHECK(proto_read_peer_entry(test_sends[0].buf + TUND_HDR_SIZE, payload_len, 0, &entry_ip,
-                                entry_name, &entry_online));
-    CHECK(entry_ip == htonl(TUND_IP_START + 1));
-    CHECK(strcmp(entry_name, "alpha") == 0);
-    CHECK(entry_online);
-    CHECK(proto_read_peer_entry(test_sends[0].buf + TUND_HDR_SIZE, payload_len, 1, &entry_ip,
-                                entry_name, &entry_online));
-    CHECK(entry_ip == htonl(TUND_IP_START + 2));
-    CHECK(strcmp(entry_name, "beta") == 0);
-    CHECK(entry_online);
+        uint32_t entry_ip = 0;
+        char entry_name[TUND_NAME_LEN];
+        bool entry_online = false;
+        CHECK(proto_read_peer_entry(page.entries, page.entry_count * TUND_PEER_ENTRY_SIZE, 0,
+                                    &entry_ip, entry_name, &entry_online));
+        CHECK(entry_ip == htonl(TUND_IP_START + 1 + (uint32_t)received_entries));
+        CHECK(entry_online);
+        received_entries += page.entry_count;
+    }
+    CHECK(received_entries == expected_entries);
     test_destroy_server(&srv);
 }
 
@@ -110,7 +110,7 @@ int main(void) {
     test_alloc_ip();
     test_find_helpers();
     test_broadcast_updates_recipients();
-    test_peer_list_payload();
+    test_full_peer_list_is_paginated();
 
     return sitest_finish("server peer tests");
 }

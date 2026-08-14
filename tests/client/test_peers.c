@@ -94,11 +94,42 @@ static void test_traffic_accounting(void) {
     test_destroy_client(&cli);
 }
 
+static void deliver_peer_list_page(client_t *cli, uint16_t page_index, uint16_t total_entries) {
+    uint8_t buf[TUND_MAX_PKT];
+    int len = proto_build_peer_list_page(buf, 1, page_index, total_entries);
+    CHECK(len > 0);
+
+    uint16_t first_entry = (uint16_t)(page_index * TUND_PEER_LIST_PAGE_ENTRIES);
+    uint16_t entry_count = proto_peer_list_page_entry_count(total_entries, page_index);
+    uint8_t *entries = buf + TUND_HDR_SIZE + TUND_PEER_LIST_PAGE_HEADER_SIZE;
+    for (uint16_t i = 0; i < entry_count; i++)
+        CHECK(proto_write_peer_entry(entries + i * TUND_PEER_ENTRY_SIZE, TUND_PEER_ENTRY_SIZE,
+                                     htonl(TUND_IP_START + first_entry + i), "peer", true));
+
+    client_handle_peer_list_page(cli, buf + TUND_HDR_SIZE, (uint16_t)(len - TUND_HDR_SIZE));
+}
+
+static void test_maximum_peer_list(void) {
+    client_t cli = {0};
+    uint16_t total_entries = TUND_MAX_PEERS - 1;
+    uint16_t page_count = proto_peer_list_page_count(total_entries);
+
+    test_init_client(&cli);
+    for (int page_index = page_count - 1; page_index >= 0; page_index--)
+        deliver_peer_list_page(&cli, (uint16_t)page_index, total_entries);
+
+    CHECK(cli.peer_count == total_entries);
+    CHECK(cli.peer_list.received_entries == total_entries);
+    CHECK(cli.peer_list.received_pages == (1ULL << page_count) - 1);
+    test_destroy_client(&cli);
+}
+
 int main(void) {
     test_update_peer_lifecycle();
     test_update_peer_truncates_names();
     test_update_peer_table_full();
     test_traffic_accounting();
+    test_maximum_peer_list();
 
     return sitest_finish("client peer tests");
 }

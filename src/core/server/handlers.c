@@ -1,5 +1,5 @@
-#include "events.h"
 #include "internal.h"
+#include "events.h"
 #include "log.h"
 #include "network.h"
 
@@ -74,6 +74,7 @@ static void server_handle_register(server_t *srv, const uint8_t *payload, uint16
                  peer_name);
 
     if (reconnect) {
+        server_send_peer_list(srv, idx);
         LOG_INFO("Peer %s reconnected (refreshed)", peer_name);
         return;
     }
